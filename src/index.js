@@ -1,19 +1,14 @@
-// Importaciones
-import express from 'express';
-import cors from 'cors';
+import dotenv from 'dotenv';
+import app from './server.js';
+import connection from './config/database.js';
 
-// Inicialización
-const app = express();
+dotenv.config();
 
-// Middlewares
-app.use(express.json());
-app.use(cors());
+// Conectar a la BD
+connection();
 
+const PORT = process.env.PORT || 3000;
 
-// Ruta de prueba
-app.get('/', (req, res) => {
-res.send('Server on');
+app.listen(PORT, () => {
+console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
-
-// Exportar app
-export default app;
