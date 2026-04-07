@@ -15,8 +15,6 @@ const usuarioSchema = new mongoose.Schema(
         password: {
             type: String,
             required: true,
-            minlength: 8,
-            maxlength: 16
         },
 
         // Rol del usuario dentro del sistema
