@@ -4,6 +4,7 @@ import cors from 'cors';
 
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import clienteRoutes from './routes/clienteRoutes.js';
 // Inicialización
 const app = express();
 
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 //Rutas de autenticación y acceso 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/clientes', clienteRoutes);
 
 // Exportar app
 export default app;
