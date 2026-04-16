@@ -145,4 +145,75 @@ const obtenerPerfil = async (req, res) => {
     }
 };
 
-export {login, obtenerPerfil};
+
+
+// Endpoint para actualizar el perfil del usuario que esté logueado
+const actualizarPerfil = async (req, res) => {
+    try {
+        // saco el id del usuario desde el token
+        const usuarioId = req.usuario.id;
+        // busco al usuario en la bd
+        const usuario = await Usuario.findById(usuarioId);
+        if (!usuario) {
+            return res.status(404).json({
+                msg: 'Usuario no encontrado'
+            });
+        }
+        let perfil = null;
+        // dependiendo del rol busco en su colección
+        if (usuario.rol === 'ADMINISTRADOR') {
+            perfil = await Administrador.findById(usuario.perfilId);
+            if (!perfil) {
+                return res.status(404).json({
+                    msg: 'Perfil de administrador no encontrado'
+                });
+            }
+            // actualizo solo lo que venga en el body
+            if (req.body.nombre) perfil.nombre = req.body.nombre;
+            if (req.body.apellido) perfil.apellido = req.body.apellido;
+            if (req.body.telefono) perfil.telefono = req.body.telefono;
+            if (req.body.direccion) perfil.direccion = req.body.direccion;
+        } 
+        else if (usuario.rol === 'VENDEDOR') {
+            perfil = await Vendedor.findById(usuario.perfilId);
+            if (!perfil) {
+                return res.status(404).json({
+                    msg: 'Perfil de vendedor no encontrado'
+                });
+            }
+            // mismo caso, actualiza lo que envíen
+            if (req.body.nombre) perfil.nombre = req.body.nombre;
+            if (req.body.apellido) perfil.apellido = req.body.apellido;
+            if (req.body.telefono) perfil.telefono = req.body.telefono;
+            if (req.body.direccion) perfil.direccion = req.body.direccion;
+        } 
+        else if (usuario.rol === 'CLIENTE') {
+            perfil = await Cliente.findById(usuario.perfilId);
+            if (!perfil) {
+                return res.status(404).json({
+                    msg: 'Perfil de cliente no encontrado'
+                });
+            }
+            // cliente tiene un campo extra: ciudad
+            if (req.body.nombre) perfil.nombre = req.body.nombre;
+            if (req.body.apellido) perfil.apellido = req.body.apellido;
+            if (req.body.telefono) perfil.telefono = req.body.telefono;
+            if (req.body.direccion) perfil.direccion = req.body.direccion;
+            if (req.body.ciudad) perfil.ciudad = req.body.ciudad;
+        }
+        // guardo los cambios
+        await perfil.save();
+        return res.status(200).json({
+            msg: 'Perfil actualizado correctamente',
+            perfil
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: 'Error al actualizar el perfil',
+            error: error.message
+        });
+    }
+};
+
+export {login, obtenerPerfil, actualizarPerfil};

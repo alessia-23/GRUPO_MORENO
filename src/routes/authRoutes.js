@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, obtenerPerfil } from '../controllers/authController.js';
+import { login, obtenerPerfil, actualizarPerfil } from '../controllers/authController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 
 
@@ -12,6 +12,8 @@ router.post('/login', login);
 //router.post('/recuperar-password', recuperarPassword);
 //Ruta para obtener el perfil del usuario logueado
 router.get('/perfil',protegerRuta ,obtenerPerfil);
+//Ruta para actualizar el perfil del usuario logueado
+router.put('/perfil',protegerRuta ,actualizarPerfil);
 
 
 export default router;  
