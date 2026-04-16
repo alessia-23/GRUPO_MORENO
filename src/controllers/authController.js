@@ -1,5 +1,5 @@
 import Usuario from '../models/Usuario.js';
-import { comparePassword } from '../helpers/bcrypt.js';
+import { comparePassword, hashPassword } from '../helpers/bcrypt.js';
 import crearTokenJWT from '../helpers/jwt.js';
 import axios from 'axios';
 import generarToken from '../helpers/generarToken.js';
@@ -216,4 +216,62 @@ const actualizarPerfil = async (req, res) => {
     }
 };
 
-export {login, obtenerPerfil, actualizarPerfil};
+
+const actualizarPassword = async (req, res) => {
+    try {
+        const { passwordActual, passwordNueva, confirmPassword } = req.body;
+        // validar que lleguen todos los campos
+        if (!passwordActual || !passwordNueva || !confirmPassword) {
+            return res.status(400).json({
+                msg: 'Debe llenar todos los campos'
+            });
+        }
+        // buscar usuario logueado
+        const usuario = await Usuario.findById(req.usuario.id);
+        if (!usuario) {
+            return res.status(404).json({
+                msg: 'Usuario no encontrado'
+            });
+        }
+        // comprobar contraseña actual
+        const passwordCorrecta = await comparePassword(passwordActual, usuario.password);
+        if (!passwordCorrecta) {
+            return res.status(401).json({
+                msg: 'La contraseña actual es incorrecta'
+            });
+        }
+        // evitar que la nueva sea igual a la actual
+        if (passwordActual === passwordNueva) {
+            return res.status(400).json({
+                msg: 'La nueva contraseña no puede ser igual a la actual'
+            });
+        }
+        // validar formato de contraseña (8 a 16, mayúscula, minúscula, número y símbolo)
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,16}$/;
+        if (!passwordRegex.test(passwordNueva)) {
+            return res.status(400).json({
+                msg: 'La contraseña debe tener entre 8 y 16 caracteres, incluir mayúscula, minúscula, número y símbolo'
+            });
+        }
+        // validar confirmación
+        if (passwordNueva !== confirmPassword) {
+            return res.status(400).json({
+                msg: 'La nueva contraseña y la confirmación no coinciden'
+            });
+        }
+        // encriptar y guardar la nueva contraseña
+        usuario.password = await hashPassword(passwordNueva);
+        await usuario.save();
+        return res.status(200).json({
+            msg: 'Contraseña actualizada correctamente'
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: 'Error al actualizar la contraseña',
+            error: error.message
+        });
+    }
+};
+
+export {login, obtenerPerfil, actualizarPerfil, actualizarPassword};
