@@ -51,7 +51,7 @@ const clienteSchema = new mongoose.Schema(
         ciudad: {
             type: String,
             trim: true,
-            default: ''
+            required:true
         },
 
         // Dirección básica

@@ -5,11 +5,11 @@ import { hashPassword } from '../helpers/bcrypt.js';
 // Registro de vendedor creado por el administrador
 const registrarVendedor = async (req, res) => {
     try {
-        const { nombre, apellido, cedula, fecha_nacimiento, telefono, direccion, email, password } = req.body;
-        // Validar campos principales obligatorios
-        if (!nombre || !apellido || !cedula || !telefono || !email || !password || !fecha_nacimiento) {
+        const {nombre,apellido,cedula,telefono,direccion,email,password,fecha_nacimiento} = req.body;
+        // Validar campos obligatorios y evitar espacios vacíos
+        if (!nombre?.trim() ||!apellido?.trim() ||!cedula?.trim() ||!telefono?.trim() ||!direccion?.trim() ||!email?.trim() ||!password ||!fecha_nacimiento) {
             return res.status(400).json({
-                msg: 'Debe llenar todos los campos'
+                msg: 'Debe llenar todos los campos obligatorios'
             });
         }
         // Validar formato de contraseña debe tener de 8 a 16, mayúscula, minúscula, número y carácter especial
@@ -137,4 +137,47 @@ const activarVendedor = async (req, res) => {
         res.status(500).json({ msg: 'Error al activar vendedor', error: error.message });
     }
 };
-export { registrarVendedor, desactivarVendedor, activarVendedor };
+
+
+// Listar vendedores
+const listarVendedores = async (req, res) => {
+    try {
+        const vendedores = await Usuario.find({
+            rol: 'VENDEDOR'
+        })
+            .select('-password -token')
+            .populate('perfilId');
+        res.status(200).json({
+            total: vendedores.length,
+            vendedores
+        });
+    } catch (error) {
+        res.status(500).json({
+            msg: 'Error al obtener vendedores',
+            error: error.message
+        });
+    }
+};
+
+// Listar clientes
+const listarClientes = async (req, res) => {
+    try {
+        const clientes = await Usuario.find({
+            rol: 'CLIENTE'
+        })
+            .select('-password -token')
+            .populate('perfilId');
+        res.status(200).json({
+            total: clientes.length,
+            clientes
+        });
+    } catch (error) {
+        res.status(500).json({
+            msg: 'Error al obtener clientes',
+            error: error.message
+        });
+    }
+};
+
+export { registrarVendedor, desactivarVendedor, activarVendedor, listarVendedores, listarClientes};
+

@@ -4,9 +4,9 @@ import { hashPassword } from '../helpers/bcrypt.js';
 
 const registrarCliente = async (req, res) => {
     try {
-        const {nombre,apellido,cedula,telefono,direccion,email,password,fecha_nacimiento} = req.body;
-        // Validar campos obligatorios
-        if (!nombre || !apellido || !cedula || !telefono || !email || !password || !fecha_nacimiento) {
+        const {nombre,apellido,cedula,telefono,direccion,ciudad,email,password,fecha_nacimiento} = req.body;
+        // Validar campos obligatorios y evitar espacios vacíos
+        if (!nombre?.trim() ||!apellido?.trim() ||!cedula?.trim() ||!telefono?.trim() ||!direccion?.trim() ||!ciudad?.trim() ||!email?.trim() ||!password ||!fecha_nacimiento) {
             return res.status(400).json({
                 msg: 'Debe llenar todos los campos obligatorios'
             });
@@ -54,7 +54,8 @@ const registrarCliente = async (req, res) => {
             cedula: cedula.trim(),
             fecha_nacimiento,
             telefono: telefono.trim(),
-            direccion: direccion ? direccion.trim() : ''
+            direccion: direccion.trim(),
+            ciudad: ciudad.trim()
         });
         // Crear usuario asociado
         const nuevoUsuario = await Usuario.create({
@@ -73,7 +74,9 @@ const registrarCliente = async (req, res) => {
                 nombre: nuevoCliente.nombre,
                 apellido: nuevoCliente.apellido,
                 cedula: nuevoCliente.cedula,
-                telefono: nuevoCliente.telefono
+                telefono: nuevoCliente.telefono,
+                direccion: nuevoCliente.direccion,
+                ciudad: nuevoCliente.ciudad
             },
             usuario: {
                 id: nuevoUsuario._id,
