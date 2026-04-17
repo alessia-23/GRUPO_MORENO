@@ -64,7 +64,6 @@ const login = async (req, res) => {
     }
 };
 
-/*
 // Solicitar recuperación de contraseña
 const recuperarPassword = async (req, res) => {
     try {
@@ -106,6 +105,7 @@ const recuperarPassword = async (req, res) => {
             msg: 'Enlace de recuperación enviado correctamente'
         });
     } catch (error) {
+        console.log(error);
         return res.status(500).json({
             msg: 'Error al recuperar contraseña',
             error: error.message
@@ -113,7 +113,7 @@ const recuperarPassword = async (req, res) => {
     }
 };
 
-*/
+
 // Endpoint para poder obtener el perfil del usuario que esté logueado 
 const obtenerPerfil = async (req, res) => {
     try {
@@ -274,4 +274,4 @@ const actualizarPassword = async (req, res) => {
     }
 };
 
-export {login, obtenerPerfil, actualizarPerfil, actualizarPassword};
+export {login, obtenerPerfil, actualizarPerfil, actualizarPassword, recuperarPassword};
