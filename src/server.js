@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
     res.send('Server on');
 });
 
-//Rutas de autenticación y acceso 
+//Rutas de autenticación y acceso endpoints
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/clientes', clienteRoutes);
