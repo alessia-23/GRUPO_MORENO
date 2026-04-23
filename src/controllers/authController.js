@@ -113,6 +113,41 @@ const recuperarPassword = async (req, res) => {
     }
 };
 
+const cambiarPasswordToken = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+        if (!password?.trim()) {
+            return res.status(400).json({
+                msg: 'La nueva contraseña es obligatoria'
+            });
+        }
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,16}$/;
+        if (!regex.test(password)) {
+            return res.status(400).json({
+                msg: 'La contraseña debe tener entre 8 y 16 caracteres, incluir mayúscula, minúscula, número y carácter especial'
+            });
+        }
+        const usuario = await Usuario.findOne({ token });
+        if (!usuario) {
+            return res.status(404).json({
+                msg: 'Token no válido o expirado'
+            });
+        }
+        usuario.password = await hashPassword(password);
+        usuario.token = null;
+        await usuario.save();
+        return res.status(200).json({
+            msg: 'Contraseña actualizada correctamente'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al cambiar la contraseña',
+            error: error.message
+        });
+    }
+};
+
 
 // Endpoint para poder obtener el perfil del usuario que esté logueado 
 const obtenerPerfil = async (req, res) => {
@@ -173,7 +208,7 @@ const actualizarPerfil = async (req, res) => {
             if (req.body.apellido) perfil.apellido = req.body.apellido;
             if (req.body.telefono) perfil.telefono = req.body.telefono;
             if (req.body.direccion) perfil.direccion = req.body.direccion;
-        } 
+        }
         else if (usuario.rol === 'VENDEDOR') {
             perfil = await Vendedor.findById(usuario.perfilId);
             if (!perfil) {
@@ -186,7 +221,7 @@ const actualizarPerfil = async (req, res) => {
             if (req.body.apellido) perfil.apellido = req.body.apellido;
             if (req.body.telefono) perfil.telefono = req.body.telefono;
             if (req.body.direccion) perfil.direccion = req.body.direccion;
-        } 
+        }
         else if (usuario.rol === 'CLIENTE') {
             perfil = await Cliente.findById(usuario.perfilId);
             if (!perfil) {
@@ -274,4 +309,4 @@ const actualizarPassword = async (req, res) => {
     }
 };
 
-export {login, obtenerPerfil, actualizarPerfil, actualizarPassword, recuperarPassword};
+export { login, obtenerPerfil, actualizarPerfil, actualizarPassword, recuperarPassword, cambiarPasswordToken };
