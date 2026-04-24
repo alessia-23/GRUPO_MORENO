@@ -116,10 +116,15 @@ const recuperarPassword = async (req, res) => {
 const cambiarPasswordToken = async (req, res) => {
     try {
         const { token } = req.params;
-        const { password } = req.body;
-        if (!password?.trim()) {
+        const { password, confirmarPassword } = req.body;
+        if (!password?.trim() || !confirmarPassword?.trim()) {
             return res.status(400).json({
-                msg: 'La nueva contraseña es obligatoria'
+                msg: 'Debe ingresar y confirmar la nueva contraseña'
+            });
+        }
+        if (password !== confirmarPassword) {
+            return res.status(400).json({
+                msg: 'Las contraseñas no coinciden'
             });
         }
         const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,16}$/;
@@ -147,7 +152,6 @@ const cambiarPasswordToken = async (req, res) => {
         });
     }
 };
-
 
 // Endpoint para poder obtener el perfil del usuario que esté logueado 
 const obtenerPerfil = async (req, res) => {
