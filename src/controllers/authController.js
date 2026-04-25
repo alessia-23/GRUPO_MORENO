@@ -113,6 +113,8 @@ const recuperarPassword = async (req, res) => {
     }
 };
 
+
+// Endpoint para cambiar la contraseña usando el token de recuperación
 const cambiarPasswordToken = async (req, res) => {
     try {
         const { token } = req.params;
