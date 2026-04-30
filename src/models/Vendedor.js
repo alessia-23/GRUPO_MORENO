@@ -61,11 +61,7 @@ const vendedorSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
-        // Estado del vendedor
-        estado: {
-            type: Boolean,
-            default: true
-        }
+
     },
     {
         timestamps: true,
