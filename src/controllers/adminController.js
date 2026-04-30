@@ -179,5 +179,65 @@ const listarClientes = async (req, res) => {
     }
 };
 
-export { registrarVendedor, desactivarVendedor, activarVendedor, listarVendedores, listarClientes};
+// Desactivar cliente y su usuario asociado
+const desactivarCliente = async (req, res) => {
+    try {
+        const { id } = req.params; // id del usuario a desactivar
+        const usuario = await Usuario.findById(id); // buscar usuario
+        if (!usuario) {
+            return res.status(404).json({
+                msg: 'Usuario no encontrado'
+            });
+        }
+        // verificar que sea cliente, es decir que conste en la BD como cliente
+        if (usuario.rol !== 'CLIENTE') {
+            return res.status(400).json({
+                msg: 'No es un cliente'
+            });
+        }
+        usuario.estado = false; // desactivar
+        await usuario.save();  // guardar cambios
+        return res.status(200).json({
+            msg: 'Cliente desactivado correctamente'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al desactivar cliente',
+            error: error.message
+        });
+    }
+};
+
+// Activar cliente y su usuario asociado
+const activarCliente = async (req, res) => {
+    try {
+        const { id } = req.params; // id del usuario a activar
+        // Buscar el usuario en la base de datos
+        const usuario = await Usuario.findById(id);
+        if (!usuario) { // Validar si el usuario existe
+            return res.status(404).json({
+                msg: 'Usuario no encontrado'
+            });
+        }
+        // Verificar que el usuario sea realmente un cliente
+        if (usuario.rol !== 'CLIENTE') {
+            return res.status(400).json({
+                msg: 'No es un cliente'
+            });
+        }
+        usuario.estado = true;  // Activar el usuario cambiando su estado a true y se guardan los cambioes en la BD
+        await usuario.save();
+        return res.status(200).json({
+            msg: 'Cliente activado correctamente'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al activar cliente',
+            error: error.message
+        });
+    }
+};
+
+
+export { registrarVendedor, desactivarVendedor, activarVendedor, listarVendedores, listarClientes, desactivarCliente, activarCliente };
 

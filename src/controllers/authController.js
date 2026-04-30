@@ -113,7 +113,6 @@ const recuperarPassword = async (req, res) => {
     }
 };
 
-
 // Endpoint para cambiar la contraseña usando el token de recuperación
 const cambiarPasswordToken = async (req, res) => {
     try {
@@ -186,8 +185,6 @@ const obtenerPerfil = async (req, res) => {
     }
 };
 
-
-
 // Endpoint para actualizar el perfil del usuario que esté logueado
 const actualizarPerfil = async (req, res) => {
     try {
@@ -257,7 +254,7 @@ const actualizarPerfil = async (req, res) => {
     }
 };
 
-
+// Endpoint para actualizar la contraseña del usuario logueado
 const actualizarPassword = async (req, res) => {
     try {
         const { passwordActual, passwordNueva, confirmPassword } = req.body;
