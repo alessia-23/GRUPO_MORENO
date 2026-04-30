@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import clienteRoutes from './routes/clienteRoutes.js';
 import categoriaRoutes from './routes/categoriaRoutes.js';
+import vendedorRoutes from './routes/vendedorRoutes.js';
 // Inicialización
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);  // Rutas de autenticación
 app.use('/api/admin', adminRoutes); // Rutas del administrador
 app.use('/api/clientes', clienteRoutes); // Rutas de clientes
 app.use('/api/categorias', categoriaRoutes); // Rutas de categorías
+app.use('/api/vendedores', vendedorRoutes); // Rutas de vendedores
 
 // Exportar app
 export default app;
