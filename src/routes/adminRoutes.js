@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { registrarVendedor, desactivarVendedor, activarVendedor, listarClientes, listarVendedores, desactivarCliente, activarCliente, buscarCliente, buscarVendedor} from '../controllers/adminController.js';
+import { registrarVendedor, desactivarVendedor, activarVendedor, listarClientes, listarVendedores, desactivarCliente, activarCliente, buscarCliente, buscarVendedor, listarClientesActivos, listarClientesInactivos,
+listarVendedoresActivos, listarVendedoresInactivos } from '../controllers/adminController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
 
@@ -31,5 +32,17 @@ router.get('/buscar-cliente/:cedula', protegerRuta, soloAdmin, buscarCliente);
 
 // Buscar vendedor por cédula
 router.get('/buscar-vendedor/:cedula', protegerRuta, soloAdmin, buscarVendedor);
+
+// Listar clientes activos
+router.get('/listar-clientes-activos', protegerRuta, soloAdmin, listarClientesActivos);
+
+//Listar clientes inactivos
+router.get('/listar-clientes-inactivos', protegerRuta, soloAdmin, listarClientesInactivos);
+
+//Listar vendedores activos
+router.get('/listar-vendedores-activos', protegerRuta, soloAdmin, listarVendedoresActivos);
+
+//Listar vendedores inactivos
+router.get('/listar-vendedores-inactivos', protegerRuta, soloAdmin, listarVendedoresInactivos);
 
 export default router;

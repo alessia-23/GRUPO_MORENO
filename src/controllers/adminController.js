@@ -278,7 +278,71 @@ const buscarVendedor= async (req, res) => {
     }
 };
 
+// Listar clientes activos
+const listarClientesActivos = async (req, res) => {
+    try {
+        const usuarios = await Usuario.find({
+            rol: 'CLIENTE',
+            estado: true
+        }).populate('perfilId');
+        return res.status(200).json(usuarios);
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar clientes activos',
+            error: error.message
+        });
+    }
+};
+
+// Listar clientes inactivos
+const listarClientesInactivos = async (req, res) => {
+    try {
+        const usuarios = await Usuario.find({
+            rol: 'CLIENTE',
+            estado: false
+        }).populate('perfilId');
+        return res.status(200).json(usuarios);
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar clientes inactivos',
+            error: error.message
+        });
+    }
+};
+
+// Listar vendedores activos
+const listarVendedoresActivos = async (req, res) => {
+    try {
+        const usuarios = await Usuario.find({
+            rol: 'VENDEDOR',
+            estado: true
+        }).populate('perfilId');
+        return res.status(200).json(usuarios);
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar vendedores activos',
+            error: error.message
+        });
+    }
+};
+
+// Listar vendedores inactivos
+const listarVendedoresInactivos = async (req, res) => {
+    try {
+        const usuarios = await Usuario.find({
+            rol: 'VENDEDOR',
+            estado: false
+        }).populate('perfilId');
+        return res.status(200).json(usuarios);
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar vendedores inactivos',
+            error: error.message
+        });
+    }
+};
+
 export { registrarVendedor, desactivarVendedor, activarVendedor, listarVendedores, listarClientes, desactivarCliente, activarCliente 
-    , buscarCliente, buscarVendedor
+    , buscarCliente, buscarVendedor, listarClientesActivos, listarClientesInactivos, listarVendedoresActivos, listarVendedoresInactivos
 };
 
