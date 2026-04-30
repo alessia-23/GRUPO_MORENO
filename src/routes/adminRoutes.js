@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registrarVendedor, desactivarVendedor, activarVendedor, listarClientes, listarVendedores, desactivarCliente, activarCliente} from '../controllers/adminController.js';
+import { registrarVendedor, desactivarVendedor, activarVendedor, listarClientes, listarVendedores, desactivarCliente, activarCliente, buscarCliente, buscarVendedor} from '../controllers/adminController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
 
@@ -25,5 +25,11 @@ router.put('/desactivar-cliente/:id', protegerRuta, soloAdmin, desactivarCliente
 
 // Activar cliente
 router.put('/activar-cliente/:id', protegerRuta, soloAdmin, activarCliente);
+
+// Buscar cliente por cédula
+router.get('/buscar-cliente/:cedula', protegerRuta, soloAdmin, buscarCliente);
+
+// Buscar vendedor por cédula
+router.get('/buscar-vendedor/:cedula', protegerRuta, soloAdmin, buscarVendedor);
 
 export default router;

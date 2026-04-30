@@ -1,5 +1,6 @@
 import Usuario from '../models/Usuario.js';
 import Vendedor from '../models/Vendedor.js';
+import Cliente from '../models/Cliente.js';
 import { hashPassword } from '../helpers/bcrypt.js';
 
 // Registro de vendedor creado por el administrador
@@ -238,6 +239,46 @@ const activarCliente = async (req, res) => {
     }
 };
 
+// Buscar cliente por cédula
+const buscarCliente = async (req, res) => {
+    try {
+        const { cedula } = req.params;
+        const cliente = await Cliente.findOne({ cedula });
+        if (!cliente) {
+            return res.status(404).json({
+                msg: 'Cliente no encontrado'
+            });
+        }
+        return res.status(200).json(cliente);
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al buscar cliente',
+            error: error.message
+        });
+    }
+};
 
-export { registrarVendedor, desactivarVendedor, activarVendedor, listarVendedores, listarClientes, desactivarCliente, activarCliente };
+
+// Buscar vendedor por cédula
+const buscarVendedor= async (req, res) => {
+    try {
+        const { cedula } = req.params;
+        const vendedor = await Vendedor.findOne({ cedula });
+        if (!vendedor) {
+            return res.status(404).json({
+                msg: 'Vendedor no encontrado'
+            });
+        }
+        return res.status(200).json(vendedor);
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al buscar vendedor',
+            error: error.message
+        });
+    }
+};
+
+export { registrarVendedor, desactivarVendedor, activarVendedor, listarVendedores, listarClientes, desactivarCliente, activarCliente 
+    , buscarCliente, buscarVendedor
+};
 
