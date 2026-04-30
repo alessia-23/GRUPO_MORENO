@@ -32,5 +32,18 @@ const crearCategoria = async (req, res) => {
     }
 };
 
+// Listar categorías
+const listarCategorias = async (req, res) => {
+    try {
+        const categorias = await Categoria.find();
+        const total = categorias.length;
+        return res.status(200).json({total,categorias});
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar las categorías',
+            error: error.message
+        });
+    }
+};
 
-export { crearCategoria };
+export { crearCategoria, listarCategorias };
