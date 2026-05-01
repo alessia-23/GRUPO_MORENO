@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import { crearCategoria, listarCategorias } from '../controllers/categoriaController.js';
+import { crearCategoria, listarCategorias, listarCategoriasActivas } from '../controllers/categoriaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
-import soloVendedor from '../middleware/vendedorMiddleware.js';
 
 const router = Router();
 
@@ -11,5 +10,8 @@ router.post('/crear', protegerRuta, soloAdmin, crearCategoria);
 
 // Listar todas categorías
 router.get('/listar-todas', protegerRuta, soloAdmin, listarCategorias);
+
+// Listar categorías activas para todos en general
+router.get('/', listarCategoriasActivas);
 
 export default router;

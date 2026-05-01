@@ -46,4 +46,19 @@ const listarCategorias = async (req, res) => {
     }
 };
 
-export { crearCategoria, listarCategorias };
+// Listar categorías activas, va a ser un endpoint para que todos puedan ver las categorías disponibles 
+const listarCategoriasActivas = async (req, res) => {
+    try {
+        const categorias = await Categoria.find({ estado: true });
+        const total = await Categoria.countDocuments({ estado: true });
+        return res.status(200).json({total,categorias});
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar categorías activas',
+            error: error.message
+        });
+    }
+};
+
+
+export { crearCategoria, listarCategorias, listarCategoriasActivas };
