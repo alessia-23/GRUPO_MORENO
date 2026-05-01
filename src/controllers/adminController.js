@@ -139,21 +139,22 @@ const activarVendedor = async (req, res) => {
     }
 };
 
-
 // Listar vendedores
 const listarVendedores = async (req, res) => {
     try {
         const vendedores = await Usuario.find({
             rol: 'VENDEDOR'
         })
-            .select('-password -token')
-            .populate('perfilId');
-        res.status(200).json({
-            total: vendedores.length,
-            vendedores
+        .select('-password -token')
+        .populate('perfilId');
+        const total = await Usuario.countDocuments({
+            rol: 'VENDEDOR'
+        });
+        return res.status(200).json({
+            total,data: vendedores
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             msg: 'Error al obtener vendedores',
             error: error.message
         });
@@ -166,14 +167,14 @@ const listarClientes = async (req, res) => {
         const clientes = await Usuario.find({
             rol: 'CLIENTE'
         })
-            .select('-password -token')
-            .populate('perfilId');
-        res.status(200).json({
-            total: clientes.length,
-            clientes
+        .select('-password -token')
+        .populate('perfilId');
+        const total = await Usuario.countDocuments({
+            rol: 'CLIENTE'
         });
+        return res.status(200).json({total,data: clientes});
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             msg: 'Error al obtener clientes',
             error: error.message
         });
@@ -258,7 +259,6 @@ const buscarCliente = async (req, res) => {
     }
 };
 
-
 // Buscar vendedor por cédula
 const buscarVendedor= async (req, res) => {
     try {
@@ -284,8 +284,15 @@ const listarClientesActivos = async (req, res) => {
         const usuarios = await Usuario.find({
             rol: 'CLIENTE',
             estado: true
-        }).populate('perfilId');
-        return res.status(200).json(usuarios);
+        })
+        .select('-password -token')
+        .populate('perfilId');
+        const total = await Usuario.countDocuments({
+            rol: 'CLIENTE',
+            estado: true
+        });
+        return res.status(200).json({total,data: usuarios
+        });
     } catch (error) {
         return res.status(500).json({
             msg: 'Error al listar clientes activos',
@@ -300,8 +307,14 @@ const listarClientesInactivos = async (req, res) => {
         const usuarios = await Usuario.find({
             rol: 'CLIENTE',
             estado: false
-        }).populate('perfilId');
-        return res.status(200).json(usuarios);
+        })
+        .select('-password -token')
+        .populate('perfilId');
+        const total = await Usuario.countDocuments({
+            rol: 'CLIENTE',
+            estado: false
+        });
+        return res.status(200).json({total,data: usuarios});
     } catch (error) {
         return res.status(500).json({
             msg: 'Error al listar clientes inactivos',
@@ -316,8 +329,15 @@ const listarVendedoresActivos = async (req, res) => {
         const usuarios = await Usuario.find({
             rol: 'VENDEDOR',
             estado: true
-        }).populate('perfilId');
-        return res.status(200).json(usuarios);
+        })
+        .select('-password -token')
+        .populate('perfilId');
+        const total = await Usuario.countDocuments({
+            rol: 'VENDEDOR',
+            estado: true
+        });
+        return res.status(200).json({total,data: usuarios
+        });
     } catch (error) {
         return res.status(500).json({
             msg: 'Error al listar vendedores activos',
@@ -332,8 +352,15 @@ const listarVendedoresInactivos = async (req, res) => {
         const usuarios = await Usuario.find({
             rol: 'VENDEDOR',
             estado: false
-        }).populate('perfilId');
-        return res.status(200).json(usuarios);
+        })
+        .select('-password -token')
+        .populate('perfilId');
+        const total = await Usuario.countDocuments({
+            rol: 'VENDEDOR',
+            estado: false
+        });
+        return res.status(200).json({total,data: usuarios
+        });
     } catch (error) {
         return res.status(500).json({
             msg: 'Error al listar vendedores inactivos',
