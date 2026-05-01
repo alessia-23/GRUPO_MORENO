@@ -60,5 +60,18 @@ const listarCategoriasActivas = async (req, res) => {
     }
 };
 
+// Listar categorías inactivas, solo serán visibles apra el rol administrador
+const listarCategoriasInactivas = async (req, res) => {
+    try {
+        const categorias = await Categoria.find({ estado: false });
+        const total = await Categoria.countDocuments({ estado: false });
+        return res.status(200).json({total,categorias});
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar categorías inactivas',
+            error: error.message
+        });
+    }
+};
 
-export { crearCategoria, listarCategorias, listarCategoriasActivas };
+export { crearCategoria, listarCategorias, listarCategoriasActivas, listarCategoriasInactivas };
