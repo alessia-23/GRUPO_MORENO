@@ -46,6 +46,35 @@ const listarCategorias = async (req, res) => {
     }
 };
 
+// Desactivar categoría
+const desactivarCategoria = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const categoria = await Categoria.findById(id);
+        if (!categoria) {
+            return res.status(404).json({
+                msg: 'Categoría no encontrada'
+            });
+        }
+        // Validar si ya está desactivada
+        if (!categoria.estado) {
+            return res.status(400).json({
+                msg: 'La categoría ya está desactivada'
+            });
+        }
+        categoria.estado = false;
+        await categoria.save();
+        return res.status(200).json({
+            msg: 'Categoría desactivada correctamente',categoria
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al desactivar categoría',
+            error: error.message
+        });
+    }
+};
+
 // Listar categorías activas, va a ser un endpoint para que todos puedan ver las categorías disponibles 
 const listarCategoriasActivas = async (req, res) => {
     try {
@@ -74,4 +103,4 @@ const listarCategoriasInactivas = async (req, res) => {
     }
 };
 
-export { crearCategoria, listarCategorias, listarCategoriasActivas, listarCategoriasInactivas };
+export { crearCategoria, listarCategorias, desactivarCategoria, listarCategoriasActivas, listarCategoriasInactivas };

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearCategoria, listarCategorias, listarCategoriasActivas, listarCategoriasInactivas } from '../controllers/categoriaController.js';
+import { crearCategoria, listarCategorias, listarCategoriasActivas, listarCategoriasInactivas, desactivarCategoria} from '../controllers/categoriaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
 
@@ -10,6 +10,9 @@ router.post('/crear', protegerRuta, soloAdmin, crearCategoria);
 
 // Listar todas categorías
 router.get('/listar-todas', protegerRuta, soloAdmin, listarCategorias);
+
+// Desactivar categoría
+router.put('/desactivar/:id', protegerRuta, soloAdmin, desactivarCategoria);
 
 // Listar categorías activas para todos en general
 router.get('/', listarCategoriasActivas);
