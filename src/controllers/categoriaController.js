@@ -32,11 +32,11 @@ const crearCategoria = async (req, res) => {
     }
 };
 
-// Listar categorías
+// Listar todas las categorías
 const listarCategorias = async (req, res) => {
     try {
         const categorias = await Categoria.find();
-        const total = categorias.length;
+        const total = await Categoria.countDocuments();
         return res.status(200).json({total,categorias});
     } catch (error) {
         return res.status(500).json({
