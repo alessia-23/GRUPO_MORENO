@@ -142,16 +142,13 @@ const activarVendedor = async (req, res) => {
 // Listar vendedores
 const listarVendedores = async (req, res) => {
     try {
-        const vendedores = await Usuario.find({
-            rol: 'VENDEDOR'
-        })
-        .select('-password -token')
-        .populate('perfilId');
-        const total = await Usuario.countDocuments({
-            rol: 'VENDEDOR'
-        });
+        const vendedores = await Usuario.find({ rol: 'VENDEDOR' })
+            .select('-password -token')
+            .populate('perfilId');
+        const total = await Usuario.countDocuments({ rol: 'VENDEDOR' });
         return res.status(200).json({
-            total,data: vendedores
+            total,
+            vendedores
         });
     } catch (error) {
         return res.status(500).json({
@@ -164,15 +161,14 @@ const listarVendedores = async (req, res) => {
 // Listar clientes
 const listarClientes = async (req, res) => {
     try {
-        const clientes = await Usuario.find({
-            rol: 'CLIENTE'
-        })
-        .select('-password -token')
-        .populate('perfilId');
-        const total = await Usuario.countDocuments({
-            rol: 'CLIENTE'
+        const clientes = await Usuario.find({ rol: 'CLIENTE' })
+            .select('-password -token')
+            .populate('perfilId');
+        const total = await Usuario.countDocuments({ rol: 'CLIENTE' });
+        return res.status(200).json({
+            total,
+            clientes
         });
-        return res.status(200).json({total,data: clientes});
     } catch (error) {
         return res.status(500).json({
             msg: 'Error al obtener clientes',
@@ -281,7 +277,7 @@ const buscarVendedor= async (req, res) => {
 // Listar clientes activos
 const listarClientesActivos = async (req, res) => {
     try {
-        const usuarios = await Usuario.find({
+        const clientes = await Usuario.find({
             rol: 'CLIENTE',
             estado: true
         })
@@ -291,7 +287,9 @@ const listarClientesActivos = async (req, res) => {
             rol: 'CLIENTE',
             estado: true
         });
-        return res.status(200).json({total,data: usuarios
+        return res.status(200).json({
+            total,
+            clientes
         });
     } catch (error) {
         return res.status(500).json({
@@ -304,7 +302,7 @@ const listarClientesActivos = async (req, res) => {
 // Listar clientes inactivos
 const listarClientesInactivos = async (req, res) => {
     try {
-        const usuarios = await Usuario.find({
+        const clientes = await Usuario.find({
             rol: 'CLIENTE',
             estado: false
         })
@@ -314,7 +312,10 @@ const listarClientesInactivos = async (req, res) => {
             rol: 'CLIENTE',
             estado: false
         });
-        return res.status(200).json({total,data: usuarios});
+        return res.status(200).json({
+            total,
+            clientes
+        });
     } catch (error) {
         return res.status(500).json({
             msg: 'Error al listar clientes inactivos',
@@ -326,7 +327,7 @@ const listarClientesInactivos = async (req, res) => {
 // Listar vendedores activos
 const listarVendedoresActivos = async (req, res) => {
     try {
-        const usuarios = await Usuario.find({
+        const vendedores = await Usuario.find({
             rol: 'VENDEDOR',
             estado: true
         })
@@ -336,7 +337,9 @@ const listarVendedoresActivos = async (req, res) => {
             rol: 'VENDEDOR',
             estado: true
         });
-        return res.status(200).json({total,data: usuarios
+        return res.status(200).json({
+            total,
+            vendedores
         });
     } catch (error) {
         return res.status(500).json({
@@ -349,7 +352,7 @@ const listarVendedoresActivos = async (req, res) => {
 // Listar vendedores inactivos
 const listarVendedoresInactivos = async (req, res) => {
     try {
-        const usuarios = await Usuario.find({
+        const vendedores = await Usuario.find({
             rol: 'VENDEDOR',
             estado: false
         })
@@ -359,7 +362,9 @@ const listarVendedoresInactivos = async (req, res) => {
             rol: 'VENDEDOR',
             estado: false
         });
-        return res.status(200).json({total,data: usuarios
+        return res.status(200).json({
+            total,
+            vendedores
         });
     } catch (error) {
         return res.status(500).json({
@@ -372,4 +377,3 @@ const listarVendedoresInactivos = async (req, res) => {
 export { registrarVendedor, desactivarVendedor, activarVendedor, listarVendedores, listarClientes, desactivarCliente, activarCliente 
     , buscarCliente, buscarVendedor, listarClientesActivos, listarClientesInactivos, listarVendedoresActivos, listarVendedoresInactivos
 };
-
