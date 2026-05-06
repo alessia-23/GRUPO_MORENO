@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { crearCategoria, listarCategorias, listarCategoriasActivas, listarCategoriasInactivas, desactivarCategoria} from '../controllers/categoriaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
+import upload from '../middleware/multer.js'
 
 const router = Router();
 
 // Crear categoría (solo admin)
-router.post('/crear', protegerRuta, soloAdmin, crearCategoria);
+router.post('/crear', protegerRuta, soloAdmin, upload.single('imagen'), crearCategoria);
 
 // Listar todas categorías
 router.get('/listar-todas', protegerRuta, soloAdmin, listarCategorias);

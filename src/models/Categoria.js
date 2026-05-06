@@ -14,14 +14,21 @@ const categoriaSchema = new mongoose.Schema({
         trim: true,
         maxlength: [200, 'La descripción debe tener máximo 200 caracteres']
     },
+    imagen: {
+        type: String,
+        default: null
+    },
     estado: {
         type: Boolean,
         default: true
     }
-}, {
-    timestamps: true
-});
+}, 
+{
+        timestamps: true,
+        versionKey: false,
+        collection: 'Categorias'
+    });
 
-const Categoria = mongoose.model('Categoria', categoriaSchema);
+const Categoria = mongoose.model('Categorias', categoriaSchema);
 
 export default Categoria;

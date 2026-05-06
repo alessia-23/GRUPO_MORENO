@@ -1,36 +1,55 @@
+// Crear categoría
 import Categoria from '../models/Categoria.js';
+import cloudinary from '../config/cloudinary.js';
 
 // Crear categoría
 const crearCategoria = async (req, res) => {
     try {
         const { nombre, descripcion } = req.body;
-        // Validar nombre
-        if (!nombre) {
-            return res.status(400).json({
-                msg: 'El nombre es obligatorio'
-            });
+        // Validar nombre y evitar espacios vacíos
+        if (!nombre?.trim()) {
+            return res.status(400).json({msg: 'El nombre es obligatorio'});
         }
-        // Verificar si ya existe para evitar duplicados
-        const categoriaExiste = await Categoria.findOne({ nombre });
+        // Verificar si la categoría ya existe antes de subir la imagen
+        const categoriaExiste = await Categoria.findOne({nombre: nombre.trim()});
         if (categoriaExiste) {
-            return res.status(400).json({
-                msg: 'La categoría ya existe'
+            return res.status(400).json({msg: 'La categoría ya existe'});
+        }
+        let imagenUrl = null;
+        // Subir imagen a Cloudinary solo si viene una imagen
+        if (req.file) {
+            const resultado = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    {
+                        folder: 'categorias',
+                        transformation: [{ width: 800, height: 800, crop: 'limit' },{ quality: 'auto' },{ fetch_format: 'auto' }]
+                    },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                stream.end(req.file.buffer);
             });
+            imagenUrl = resultado.secure_url;
         }
         // Crear categoría
-        const nuevaCategoria = new Categoria({nombre,descripcion});
+        const nuevaCategoria = new Categoria({
+            nombre: nombre.trim(),
+            descripcion: descripcion?.trim(),
+            imagen: imagenUrl
+        });
         await nuevaCategoria.save();
         return res.status(201).json({
             msg: 'Categoría creada correctamente',
             categoria: nuevaCategoria
         });
     } catch (error) {
-        return res.status(500).json({
-            msg: 'Error al crear la categoría',
-            error: error.message
+        return res.status(500).json({msg: 'Error al crear la categoría',error: error.message
         });
     }
 };
+
 
 // Listar todas las categorías
 const listarCategorias = async (req, res) => {

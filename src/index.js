@@ -1,9 +1,10 @@
-import dotenv from 'dotenv';
+import 'dotenv/config';
+
+
 import app from './server.js';
 import connection from './config/database.js';
 import createAdminSeed from './Seeds/AdministradorSeed.js';
 
-dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
