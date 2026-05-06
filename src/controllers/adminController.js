@@ -240,18 +240,23 @@ const activarCliente = async (req, res) => {
 const buscarCliente = async (req, res) => {
     try {
         const { cedula } = req.params;
-        const cliente = await Cliente.findOne({ cedula });
+        const cliente = await Cliente.findOne({ cedula: cedula.trim() });
         if (!cliente) {
-            return res.status(404).json({
-                msg: 'Cliente no encontrado'
+            return res.status(404).json({msg: 'Cliente no encontrado'});
+        }
+        // Buscar el usuario asociado a ese cliente
+        const usuario = await Usuario.findOne({
+            rol: 'CLIENTE',perfilId: cliente._id
+        })
+            .select('-password -token')
+            .populate('perfilId');
+        if (!usuario) {
+            return res.status(404).json({msg: 'Usuario asociado al cliente no encontrado'
             });
         }
-        return res.status(200).json(cliente);
+        return res.status(200).json(usuario);
     } catch (error) {
-        return res.status(500).json({
-            msg: 'Error al buscar cliente',
-            error: error.message
-        });
+        return res.status(500).json({msg: 'Error al buscar cliente',error: error.message});
     }
 };
 
