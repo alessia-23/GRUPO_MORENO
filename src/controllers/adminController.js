@@ -240,7 +240,10 @@ const activarCliente = async (req, res) => {
 const buscarCliente = async (req, res) => {
     try {
         const { cedula } = req.params;
-        const cliente = await Cliente.findOne({ cedula: cedula.trim() });
+        // Buscar el perfil del cliente por cédula
+        const cliente = await Cliente.findOne({
+            cedula: cedula.trim()
+        });
         if (!cliente) {
             return res.status(404).json({msg: 'Cliente no encontrado'});
         }
@@ -248,11 +251,10 @@ const buscarCliente = async (req, res) => {
         const usuario = await Usuario.findOne({
             rol: 'CLIENTE',perfilId: cliente._id
         })
-            .select('-password -token')
-            .populate('perfilId');
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
         if (!usuario) {
-            return res.status(404).json({msg: 'Usuario asociado al cliente no encontrado'
-            });
+            return res.status(404).json({msg: 'Usuario asociado al cliente no encontrado'});
         }
         return res.status(200).json(usuario);
     } catch (error) {
@@ -261,21 +263,30 @@ const buscarCliente = async (req, res) => {
 };
 
 // Buscar vendedor por cédula
-const buscarVendedor= async (req, res) => {
+const buscarVendedor = async (req, res) => {
     try {
         const { cedula } = req.params;
-        const vendedor = await Vendedor.findOne({ cedula });
+        // Buscar el perfil del vendedor por cédula
+        const vendedor = await Vendedor.findOne({
+            cedula: cedula.trim()
+        });
         if (!vendedor) {
-            return res.status(404).json({
-                msg: 'Vendedor no encontrado'
-            });
+            return res.status(404).json({msg: 'Vendedor no encontrado'});
         }
-        return res.status(200).json(vendedor);
+        // Buscar el usuario asociado a ese vendedor
+        const usuario = await Usuario.findOne({
+            rol: 'VENDEDOR',perfilId: vendedor._id
+        })
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
+        if (!usuario) {
+            return res.status(404).json({
+                msg: 'Usuario asociado al vendedor no encontrado'});
+        }
+        return res.status(200).json(usuario);
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al buscar vendedor',
-            error: error.message
-        });
+            msg: 'Error al buscar vendedor',error: error.message});
     }
 };
 
