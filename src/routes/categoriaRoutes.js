@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearCategoria, listarCategorias, listarCategoriasActivas, listarCategoriasInactivas, desactivarCategoria, activarCategoria} from '../controllers/categoriaController.js';
+import { crearCategoria, listarCategorias, listarCategoriasActivas, listarCategoriasInactivas, desactivarCategoria, activarCategoria, actualizarCategoria } from '../controllers/categoriaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
@@ -11,7 +11,7 @@ const router = Router();
 router.post('/crear', protegerRuta, soloAdmin, upload.single('imagen'), crearCategoria);
 
 // Listar todas categorías
-router.get('/listar-todas', protegerRuta, soloAdmin, soloVendedor, listarCategorias);
+router.get('/listar-todas', protegerRuta, soloAdmin, listarCategorias);
 
 // Desactivar categoría
 router.put('/desactivar/:id', protegerRuta, soloAdmin, desactivarCategoria);
@@ -24,5 +24,8 @@ router.get('/', listarCategoriasActivas);
 
 // Listar categorías inactivas 
 router.get('/inactivas', protegerRuta, soloAdmin, listarCategoriasInactivas);
+
+// Actualizar categoria
+router.put('/actualizar/:id', protegerRuta, soloAdmin, upload.single('imagen'), actualizarCategoria);
 
 export default router;

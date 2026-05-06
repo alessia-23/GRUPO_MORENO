@@ -169,16 +169,79 @@ const listarCategoriasInactivas = async (req, res) => {
             estado: false
         });
         return res.status(200).json({
-            total,categorias
+            total, categorias
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al listar categorías inactivas',error: error.message
+            msg: 'Error al listar categorías inactivas', error: error.message
+        });
+    }
+};
+
+// Actualizar categoría
+const actualizarCategoria = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, descripcion } = req.body;
+        // Buscar categoría por id
+        const categoria = await Categoria.findById(id);
+        if (!categoria) {
+            return res.status(404).json({
+                msg: 'Categoría no encontrada'
+            });
+        }
+        // Validar nombre
+        if (!nombre?.trim()) {
+            return res.status(400).json({
+                msg: 'El nombre es obligatorio'
+            });
+        }
+        // Verificar si ya existe otra categoría con el mismo nombre
+        const categoriaExiste = await Categoria.findOne({
+            nombre: nombre.trim(),
+            _id: { $ne: id }
+        });
+        if (categoriaExiste) {
+            return res.status(400).json({
+                msg: 'Ya existe una categoría con ese nombre'
+            });
+        }
+        // Actualizar datos
+        categoria.nombre = nombre.trim();
+        categoria.descripcion = descripcion?.trim();
+        // Si viene una nueva imagen, se sube a Cloudinary
+        if (req.file) {
+            const resultado = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    {
+                        folder: 'categorias',
+                        transformation: [
+                            { width: 800, height: 800, crop: 'limit' },
+                            { quality: 'auto' },
+                            { fetch_format: 'auto' }
+                        ]
+                    },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                stream.end(req.file.buffer);
+            });
+            categoria.imagen = resultado.secure_url;
+        }
+        await categoria.save();
+        return res.status(200).json({
+            msg: 'Categoría actualizada correctamente'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al actualizar categoría', error: error.message
         });
     }
 };
 
 export {
     crearCategoria, listarCategorias, desactivarCategoria, listarCategoriasActivas, listarCategoriasInactivas,
-    activarCategoria
+    activarCategoria, actualizarCategoria
 };
