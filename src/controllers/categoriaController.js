@@ -50,13 +50,17 @@ const crearCategoria = async (req, res) => {
     }
 };
 
-
 // Listar todas las categorías
 const listarCategorias = async (req, res) => {
     try {
-        const categorias = await Categoria.find();
+        // Obtener categorías ocultando fechas
+        const categorias = await Categoria.find()
+            .select('-createdAt -updatedAt');
+        // Contar total de categorías
         const total = await Categoria.countDocuments();
-        return res.status(200).json({total,categorias});
+        return res.status(200).json({
+            total,categorias
+        });
     } catch (error) {
         return res.status(500).json({
             msg: 'Error al listar las categorías',
