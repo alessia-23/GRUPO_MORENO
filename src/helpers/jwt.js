@@ -6,7 +6,8 @@ const crearTokenJWT = (usuario) => {
         {
             id: usuario._id,
             rol: usuario.rol,
-            perfilId: usuario.perfilId,
+            // Solo toma solo el _id, nada más
+            perfilId: usuario.perfilId?._id || usuario.perfilId,
             perfilModelo: usuario.perfilModelo
         },
         process.env.JWT_SECRET,
