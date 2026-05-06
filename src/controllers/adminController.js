@@ -142,18 +142,24 @@ const activarVendedor = async (req, res) => {
 // Listar vendedores
 const listarVendedores = async (req, res) => {
     try {
-        const vendedores = await Usuario.find({ rol: 'VENDEDOR' })
-            .select('-password -token')
-            .populate('perfilId');
+        const usuarios = await Usuario.find({ rol: 'VENDEDOR' })
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({ rol: 'VENDEDOR' });
+        // Limpiar respuesta y quitar perfilModelo
+        const vendedores = usuarios.map(usuario => ({
+            _id: usuario._id,
+            email: usuario.email,
+            rol: usuario.rol,
+            estado: usuario.estado,
+            perfilId: usuario.perfilId
+        }));
         return res.status(200).json({
-            total,
-            vendedores
+            total,vendedores
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al obtener vendedores',
-            error: error.message
+            msg: 'Error al obtener vendedores',error: error.message
         });
     }
 };
@@ -161,18 +167,28 @@ const listarVendedores = async (req, res) => {
 // Listar clientes
 const listarClientes = async (req, res) => {
     try {
-        const clientes = await Usuario.find({ rol: 'CLIENTE' })
-            .select('-password -token')
-            .populate('perfilId');
-        const total = await Usuario.countDocuments({ rol: 'CLIENTE' });
+        const usuarios = await Usuario.find({
+            rol: 'CLIENTE'
+        })
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
+        const total = await Usuario.countDocuments({
+            rol: 'CLIENTE'
+        });
+        // Limpiar respuesta y quitar perfilModelo
+        const clientes = usuarios.map(usuario => ({
+            _id: usuario._id,
+            email: usuario.email,
+            rol: usuario.rol,
+            estado: usuario.estado,
+            perfilId: usuario.perfilId
+        }));
         return res.status(200).json({
-            total,
-            clientes
+            total,clientes
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al obtener clientes',
-            error: error.message
+            msg: 'Error al obtener clientes',error: error.message
         });
     }
 };
