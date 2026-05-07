@@ -6,28 +6,43 @@ import cloudinary from '../config/cloudinary.js';
 const crearCategoria = async (req, res) => {
     try {
         const { nombre, descripcion } = req.body;
-        const existeCategoria = await Categoria.findOne({ nombre });
+        // Validar imagen
+        if (!req.file) {
+            return res.status(400).json({
+                msg: 'La imagen es obligatoria'
+            });
+        }
+        // Verificar si ya existe la categoría
+        const existeCategoria = await Categoria.findOne({
+            nombre: nombre.trim()
+        });
+        // Si existe, borrar imagen subida y retornar error
         if (existeCategoria) {
+            await cloudinary.uploader.destroy(req.file.filename);
             return res.status(400).json({
                 msg: 'La categoría ya existe'
             });
         }
         const categoria = new Categoria({
-            nombre,
+            nombre: nombre.trim(),
             descripcion,
-            // Guardar imagen subida en Cloudinary
-            imagen: req.file ? {
+            imagen: {
                 url: req.file.path,
                 public_id: req.file.filename
-            } : undefined
+            }
         });
         await categoria.save();
         return res.status(201).json({
-            msg: 'Categoría creada correctamente', categoria
+            msg: 'Categoría creada correctamente'
         });
     } catch (error) {
+        // Si algo falla, borrar imagen subida
+        if (req.file?.filename) {
+            await cloudinary.uploader.destroy(req.file.filename);
+        }
         return res.status(500).json({
-            msg: 'Error al crear categoría', error: error.message
+            msg: 'Error al crear categoría',
+            error: error.message
         });
     }
 };
@@ -145,15 +160,16 @@ const actualizarCategoria = async (req, res) => {
         }
         categoria.nombre = nombre || categoria.nombre;
         categoria.descripcion = descripcion || categoria.descripcion;
-        // Si se sube una nueva imagen
         if (req.file) {
-            // Eliminar imagen anterior de Cloudinary
+            //console.log('IMAGEN ANTERIOR:', categoria.imagen);
+            //console.log('NUEVA IMAGEN:', req.file);
             if (categoria.imagen?.public_id) {
-                await cloudinary.uploader.destroy(categoria.imagen.public_id);
+                const resultado = await cloudinary.uploader.destroy(categoria.imagen.public_id);
+                console.log('RESULTADO DESTROY:', resultado);
             }
-            // Guardar nueva imagen
             categoria.imagen = {
-                url: req.file.path, public_id: req.file.filename
+                url: req.file.path,
+                public_id: req.file.filename
             };
         }
         await categoria.save();
@@ -162,7 +178,8 @@ const actualizarCategoria = async (req, res) => {
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al actualizar categoría', error: error.message
+            msg: 'Error al actualizar categoría',
+            error: error.message
         });
     }
 };
