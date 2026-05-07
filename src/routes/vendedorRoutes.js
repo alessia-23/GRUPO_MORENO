@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { registrarClientePorVendedor } from '../controllers/vendedorController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
-import { listarClientes } from '../controllers/adminController.js';
+import { listarClientesActivos } from '../controllers/adminController.js';
 
 const router = Router();
 
@@ -10,6 +10,6 @@ const router = Router();
 router.post('/registrar-cliente', protegerRuta, soloVendedor, registrarClientePorVendedor);
 
 // Vendedor lista clientes
-router.get('/listar-clientes', protegerRuta, soloVendedor, listarClientes);
+router.get('/listar-clientes', protegerRuta, soloVendedor, listarClientesActivos);
 
 export default router;
