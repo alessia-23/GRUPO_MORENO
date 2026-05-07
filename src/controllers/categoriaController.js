@@ -13,8 +13,9 @@ const crearCategoria = async (req, res) => {
             });
         }
         const categoria = new Categoria({
-            nombre, descripcion,
-            // Guardar imagen de Cloudinary
+            nombre,
+            descripcion,
+            // Guardar imagen subida en Cloudinary
             imagen: req.file ? {
                 url: req.file.path,
                 public_id: req.file.filename
@@ -144,11 +145,13 @@ const actualizarCategoria = async (req, res) => {
         }
         categoria.nombre = nombre || categoria.nombre;
         categoria.descripcion = descripcion || categoria.descripcion;
-        // Si se sube una nueva imagen, se elimina la anterior
+        // Si se sube una nueva imagen
         if (req.file) {
+            // Eliminar imagen anterior de Cloudinary
             if (categoria.imagen?.public_id) {
                 await cloudinary.uploader.destroy(categoria.imagen.public_id);
             }
+            // Guardar nueva imagen
             categoria.imagen = {
                 url: req.file.path, public_id: req.file.filename
             };
