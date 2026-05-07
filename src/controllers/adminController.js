@@ -142,24 +142,21 @@ const activarVendedor = async (req, res) => {
 // Listar vendedores
 const listarVendedores = async (req, res) => {
     try {
-        const usuarios = await Usuario.find({ rol: 'VENDEDOR' })
-            .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
-        const total = await Usuario.countDocuments({ rol: 'VENDEDOR' });
-        // Limpiar respuesta y quitar perfilModelo
-        const vendedores = usuarios.map(usuario => ({
-            _id: usuario._id,
-            email: usuario.email,
-            rol: usuario.rol,
-            estado: usuario.estado,
-            perfilId: usuario.perfilId
-        }));
+        const usuarios = await Usuario.find({
+            rol: 'VENDEDOR'
+        })
+        .select('-password -token -createdAt -updatedAt')
+        .populate('perfilId', '-createdAt -updatedAt');
+        const total = await Usuario.countDocuments({
+            rol: 'VENDEDOR'
+        });
         return res.status(200).json({
-            total,vendedores
+            total,usuarios
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al obtener vendedores',error: error.message
+            msg: 'Error al listar vendedores',
+            error: error.message
         });
     }
 };
@@ -170,25 +167,18 @@ const listarClientes = async (req, res) => {
         const usuarios = await Usuario.find({
             rol: 'CLIENTE'
         })
-            .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
+        .select('-password -token -createdAt -updatedAt')
+        .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({
             rol: 'CLIENTE'
         });
-        // Limpiar respuesta y quitar perfilModelo
-        const clientes = usuarios.map(usuario => ({
-            _id: usuario._id,
-            email: usuario.email,
-            rol: usuario.rol,
-            estado: usuario.estado,
-            perfilId: usuario.perfilId
-        }));
         return res.status(200).json({
-            total,clientes
+            total,usuarios
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al obtener clientes',error: error.message
+            msg: 'Error al listar clientes',
+            error: error.message
         });
     }
 };
@@ -326,27 +316,23 @@ const buscarVendedor = async (req, res) => {
 const listarClientesActivos = async (req, res) => {
     try {
         const usuarios = await Usuario.find({
-            rol: 'CLIENTE',estado: true
+            rol: 'CLIENTE',
+            estado: true
         })
-            .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
+        .select('-password -token -createdAt -updatedAt')
+        .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({
-            rol: 'CLIENTE',estado: true
+            rol: 'CLIENTE',
+            estado: true
         });
-        // Limpiar respuesta y quitar perfilModelo
-        const clientes = usuarios.map(usuario => ({
-            _id: usuario._id,
-            email: usuario.email,
-            rol: usuario.rol,
-            estado: usuario.estado,
-            perfilId: usuario.perfilId
-        }));
         return res.status(200).json({
-            total,clientes
+            total,
+            usuarios
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al listar clientes activos',error: error.message
+            msg: 'Error al listar clientes activos',
+            error: error.message
         });
     }
 };
@@ -355,27 +341,23 @@ const listarClientesActivos = async (req, res) => {
 const listarClientesInactivos = async (req, res) => {
     try {
         const usuarios = await Usuario.find({
-            rol: 'CLIENTE',estado: false
+            rol: 'CLIENTE',
+            estado: false
         })
-            .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
+        .select('-password -token -createdAt -updatedAt')
+        .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({
-            rol: 'CLIENTE',estado: false
+            rol: 'CLIENTE',
+            estado: false
         });
-        // Limpiar respuesta y quitar perfilModelo
-        const clientes = usuarios.map(usuario => ({
-            _id: usuario._id,
-            email: usuario.email,
-            rol: usuario.rol,
-            estado: usuario.estado,
-            perfilId: usuario.perfilId
-        }));
         return res.status(200).json({
-            total,clientes
+            total,
+            usuarios
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al listar clientes inactivos',error: error.message
+            msg: 'Error al listar clientes inactivos',
+            error: error.message
         });
     }
 };
@@ -384,27 +366,23 @@ const listarClientesInactivos = async (req, res) => {
 const listarVendedoresActivos = async (req, res) => {
     try {
         const usuarios = await Usuario.find({
-            rol: 'VENDEDOR',estado: true
+            rol: 'VENDEDOR',
+            estado: true
         })
-            .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
+        .select('-password -token -createdAt -updatedAt')
+        .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({
-            rol: 'VENDEDOR',estado: true
+            rol: 'VENDEDOR',
+            estado: true
         });
-        // Limpiar respuesta y quitar perfilModelo
-        const vendedores = usuarios.map(usuario => ({
-            _id: usuario._id,
-            email: usuario.email,
-            rol: usuario.rol,
-            estado: usuario.estado,
-            perfilId: usuario.perfilId
-        }));
         return res.status(200).json({
-            total,vendedores
+            total,
+            usuarios
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al listar vendedores activos',error: error.message
+            msg: 'Error al listar vendedores activos',
+            error: error.message
         });
     }
 };
@@ -413,27 +391,23 @@ const listarVendedoresActivos = async (req, res) => {
 const listarVendedoresInactivos = async (req, res) => {
     try {
         const usuarios = await Usuario.find({
-            rol: 'VENDEDOR',estado: false
+            rol: 'VENDEDOR',
+            estado: false
         })
-            .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
+        .select('-password -token -createdAt -updatedAt')
+        .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({
-            rol: 'VENDEDOR',estado: false
+            rol: 'VENDEDOR',
+            estado: false
         });
-        // Limpiar respuesta y quitar perfilModelo
-        const vendedores = usuarios.map(usuario => ({
-            _id: usuario._id,
-            email: usuario.email,
-            rol: usuario.rol,
-            estado: usuario.estado,
-            perfilId: usuario.perfilId
-        }));
-        return res.status(200).json({total,
-            vendedores
+        return res.status(200).json({
+            total,
+            usuarios
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al listar vendedores inactivos',error: error.message
+            msg: 'Error al listar vendedores inactivos',
+            error: error.message
         });
     }
 };
