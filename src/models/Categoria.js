@@ -15,15 +15,15 @@ const categoriaSchema = new mongoose.Schema({
         maxlength: [200, 'La descripción debe tener máximo 200 caracteres']
     },
     imagen: {
-        type: String,
-        default: null
+        url: String,
+        public_id: String
     },
     estado: {
         type: Boolean,
         default: true
     }
-}, 
-{
+},
+    {
         timestamps: true,
         versionKey: false,
         collection: 'Categorias'

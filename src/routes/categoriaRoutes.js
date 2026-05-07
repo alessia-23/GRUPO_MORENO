@@ -26,6 +26,6 @@ router.get('/', listarCategoriasActivas);
 router.get('/inactivas', protegerRuta, soloAdmin, listarCategoriasInactivas);
 
 // Actualizar categoria
-router.put('/actualizar/:id', protegerRuta, soloAdmin, upload.single('imagen'), actualizarCategoria);
+router.put('/actualizar/:id',protegerRuta,soloAdmin,upload.single('imagen'),actualizarCategoria);
 
 export default router;

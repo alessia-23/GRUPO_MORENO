@@ -1,23 +1,15 @@
 import multer from 'multer';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinary from '../config/cloudinary.js';
 
-// Almacenamiento temporal en memoria
-const storage = multer.memoryStorage();
-
-const upload = multer({
-    storage,
-    // Límite de tamaño: 5MB
-    limits: {
-        fileSize: 5 * 1024 * 1024
-    },
-    // Validación de formatos permitidos
-    fileFilter: (req, file, cb) => {
-        const formatosPermitidos = ['image/jpeg','image/png','image/jpg','image/webp'];
-        if (formatosPermitidos.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Formato de imagen no permitido'));
-        }
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'categorias',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
     }
 });
+
+const upload = multer({ storage });
 
 export default upload;
