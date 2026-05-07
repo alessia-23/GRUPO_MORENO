@@ -161,12 +161,11 @@ const actualizarCategoria = async (req, res) => {
         categoria.nombre = nombre || categoria.nombre;
         categoria.descripcion = descripcion || categoria.descripcion;
         if (req.file) {
-            //console.log('IMAGEN ANTERIOR:', categoria.imagen);
-            //console.log('NUEVA IMAGEN:', req.file);
+            // Eliminar imagen anterior de Cloudinary
             if (categoria.imagen?.public_id) {
-                const resultado = await cloudinary.uploader.destroy(categoria.imagen.public_id);
-                console.log('RESULTADO DESTROY:', resultado);
+                await cloudinary.uploader.destroy(categoria.imagen.public_id);
             }
+            // Guardar nueva imagen
             categoria.imagen = {
                 url: req.file.path,
                 public_id: req.file.filename
