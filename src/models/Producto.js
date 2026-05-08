@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 
 const productoSchema = new mongoose.Schema({
-
     nombre: {
         type: String,
         required: [true, 'El nombre del producto es obligatorio'],
@@ -36,13 +35,16 @@ const productoSchema = new mongoose.Schema({
             message: 'El precio de venta debe ser mayor al precio de compra'
         }
     },
-    // Precio para ventas al por mayor
+    tipoIVA: {
+        type: String,
+        enum: ['15%', '0%', 'Exento'],
+        default: '15%'
+    },
     precioMayorista: {
         type: Number,
         min: [0.01, 'El precio mayorista debe ser mayor a 0'],
         validate: {
             validator: function (valor) {
-                // Permitir que sea opcional
                 if (valor === undefined || valor === null) {
                     return true;
                 }
@@ -51,7 +53,6 @@ const productoSchema = new mongoose.Schema({
             message: 'El precio mayorista debe ser mayor al precio de compra y menor al precio de venta'
         }
     },
-    // Cantidad mínima para aplicar precio mayorista
     cantidadMinimaMayorista: {
         type: Number,
         min: [1, 'La cantidad mínima mayorista debe ser al menos 1']
