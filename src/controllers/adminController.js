@@ -139,7 +139,7 @@ const activarVendedor = async (req, res) => {
     }
 };
 
-// Listar vendedores
+/* Listar vendedores
 const listarVendedores = async (req, res) => {
     try {
         const usuarios = await Usuario.find({
@@ -160,8 +160,9 @@ const listarVendedores = async (req, res) => {
         });
     }
 };
+*/
 
-// Listar clientes
+/* Listar clientes
 const listarClientes = async (req, res) => {
     try {
         const usuarios = await Usuario.find({
@@ -182,6 +183,7 @@ const listarClientes = async (req, res) => {
         });
     }
 };
+*/
 
 // Desactivar cliente y su usuario asociado
 const desactivarCliente = async (req, res) => {
@@ -412,6 +414,6 @@ const listarVendedoresInactivos = async (req, res) => {
     }
 };
 
-export { registrarVendedor, desactivarVendedor, activarVendedor, listarVendedores, listarClientes, desactivarCliente, activarCliente 
+export { registrarVendedor, desactivarVendedor, activarVendedor, desactivarCliente, activarCliente 
     , buscarCliente, buscarVendedor, listarClientesActivos, listarClientesInactivos, listarVendedoresActivos, listarVendedoresInactivos
 };
