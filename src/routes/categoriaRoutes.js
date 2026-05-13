@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import {
-    crearCategoria, listarCategorias, listarCategoriasActivas, listarCategoriasInactivas,
+import {crearCategoria, listarCategoriasActivas, listarCategoriasInactivas,
     desactivarCategoria, activarCategoria, actualizarCategoria
 } from '../controllers/categoriaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
@@ -16,7 +15,7 @@ const uploadCategorias = crearUpload('categorias');
 router.post('/crear', protegerRuta, soloAdmin, uploadCategorias.single('imagen'), crearCategoria);
 
 // Listar todas categorías
-router.get('/listar-todas', protegerRuta, soloAdmin, listarCategorias);
+//router.get('/listar-todas', protegerRuta, soloAdmin, listarCategorias);
 
 // Desactivar categoría
 router.put('/desactivar/:id', protegerRuta, soloAdmin, desactivarCategoria);

@@ -60,7 +60,7 @@ const crearCategoria = async (req, res) => {
     }
 };
 
-// Listar todas las categorías
+/* Listar todas las categorías
 const listarCategorias = async (req, res) => {
     try {
         // Obtener categorías ocultando fechas
@@ -78,6 +78,7 @@ const listarCategorias = async (req, res) => {
         });
     }
 };
+*/
 
 // Desactivar categoría
 const desactivarCategoria = async (req, res) => {
@@ -163,7 +164,7 @@ const listarCategoriasInactivas = async (req, res) => {
 // Actualizar categoría
 const actualizarCategoria = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const { nombre, descripcion } = req.body;
         const categoria = await Categoria.findById(id);
         if (!categoria) {
@@ -197,6 +198,6 @@ const actualizarCategoria = async (req, res) => {
 };
 
 export {
-    crearCategoria, listarCategorias, desactivarCategoria, listarCategoriasActivas, listarCategoriasInactivas,
+    crearCategoria, desactivarCategoria, listarCategoriasActivas, listarCategoriasInactivas,
     activarCategoria, actualizarCategoria
 };
