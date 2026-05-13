@@ -8,12 +8,13 @@ const obtenerPublicId = (file) => {
     return file?.filename || file?.public_id;
 };
 
-
 // Crear categoría
 const crearCategoria = async (req, res) => {
     try {
         const { nombre, descripcion } = req.body;
         if (!nombre?.trim()) {
+            const publicId = obtenerPublicId(req.file);
+            if (publicId) await cloudinary.uploader.destroy(publicId);
             return res.status(400).json({
                 msg: 'El nombre de la categoría es obligatorio'
             });
@@ -23,34 +24,35 @@ const crearCategoria = async (req, res) => {
                 msg: 'La imagen es obligatoria'
             });
         }
+        const nombreLimpio = nombre.trim();
         const existeCategoria = await Categoria.findOne({
-            nombre: nombre.trim()
+            nombre: { $regex: `^${nombreLimpio}$`, $options: 'i' }
         });
         if (existeCategoria) {
             const publicId = obtenerPublicId(req.file);
-            if (publicId) {
-                await cloudinary.uploader.destroy(publicId);
-            }
+            if (publicId) await cloudinary.uploader.destroy(publicId);
             return res.status(400).json({
                 msg: 'La categoría ya existe'
             });
         }
         const publicId = obtenerPublicId(req.file);
         const categoria = new Categoria({
-            nombre: nombre.trim(),
+            nombre: nombreLimpio,
             descripcion: descripcion?.trim(),
-            imagen: { url: req.file.path, public_id: publicId }
+            imagen: {
+                url: req.file.path,
+                public_id: publicId
+            }
         });
         await categoria.save();
         return res.status(201).json({
-            msg: 'Categoría creada correctamente', categoria
+            msg: 'Categoría creada correctamente',
+            categoria
         });
     } catch (error) {
         console.log(error);
         const publicId = obtenerPublicId(req.file);
-        if (publicId) {
-            await cloudinary.uploader.destroy(publicId);
-        }
+        if (publicId) await cloudinary.uploader.destroy(publicId);
         return res.status(500).json({
             msg: 'Error al crear categoría',
             error: error.message
