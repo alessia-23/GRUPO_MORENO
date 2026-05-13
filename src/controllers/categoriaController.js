@@ -90,6 +90,11 @@ const desactivarCategoria = async (req, res) => {
                 msg: 'Categoría no encontrada'
             });
         }
+        if (categoria.estado === false) {
+            return res.status(400).json({
+                msg: 'La categoría ya está desactivada'
+            });
+        }
         categoria.estado = false;
         await categoria.save();
         return res.status(200).json({
@@ -164,7 +169,7 @@ const listarCategoriasInactivas = async (req, res) => {
 // Actualizar categoría
 const actualizarCategoria = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
         const { nombre, descripcion } = req.body;
         const categoria = await Categoria.findById(id);
         if (!categoria) {
