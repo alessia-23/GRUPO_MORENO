@@ -160,7 +160,7 @@ const listarCategoriasInactivas = async (req, res) => {
     try {
         const categorias = await Categoria.find({
             estado: false
-        });
+        }).select('-createdAt -updatedAt');
         return res.status(200).json({
             categorias
         });
