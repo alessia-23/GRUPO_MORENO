@@ -3,58 +3,22 @@ import Categoria from '../models/Categoria.js';
 import cloudinary from '../config/cloudinary.js';
 
 
-// Obtener el public_id de Cloudinary de forma segura
-const obtenerPublicId = (file) => {
-    return file?.filename || file?.public_id;
-};
+// Obtener el public_id de Cloudinary
+const obtenerPublicId = (file) => file?.filename || file?.public_id;
 
 // Crear categoría
 const crearCategoria = async (req, res) => {
     try {
-        console.log("BODY:", req.body);
-        console.log("FILE:", req.file);
         const { nombre, descripcion } = req.body;
-        if (!nombre?.trim()) {
-            const publicId = obtenerPublicId(req.file);
-            if (publicId) await cloudinary.uploader.destroy(publicId);
-            return res.status(400).json({
-                msg: 'El nombre de la categoría es obligatorio'
-            });
-        }
         if (!req.file) {
             return res.status(400).json({
                 msg: 'La imagen es obligatoria'
             });
         }
-        const nombreLimpio = nombre.trim();
-        if (nombreLimpio.length < 3 || nombreLimpio.length > 50) {
-            const publicId = obtenerPublicId(req.file);
-            if (publicId) await cloudinary.uploader.destroy(publicId);
-            return res.status(400).json({
-                msg: 'El nombre debe tener entre 3 y 50 caracteres'
-            });
-        }
-        if (descripcion && descripcion.trim().length > 200) {
-            const publicId = obtenerPublicId(req.file);
-            if (publicId) await cloudinary.uploader.destroy(publicId);
-            return res.status(400).json({
-                msg: 'La descripción debe tener máximo 200 caracteres'
-            });
-        }
-        const existeCategoria = await Categoria.findOne({
-            nombre: { $regex: `^${nombreLimpio}$`, $options: 'i' }
-        });
-        if (existeCategoria) {
-            const publicId = obtenerPublicId(req.file);
-            if (publicId) await cloudinary.uploader.destroy(publicId);
-            return res.status(400).json({
-                msg: 'La categoría ya existe'
-            });
-        }
         const publicId = obtenerPublicId(req.file);
         const categoria = new Categoria({
-            nombre: nombreLimpio,
-            descripcion: descripcion?.trim(),
+            nombre,
+            descripcion,
             imagen: {
                 url: req.file.path || req.file.url || req.file.secure_url,
                 public_id: publicId
@@ -69,11 +33,20 @@ const crearCategoria = async (req, res) => {
             categoria: categoriaRespuesta
         });
     } catch (error) {
-        console.log("ERROR COMPLETO:", error);
-        console.log("ERROR MESSAGE:", error.message);
-        console.log("REQ FILE:", req.file);
+        console.log("ERROR REAL BACKEND:", error);
+        console.log("MENSAJE:", error.message);
+        console.log("REQ.FILE:", req.file);
+        console.log("REQ.BODY:", req.body);
         const publicId = obtenerPublicId(req.file);
-        if (publicId) await cloudinary.uploader.destroy(publicId);
+        if (publicId) {
+            await cloudinary.uploader.destroy(publicId);
+        }
+        if (error.code === 11000) {
+            return res.status(400).json({
+                msg: 'La categoría ya existe',
+                error: error.message
+            });
+        }
         return res.status(500).json({
             msg: 'Error al crear categoría',
             error: error.message
