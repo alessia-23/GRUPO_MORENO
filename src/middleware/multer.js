@@ -3,12 +3,13 @@ import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../config/cloudinary.js';
 
 const crearUpload = (folder) => {
-
     const storage = new CloudinaryStorage({
         cloudinary,
-        params: {
-            folder,
-            allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+        params: async (req, file) => {
+            return {
+                folder,
+                allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+            };
         }
     });
 
