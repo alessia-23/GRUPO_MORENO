@@ -92,7 +92,7 @@ const desactivarCategoria = async (req, res) => {
         }
         if (categoria.estado === false) {
             return res.status(400).json({
-                msg: 'La categoría ya está desactivada'
+                msg: 'La categoría ya se encuentra desactivada'
             });
         }
         categoria.estado = false;
@@ -115,6 +115,11 @@ const activarCategoria = async (req, res) => {
         if (!categoria) {
             return res.status(404).json({
                 msg: 'Categoría no encontrada'
+            });
+        }
+        if (categoria.estado === true) {
+            return res.status(400).json({
+                msg: 'La categoría ya se encuentra activa'
             });
         }
         categoria.estado = true;
