@@ -11,6 +11,8 @@ const obtenerPublicId = (file) => {
 // Crear categoría
 const crearCategoria = async (req, res) => {
     try {
+        console.log("BODY:", req.body);
+        console.log("FILE:", req.file);
         const { nombre, descripcion } = req.body;
         if (!nombre?.trim()) {
             const publicId = obtenerPublicId(req.file);
@@ -25,6 +27,20 @@ const crearCategoria = async (req, res) => {
             });
         }
         const nombreLimpio = nombre.trim();
+        if (nombreLimpio.length < 3 || nombreLimpio.length > 50) {
+            const publicId = obtenerPublicId(req.file);
+            if (publicId) await cloudinary.uploader.destroy(publicId);
+            return res.status(400).json({
+                msg: 'El nombre debe tener entre 3 y 50 caracteres'
+            });
+        }
+        if (descripcion && descripcion.trim().length > 200) {
+            const publicId = obtenerPublicId(req.file);
+            if (publicId) await cloudinary.uploader.destroy(publicId);
+            return res.status(400).json({
+                msg: 'La descripción debe tener máximo 200 caracteres'
+            });
+        }
         const existeCategoria = await Categoria.findOne({
             nombre: { $regex: `^${nombreLimpio}$`, $options: 'i' }
         });
@@ -40,17 +56,22 @@ const crearCategoria = async (req, res) => {
             nombre: nombreLimpio,
             descripcion: descripcion?.trim(),
             imagen: {
-                url: req.file.path,
+                url: req.file.path || req.file.url || req.file.secure_url,
                 public_id: publicId
             }
         });
         await categoria.save();
+        const categoriaRespuesta = categoria.toObject();
+        delete categoriaRespuesta.createdAt;
+        delete categoriaRespuesta.updatedAt;
         return res.status(201).json({
             msg: 'Categoría creada correctamente',
-            categoria
+            categoria: categoriaRespuesta
         });
     } catch (error) {
-        console.log(error);
+        console.log("ERROR COMPLETO:", error);
+        console.log("ERROR MESSAGE:", error.message);
+        console.log("REQ FILE:", req.file);
         const publicId = obtenerPublicId(req.file);
         if (publicId) await cloudinary.uploader.destroy(publicId);
         return res.status(500).json({
@@ -178,31 +199,55 @@ const actualizarCategoria = async (req, res) => {
         const { nombre, descripcion } = req.body;
         const categoria = await Categoria.findById(id);
         if (!categoria) {
+            const publicId = obtenerPublicId(req.file);
+            if (publicId) await cloudinary.uploader.destroy(publicId);
             return res.status(404).json({
                 msg: 'Categoría no encontrada'
             });
         }
-        categoria.nombre = nombre || categoria.nombre;
-        categoria.descripcion = descripcion || categoria.descripcion;
-        if (req.file) {
-            // Eliminar imagen anterior de Cloudinary
-            if (categoria.imagen?.public_id) {
-                await cloudinary.uploader.destroy(categoria.imagen.public_id);
+        if (nombre !== undefined) {
+            if (!nombre.trim()) {
+                const publicId = obtenerPublicId(req.file);
+                if (publicId) await cloudinary.uploader.destroy(publicId);
+                return res.status(400).json({
+                    msg: 'El nombre de la categoría no puede estar vacío'
+                });
             }
-            // Guardar nueva imagen
-            categoria.imagen = {
-                url: req.file.path,
-                public_id: req.file.filename
-            };
+            const nombreLimpio = nombre.trim();
+            const existeCategoria = await Categoria.findOne({
+                _id: { $ne: id },
+                nombre: { $regex: `^${nombreLimpio}$`, $options: 'i' }
+            });
+            if (existeCategoria) {
+                const publicId = obtenerPublicId(req.file);
+                if (publicId) await cloudinary.uploader.destroy(publicId);
+                return res.status(400).json({
+                    msg: 'Ya existe otra categoría con ese nombre'
+                });
+            }
+            categoria.nombre = nombreLimpio;
+        }
+        if (descripcion !== undefined) {
+            categoria.descripcion = descripcion.trim();
+        }
+        const imagenAnteriorPublicId = categoria.imagen?.public_id;
+        if (req.file) {
+            const nuevoPublicId = obtenerPublicId(req.file);
+            categoria.imagen = { url: req.file.path, public_id: nuevoPublicId };
+            if (imagenAnteriorPublicId) {
+                await cloudinary.uploader.destroy(imagenAnteriorPublicId);
+            }
         }
         await categoria.save();
         return res.status(200).json({
-            msg: 'Categoría actualizada correctamente'
+            msg: 'Categoría actualizada correctamente', categoria
         });
     } catch (error) {
+        console.log(error);
+        const publicId = obtenerPublicId(req.file);
+        if (publicId) await cloudinary.uploader.destroy(publicId);
         return res.status(500).json({
-            msg: 'Error al actualizar categoría',
-            error: error.message
+            msg: 'Error al actualizar categoría', error: error.message
         });
     }
 };
