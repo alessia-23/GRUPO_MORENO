@@ -6,26 +6,43 @@ import cloudinary from '../config/cloudinary.js';
 // Obtener el public_id de Cloudinary
 const obtenerPublicId = (file) => file?.filename || file?.public_id;
 
+
 // Crear categoría
 const crearCategoria = async (req, res) => {
     try {
         const { nombre, descripcion } = req.body;
-        if (!req.file) {
+        // 1. Validación previa de existencia (Evita subir imagen si el nombre ya existe)
+        const nombreLimpio = nombre?.trim();
+        const existeCategoria = await Categoria.findOne({
+            nombre: { $regex: `^${nombreLimpio}$`, $options: 'i' }
+        });
+        if (existeCategoria) {
+            // Si ya existe, eliminamos la imagen que multer ya subió antes de entrar aquí
+            if (req.file) {
+                await cloudinary.uploader.destroy(req.file.filename);
+            }
             return res.status(400).json({
-                msg: 'La imagen es obligatoria'
+                msg: `La categoría "${nombreLimpio}" ya se encuentra registrada.`
             });
         }
-        const publicId = obtenerPublicId(req.file);
-        const categoria = new Categoria({
-            nombre,
-            descripcion,
+        // 2. Validación de imagen obligatoria
+        if (!req.file) {
+            return res.status(400).json({
+                msg: 'La imagen es obligatoria para crear una categoría'
+            });
+        }
+        // 3. Creación del objeto
+        const nuevaCategoria = new Categoria({
+            nombre: nombreLimpio,
+            descripcion: descripcion?.trim(),
             imagen: {
-                url: req.file.path || req.file.url || req.file.secure_url,
-                public_id: publicId
+                url: req.file.path,
+                public_id: req.file.filename
             }
         });
-        await categoria.save();
-        const categoriaRespuesta = categoria.toObject();
+        await nuevaCategoria.save();
+        // 4. Respuesta limpia
+        const categoriaRespuesta = nuevaCategoria.toObject();
         delete categoriaRespuesta.createdAt;
         delete categoriaRespuesta.updatedAt;
         return res.status(201).json({
@@ -33,22 +50,13 @@ const crearCategoria = async (req, res) => {
             categoria: categoriaRespuesta
         });
     } catch (error) {
-        console.log("ERROR REAL BACKEND:", error);
-        console.log("MENSAJE:", error.message);
-        console.log("REQ.FILE:", req.file);
-        console.log("REQ.BODY:", req.body);
-        const publicId = obtenerPublicId(req.file);
-        if (publicId) {
-            await cloudinary.uploader.destroy(publicId);
-        }
-        if (error.code === 11000) {
-            return res.status(400).json({
-                msg: 'La categoría ya existe',
-                error: error.message
-            });
+        console.error("ERROR EN BACKEND:", error.message);
+        // Limpieza de emergencia en Cloudinary si algo falló en el proceso
+        if (req.file) {
+            await cloudinary.uploader.destroy(req.file.filename);
         }
         return res.status(500).json({
-            msg: 'Error al crear categoría',
+            msg: 'Hubo un error al procesar la solicitud',
             error: error.message
         });
     }
