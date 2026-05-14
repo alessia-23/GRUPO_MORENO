@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import {crearCategoria, listarCategoriasActivas, listarCategoriasInactivas,
-    desactivarCategoria, activarCategoria
+import {
+    crearCategoria, listarCategoriasActivas, listarCategoriasInactivas,
+    desactivarCategoria, activarCategoria, actualizarCategoria
 } from '../controllers/categoriaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
@@ -24,5 +25,8 @@ router.get('/', listarCategoriasActivas);
 
 // Listar categorías inactivas
 router.get('/inactivas', protegerRuta, soloAdmin, listarCategoriasInactivas);
+
+// Actualizar categoría
+router.put('/actualizar/:id', protegerRuta, soloAdmin, actualizarCategoria);
 
 export default router;

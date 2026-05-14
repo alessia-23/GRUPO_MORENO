@@ -1,5 +1,6 @@
 import Categoria from '../models/Categoria.js';
 import { subirImagenCloudinary } from '../helpers/uploadCloudinary.js';
+import { v2 as cloudinary } from 'cloudinary';
 
 // Crear categoría
 const crearCategoria = async (req, res) => {
@@ -234,5 +235,5 @@ const actualizarCategoria = async (req, res) => {
 
 export {
     crearCategoria, desactivarCategoria, listarCategoriasActivas, listarCategoriasInactivas,
-    activarCategoria
+    activarCategoria, actualizarCategoria
 };
