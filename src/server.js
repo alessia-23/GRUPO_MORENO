@@ -1,7 +1,7 @@
 // Importaciones
 import express from 'express';
 import cors from 'cors';
-import cloudinary from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import fileUpload from 'express-fileupload';
 
 import authRoutes from './routes/authRoutes.js';
@@ -31,7 +31,7 @@ app.use(express.json());
 
 app.use(fileUpload({
     useTempFiles: true,
-    tempFileDir: './uploads'
+    tempFileDir: '/tmp/'
 }));
 
 // Ruta de prueba

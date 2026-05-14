@@ -5,20 +5,17 @@ import { subirImagenCloudinary } from '../helpers/uploadCloudinary.js';
 const crearCategoria = async (req, res) => {
     try {
         const { nombre, descripcion } = req.body;
-        // Validar nombre
         if (!nombre?.trim()) {
             return res.status(400).json({
                 msg: 'El nombre es obligatorio'
             });
         }
-        // Validar imagen
         if (!req.files?.imagen) {
             return res.status(400).json({
                 msg: 'La imagen es obligatoria'
             });
         }
         const nombreLimpio = nombre.trim();
-        // Validar si ya existe la categoría ANTES de subir imagen
         const existeCategoria = await Categoria.findOne({
             nombre: {
                 $regex: `^${nombreLimpio}$`,
@@ -30,7 +27,6 @@ const crearCategoria = async (req, res) => {
                 msg: 'La categoría ya existe'
             });
         }
-        // Subir imagen solo si ya pasó todas las validaciones
         const { secure_url, public_id } = await subirImagenCloudinary(
             req.files.imagen.tempFilePath,
             'Categorias'
@@ -38,20 +34,23 @@ const crearCategoria = async (req, res) => {
         const categoria = new Categoria({
             nombre: nombreLimpio,
             descripcion: descripcion?.trim() || '',
-            imagen: { url: secure_url, public_id }
+            imagen: {
+                url: secure_url,
+                public_id
+            }
         });
         await categoria.save();
         return res.status(201).json({
             msg: 'Categoría creada correctamente'
         });
     } catch (error) {
+        console.log('ERROR CREAR CATEGORIA:', error);
         return res.status(500).json({
-            msg: 'Error al crear categoría', error: error.message
+            msg: 'Error al crear categoría',
+            error: error.message
         });
     }
 };
-
-
 
 /* Listar todas las categorías
 const listarCategorias = async (req, res) => {
