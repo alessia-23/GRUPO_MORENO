@@ -1,13 +1,6 @@
 import Producto from '../models/Producto.js';
 import Categoria from '../models/Categoria.js';
-import { v2 as cloudinary } from 'cloudinary';
-
-// Función para eliminar imagen subida si algo falla
-const eliminarImagenSubida = async (req) => {
-    if (req.file?.filename) {
-        await cloudinary.uploader.destroy(req.file.filename);
-    }
-};
+import { subirBase64Cloudinary } from '../helpers/uploadCloudinary.js';
 
 // Crear producto
 const crearProducto = async (req, res) => {
@@ -26,7 +19,8 @@ const crearProducto = async (req, res) => {
             marca,
             unidadMedida,
             destacado,
-            categoria
+            categoria,
+            imagen
         } = req.body;
 
         // Validar campos obligatorios
@@ -41,8 +35,6 @@ const crearProducto = async (req, res) => {
             !unidadMedida?.trim() ||
             !categoria?.trim()
         ) {
-            await eliminarImagenSubida(req);
-
             return res.status(400).json({
                 msg: 'Todos los campos obligatorios deben ser completados'
             });
@@ -54,8 +46,6 @@ const crearProducto = async (req, res) => {
         });
 
         if (productoExistente) {
-            await eliminarImagenSubida(req);
-
             return res.status(400).json({
                 msg: 'Ya existe un producto con ese código'
             });
@@ -65,8 +55,6 @@ const crearProducto = async (req, res) => {
         const categoriaExistente = await Categoria.findById(categoria);
 
         if (!categoriaExistente) {
-            await eliminarImagenSubida(req);
-
             return res.status(404).json({
                 msg: 'La categoría no existe'
             });
@@ -74,17 +62,30 @@ const crearProducto = async (req, res) => {
 
         // Validar que la categoría esté activa
         if (!categoriaExistente.estado) {
-            await eliminarImagenSubida(req);
-
             return res.status(400).json({
                 msg: 'No se puede crear un producto en una categoría inactiva'
             });
         }
 
+        let imagenProducto = {
+            url: null,
+            public_id: null
+        };
+
+        // Subir imagen solo si viene en base64
+        if (imagen?.trim()) {
+            const { secure_url, public_id } = await subirBase64Cloudinary(imagen, 'Productos');
+
+            imagenProducto = {
+                url: secure_url,
+                public_id
+            };
+        }
+
         // Crear producto
         const nuevoProducto = new Producto({
             nombre: nombre.trim(),
-            descripcion: descripcion?.trim(),
+            descripcion: descripcion?.trim() || '',
             codigo: codigo.toUpperCase(),
             precioCompra,
             precioVenta,
@@ -97,15 +98,7 @@ const crearProducto = async (req, res) => {
             unidadMedida,
             destacado,
             categoria,
-            imagen: req.file
-                ? {
-                      url: req.file.path,
-                      public_id: req.file.filename
-                  }
-                : {
-                      url: null,
-                      public_id: null
-                  }
+            imagen: imagenProducto
         });
 
         await nuevoProducto.save();
@@ -116,8 +109,6 @@ const crearProducto = async (req, res) => {
         });
 
     } catch (error) {
-        await eliminarImagenSubida(req);
-
         return res.status(500).json({
             msg: 'Error al crear el producto',
             error: error.message

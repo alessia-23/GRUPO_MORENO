@@ -1,6 +1,8 @@
 // Importaciones
 import express from 'express';
 import cors from 'cors';
+import cloudinary from 'cloudinary';
+import fileUpload from 'express-fileupload';
 
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -9,16 +11,28 @@ import categoriaRoutes from './routes/categoriaRoutes.js';
 import vendedorRoutes from './routes/vendedorRoutes.js';
 import productoRoutes from './routes/productoRoutes.js';
 
+
 // Inicialización
 const app = express();
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Middlewares
 app.use(cors({
-    origin: '*', 
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
+
+app.use(fileUpload({
+    useTempFiles: true,
+    tempFileDir: './uploads'
+}));
 
 // Ruta de prueba
 app.get('/', (req, res) => {
