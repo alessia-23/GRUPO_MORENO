@@ -14,10 +14,16 @@ const productoSchema = new mongoose.Schema({
     },
     codigo: {
         type: String,
-        required: [true, 'El código del producto es obligatorio'],
+        required: [true, 'El código interno del producto es obligatorio'],
         unique: true,
         trim: true,
         uppercase: true
+    },
+    codigoBarras: {
+        type: String,
+        unique: true,
+        sparse: true,
+        trim: true
     },
     precioCompra: {
         type: Number,
@@ -74,11 +80,32 @@ const productoSchema = new mongoose.Schema({
         trim: true,
         required: [true, 'La marca es obligatoria']
     },
+    proveedor: {
+        type: String,
+        required: [true, 'El proveedor es obligatorio'],
+        trim: true
+    },
     unidadMedida: {
         type: String,
         required: [true, 'La unidad de medida es obligatoria'],
         enum: ['Unidad', 'Caja', 'Litro', 'Kilogramo', 'Paquete'],
         default: 'Unidad'
+    },
+    color: {
+        type: String,
+        trim: true
+    },
+    material: {
+        type: String,
+        trim: true
+    },
+    tamanio: {
+        type: String,
+        trim: true
+    },
+    presentacion: {
+        type: String,
+        trim: true
     },
     imagen: {
         url: String,
