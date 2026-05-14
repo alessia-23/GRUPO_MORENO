@@ -107,13 +107,12 @@ const obtenerCatalogo = async (req, res) => {
                 select: 'nombre imagen'
             })
             .select('nombre descripcion precioVenta imagen stock marca unidadMedida color material tamanio presentacion destacado categoria')
-            .sort({ nombre: 1 });
-
-        const productosFiltrados = productos.filter(producto => producto.categoria !== null);
-
+            .sort({ nombre: 1 })
+            .lean();
+        const productosVisibles = productos.filter(producto => producto.categoria !== null);
         return res.status(200).json({
-            total: productosFiltrados.length,
-            productos: productosFiltrados
+            total: productosVisibles.length,
+            productos: productosVisibles
         });
     } catch (error) {
         return res.status(500).json({
