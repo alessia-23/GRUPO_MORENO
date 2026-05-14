@@ -122,7 +122,39 @@ const obtenerCatalogo = async (req, res) => {
     }
 };
 
+// Listar productos para gestión del administrador
+const obtenerGestionAdmin = async (req, res) => {
+    try {
+        const { estado, buscar } = req.query;
+        const filtro = {};
+        // Filtrar por estado
+        if (estado !== undefined) {
+            filtro.estado = estado === 'true';
+        }
+        // Buscar por nombre o código interno
+        if (buscar?.trim()) {
+            filtro.$or = [
+                { nombre: { $regex: buscar.trim(), $options: 'i' } },
+                { codigo: { $regex: buscar.trim(), $options: 'i' } }
+            ];
+        }
+        const productos = await Producto.find(filtro)
+            .populate('categoria', 'nombre estado')
+            .select('-createdAt -updatedAt -__v')
+            .sort({ createdAt: -1 })
+            .lean();
+        return res.status(200).json({
+            total: productos.length,
+            productos
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al cargar la gestión de productos',
+            error: error.message
+        });
+    }
+};
 
 export {
-    crearProducto, obtenerCatalogo
+    crearProducto, obtenerCatalogo, obtenerGestionAdmin
 };
