@@ -6,17 +6,15 @@ const crearUpload = (folder) => {
 
     const storage = new CloudinaryStorage({
         cloudinary,
+
         params: async (req, file) => ({
-            folder: folder,
-            format: file.mimetype.split('/')[1],
-        }),
+            folder,
+            allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+        })
     });
 
     return multer({
-        storage,
-        limits: {
-            fileSize: 5 * 1024 * 1024
-        }
+        storage
     });
 };
 
