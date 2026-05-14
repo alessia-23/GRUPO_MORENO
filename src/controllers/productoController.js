@@ -1,117 +1,98 @@
 import Producto from '../models/Producto.js';
 import Categoria from '../models/Categoria.js';
-import { subirBase64Cloudinary } from '../helpers/uploadCloudinary.js';
+import { subirImagenCloudinary } from '../helpers/uploadCloudinary.js';
+import { v2 as cloudinary } from 'cloudinary';
 
 // Crear producto
 const crearProducto = async (req, res) => {
+    let imagenProducto = { url: null, public_id: null };
     try {
-        const {
-            nombre,
-            descripcion,
-            codigo,
-            precioCompra,
-            precioVenta,
-            tipoIVA,
-            precioMayorista,
-            cantidadMinimaMayorista,
-            stock,
-            stockMinimo,
-            marca,
-            unidadMedida,
-            destacado,
-            categoria,
-            imagen
-        } = req.body;
-
+        const { nombre, descripcion, codigo, codigoBarras, precioCompra, precioVenta, tipoIVA, precioMayorista, cantidadMinimaMayorista, stock,
+            stockMinimo, marca, proveedor, unidadMedida, color, material, tamanio, presentacion, destacado, categoria } = req.body;
         // Validar campos obligatorios
-        if (
-            !nombre?.trim() ||
-            !codigo?.trim() ||
-            !precioCompra ||
-            !precioVenta ||
-            stock === undefined ||
-            stockMinimo === undefined ||
-            !marca?.trim() ||
-            !unidadMedida?.trim() ||
-            !categoria?.trim()
+        if (!nombre?.trim() || !codigo?.trim() || !precioCompra || !precioVenta || stock === undefined || stockMinimo === undefined || !marca?.trim() ||
+            !proveedor?.trim() || !unidadMedida?.trim() || !categoria?.trim()
         ) {
             return res.status(400).json({
                 msg: 'Todos los campos obligatorios deben ser completados'
             });
         }
-
-        // Validar que el código no esté repetido
-        const productoExistente = await Producto.findOne({
-            codigo: codigo.toUpperCase()
+        // Validar código interno duplicado
+        const productoCodigoExistente = await Producto.findOne({
+            codigo: codigo.trim().toUpperCase()
         });
-
-        if (productoExistente) {
+        if (productoCodigoExistente) {
             return res.status(400).json({
-                msg: 'Ya existe un producto con ese código'
+                msg: 'Ya existe un producto con ese código interno'
             });
         }
-
-        // Validar que la categoría exista
+        // Validar código de barras duplicado
+        if (codigoBarras?.trim()) {
+            const productoCodigoBarrasExistente = await Producto.findOne({
+                codigoBarras: codigoBarras.trim()
+            });
+            if (productoCodigoBarrasExistente) {
+                return res.status(400).json({
+                    msg: 'Ya existe un producto con ese código de barras'
+                });
+            }
+        }
+        // Validar categoría existente
         const categoriaExistente = await Categoria.findById(categoria);
-
         if (!categoriaExistente) {
-            return res.status(404).json({
-                msg: 'La categoría no existe'
-            });
+            return res.status(404).json({ msg: 'La categoría no existe' });
         }
-
-        // Validar que la categoría esté activa
+        // Validar categoría activa
         if (!categoriaExistente.estado) {
-            return res.status(400).json({
-                msg: 'No se puede crear un producto en una categoría inactiva'
-            });
+            return res.status(400).json({ msg: 'No se puede crear un producto en una categoría inactiva' });
         }
-
-        let imagenProducto = {
-            url: null,
-            public_id: null
-        };
-
-        // Subir imagen solo si viene en base64
-        if (imagen?.trim()) {
-            const { secure_url, public_id } = await subirBase64Cloudinary(imagen, 'Productos');
-
-            imagenProducto = {
-                url: secure_url,
-                public_id
-            };
+        // Subir imagen a Cloudinary si viene en form-data
+        if (req.files?.imagen) {
+            const { secure_url, public_id } = await subirImagenCloudinary(
+                req.files.imagen.tempFilePath,
+                'Productos'
+            );
+            imagenProducto = { url: secure_url, public_id };
         }
-
         // Crear producto
         const nuevoProducto = new Producto({
-            nombre: nombre.trim(),
-            descripcion: descripcion?.trim() || '',
-            codigo: codigo.toUpperCase(),
-            precioCompra,
-            precioVenta,
-            tipoIVA,
-            precioMayorista: precioMayorista || undefined,
-            cantidadMinimaMayorista: cantidadMinimaMayorista || undefined,
-            stock,
-            stockMinimo,
-            marca: marca.trim(),
-            unidadMedida,
-            destacado,
-            categoria,
-            imagen: imagenProducto
+            nombre: nombre.trim(), descripcion: descripcion?.trim() || '', codigo: codigo.trim().toUpperCase(), codigoBarras: codigoBarras?.trim() || undefined,
+            precioCompra: Number(precioCompra), precioVenta: Number(precioVenta), tipoIVA,
+            precioMayorista: precioMayorista ? Number(precioMayorista) : undefined,
+            cantidadMinimaMayorista: cantidadMinimaMayorista ? Number(cantidadMinimaMayorista) : undefined,
+            stock: Number(stock), stockMinimo: Number(stockMinimo), marca: marca.trim(), proveedor: proveedor.trim(),
+            unidadMedida, color: color?.trim() || '', material: material?.trim() || '', tamanio: tamanio?.trim() || '',
+            presentacion: presentacion?.trim() || '', destacado: destacado || false, categoria, imagen: imagenProducto
         });
-
         await nuevoProducto.save();
-
+        // Convertir a objeto y ocultar fechas
+        const productoRespuesta = nuevoProducto.toObject();
+        delete productoRespuesta.createdAt;
+        delete productoRespuesta.updatedAt;
         return res.status(201).json({
             msg: 'Producto creado correctamente',
-            producto: nuevoProducto
+            producto: productoRespuesta
         });
-
     } catch (error) {
+        // Eliminar imagen de Cloudinary si falla el guardado
+        if (imagenProducto.public_id) {
+            await cloudinary.uploader.destroy(imagenProducto.public_id);
+        }
+        // Errores de validación de Mongoose
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ msg: Object.values(error.errors)[0].message });
+        }
+        // Error por campos únicos duplicados
+        if (error.code === 11000) {
+            const campo = Object.keys(error.keyPattern)[0];
+            const mensajes = { codigo: 'código interno', codigoBarras: 'código de barras' };
+            return res.status(400).json({
+                msg: `El ${mensajes[campo] || campo} ya está registrado`
+            });
+        }
+        console.log('ERROR CREAR PRODUCTO:', error);
         return res.status(500).json({
-            msg: 'Error al crear el producto',
-            error: error.message
+            msg: 'Error al crear el producto', error: error.message
         });
     }
 };

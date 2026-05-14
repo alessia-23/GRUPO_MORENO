@@ -6,8 +6,8 @@ import soloAdmin from '../middleware/adminMiddleware.js';
 
 const router = Router();
 
-
-
+// Crear producto
+router.post('/crear', protegerRuta, soloAdmin, crearProducto);
 
 
 export default router;
