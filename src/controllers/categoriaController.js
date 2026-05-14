@@ -169,6 +169,69 @@ const listarCategoriasInactivas = async (req, res) => {
     }
 };
 
+// Actualizar categoría
+const actualizarCategoria = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, descripcion } = req.body;
+        // Buscar categoría
+        const categoria = await Categoria.findById(id);
+        if (!categoria) {
+            return res.status(404).json({ msg: 'Categoría no encontrada' });
+        }
+        if (!categoria.estado) {
+            return res.status(400).json({
+                msg: 'No se puede actualizar una categoría inactiva'
+            });
+        }
+        // Validar nombre
+        if (!nombre?.trim()) {
+            return res.status(400).json({ msg: 'El nombre es obligatorio' });
+        }
+        const nombreLimpio = nombre.trim();
+        // Validar duplicado
+        const categoriaExistente = await Categoria.findOne({
+            nombre: {
+                $regex: `^${nombreLimpio}$`,
+                $options: 'i'
+            },
+            _id: { $ne: id }
+        });
+        if (categoriaExistente) {
+            return res.status(400).json({
+                msg: 'Ya existe una categoría con ese nombre'
+            });
+        }
+        // Actualizar datos
+        categoria.nombre = nombreLimpio;
+        categoria.descripcion = descripcion?.trim() || '';
+        // Si viene nueva imagen
+        if (req.files?.imagen) {
+            // Eliminar imagen anterior de Cloudinary
+            if (categoria.imagen?.public_id) {
+                await cloudinary.uploader.destroy(
+                    categoria.imagen.public_id
+                );
+            }
+            // Subir nueva imagen
+            const { secure_url, public_id } =
+                await subirImagenCloudinary(
+                    req.files.imagen.tempFilePath, 'Categorias'
+                );
+            categoria.imagen = { url: secure_url, public_id };
+        }
+        await categoria.save();
+        return res.status(200).json({
+            msg: 'Categoría actualizada correctamente'
+        });
+    } catch (error) {
+        console.log('ERROR ACTUALIZAR CATEGORIA:', error);
+        return res.status(500).json({
+            msg: 'Error al actualizar categoría', error: error.message
+        });
+    }
+};
+
 export {
     crearCategoria, desactivarCategoria, listarCategoriasActivas, listarCategoriasInactivas,
     activarCategoria
