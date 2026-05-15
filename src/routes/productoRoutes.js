@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto } from '../controllers/productoController.js';
+import { crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto, desactivarProducto } from '../controllers/productoController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
@@ -18,5 +18,8 @@ router.get('/gestion', protegerRuta, soloVendedor, obtenerGestionVende);
 
 // Actualizar producto 
 router.put('/actualizar/:id', protegerRuta, soloVendedor, actualizarProducto);
+
+// Desactivar producto
+router.put('/desactivar:id', protegerRuta, soloVendedor, desactivarProducto);
 
 export default router;
