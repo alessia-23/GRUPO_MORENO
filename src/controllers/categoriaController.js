@@ -233,7 +233,33 @@ const actualizarCategoria = async (req, res) => {
     }
 };
 
+// Desactivar producto
+const desactivarProducto = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const producto = await Producto.findById(id);
+        if (!producto) {
+            return res.status(404).json({
+                msg: 'Producto no encontrado'
+            });
+        }
+        if (producto.estado === false) {
+            return res.status(400).json({
+                msg: 'El producto ya se encuentra desactivado'
+            });
+        }
+        producto.estado = false;
+        await producto.save();
+        return res.status(200).json({
+            msg: 'Producto desactivado correctamente'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al desactivar el producto', error: error.message
+        });
+    }
+};
 export {
     crearCategoria, desactivarCategoria, listarCategoriasActivas, listarCategoriasInactivas,
-    activarCategoria, actualizarCategoria
+    activarCategoria, actualizarCategoria, desactivarProducto
 };
