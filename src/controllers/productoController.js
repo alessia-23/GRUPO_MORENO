@@ -62,7 +62,7 @@ const crearProducto = async (req, res) => {
             cantidadMinimaMayorista: cantidadMinimaMayorista ? Number(cantidadMinimaMayorista) : undefined,
             stock: Number(stock), stockMinimo: Number(stockMinimo), marca: marca.trim(), proveedor: proveedor.trim(),
             unidadMedida, color: color?.trim() || '', material: material?.trim() || '', tamanio: tamanio?.trim() || '',
-            presentacion: presentacion?.trim() || '', destacado: destacado || false, categoria, imagen: imagenProducto
+            presentacion: presentacion?.trim() || '', destacado: destacado === 'true' || destacado === true, categoria, imagen: imagenProducto
         });
         await nuevoProducto.save();
         // Convertir a objeto y ocultar fechas
@@ -100,30 +100,35 @@ const crearProducto = async (req, res) => {
 // Listar productos para catálogo público
 const obtenerCatalogo = async (req, res) => {
     try {
-        const productos = await Producto.find({ estado: true })
+        const productos = await Producto.find({
+            estado: true,
+            destacado: true
+        })
             .populate({
                 path: 'categoria',
-                match: { estado: true },
-                select: 'nombre imagen'
+                match: { estado: true }, select: 'nombre imagen'
             })
             .select('nombre descripcion precioVenta imagen stock marca unidadMedida color material tamanio presentacion destacado categoria')
             .sort({ nombre: 1 })
+            .limit(13)
             .lean();
-        const productosVisibles = productos.filter(producto => producto.categoria !== null);
+        const productosVisibles = productos.filter(
+            producto => producto.categoria !== null
+        );
         return res.status(200).json({
-            total: productosVisibles.length,
+            totalProductos: productosVisibles.length,
             productos: productosVisibles
         });
     } catch (error) {
+        console.error('ERROR CATALOGO PUBLICO:', error);
         return res.status(500).json({
-            msg: 'Error al cargar el catálogo',
-            error: error.message
+            msg: 'Error al cargar el catálogo público', error: error.message
         });
     }
 };
 
-// Listar productos para gestión del administrador
-const obtenerGestionAdmin = async (req, res) => {
+// Listar productos para gestión del vendedor
+const obtenerGestionVende = async (req, res) => {
     let etapaActual = 'inicializando consulta';
     try {
         const { estado, buscar, page = 1, limit = 20 } = req.query;
@@ -164,6 +169,136 @@ const obtenerGestionAdmin = async (req, res) => {
     }
 };
 
+// Actualizar producto
+const actualizarProducto = async (req, res) => {
+    const { id } = req.params;
+    let etapaActual = 'buscando producto existente';
+    let nuevaImagenPublicId = null;
+    let publicIdBorrar = null;
+    try {
+        // Buscar producto
+        const producto = await Producto.findById(id);
+        if (!producto) {
+            return res.status(404).json({
+                msg: 'Producto no encontrado'
+            });
+        }
+        const { nombre, descripcion, codigo, codigoBarras, precioCompra, precioVenta, tipoIVA, precioMayorista, cantidadMinimaMayorista,
+            stock, stockMinimo, marca, proveedor, unidadMedida, color, material, tamanio, presentacion, destacado, categoria } = req.body;
+        // Validar categoría
+        if (categoria && categoria !== producto.categoria.toString()) {
+            etapaActual = 'validando nueva categoría';
+            const categoriaExiste = await Categoria.findById(categoria);
+            if (!categoriaExiste) {
+                return res.status(404).json({
+                    msg: 'La categoría asignada no existe'
+                });
+            }
+            if (!categoriaExiste.estado) {
+                return res.status(400).json({
+                    msg: 'No se puede asignar una categoría inactiva'
+                });
+            }
+            producto.categoria = categoria;
+        }
+        // Validar código interno
+        if (codigo !== undefined) {
+            const codigoNorm = codigo.trim().toUpperCase();
+            if (codigoNorm && codigoNorm !== producto.codigo) {
+                etapaActual = 'validando duplicidad de código interno';
+                const existeCodigo = await Producto.findOne({
+                    codigo: codigoNorm,
+                    _id: { $ne: id }
+                });
+                if (existeCodigo) {
+                    return res.status(400).json({
+                        msg: 'El nuevo código interno ya está registrado'
+                    });
+                }
+                producto.codigo = codigoNorm;
+            }
+        }
+        // Validar código de barras
+        if (codigoBarras !== undefined) {
+            etapaActual = 'validando código de barras';
+            const codigoBarrasNorm = codigoBarras.trim() === ''
+                ? undefined
+                : codigoBarras.trim();
+            if (codigoBarrasNorm && codigoBarrasNorm !== producto.codigoBarras) {
+                const existeCodigoBarras = await Producto.findOne({
+                    codigoBarras: codigoBarrasNorm,
+                    _id: { $ne: id }
+                });
+                if (existeCodigoBarras) {
+                    return res.status(400).json({
+                        msg: 'Este código de barras ya lo tiene otro producto'
+                    });
+                }
+            }
+            producto.codigoBarras = codigoBarrasNorm;
+        }
+        // Subir nueva imagen a Cloudinary
+        if (req.files?.imagen) {
+            etapaActual = 'subiendo nueva imagen a Cloudinary';
+            const { secure_url, public_id } = await subirImagenCloudinary(
+                req.files.imagen.tempFilePath,
+                'Productos'
+            );
+            nuevaImagenPublicId = public_id;
+            if (producto.imagen?.public_id) {
+                publicIdBorrar = producto.imagen.public_id;
+            }
+            producto.imagen = {
+                url: secure_url,
+                public_id
+            };
+        }
+        // Asignar valores finales
+        etapaActual = 'asignando valores finales';
+        if (nombre !== undefined) producto.nombre = nombre.trim();
+        if (descripcion !== undefined) producto.descripcion = descripcion.trim();
+        if (precioCompra !== undefined) producto.precioCompra = Number(precioCompra);
+        if (precioVenta !== undefined) producto.precioVenta = Number(precioVenta);
+        if (tipoIVA !== undefined) producto.tipoIVA = tipoIVA;
+        if (precioMayorista !== undefined) producto.precioMayorista = Number(precioMayorista);
+        if (cantidadMinimaMayorista !== undefined) producto.cantidadMinimaMayorista = Number(cantidadMinimaMayorista);
+        if (stock !== undefined) producto.stock = Number(stock);
+        if (stockMinimo !== undefined) producto.stockMinimo = Number(stockMinimo);
+        if (marca !== undefined) producto.marca = marca.trim();
+        if (proveedor !== undefined) producto.proveedor = proveedor.trim();
+        if (unidadMedida !== undefined) producto.unidadMedida = unidadMedida;
+        if (color !== undefined) producto.color = color.trim();
+        if (material !== undefined) producto.material = material.trim();
+        if (tamanio !== undefined) producto.tamanio = tamanio.trim();
+        if (presentacion !== undefined) producto.presentacion = presentacion.trim();
+        if (destacado !== undefined) {
+            producto.destacado = destacado === 'true' || destacado === true;
+        }
+        // Guardar cambios en MongoDB
+        etapaActual = 'guardando cambios en base de datos';
+        await producto.save();
+        // Si todo salió bien, borrar imagen anterior
+        if (publicIdBorrar) {
+            etapaActual = 'eliminando imagen anterior de Cloudinary';
+            await cloudinary.uploader.destroy(publicIdBorrar);
+        }
+        return res.status(200).json({
+            msg: 'Producto actualizado correctamente'
+        });
+    } catch (error) {
+        console.error(`ERROR AL EDITAR PRODUCTO [${etapaActual}]:`, error);
+        // Si se subió una imagen nueva pero falló el proceso, se elimina
+        if (nuevaImagenPublicId) {
+            await cloudinary.uploader.destroy(nuevaImagenPublicId);
+        }
+        return res.status(500).json({
+            msg: 'Error interno al actualizar el producto',
+            etapa: etapaActual,
+            error: error.message
+        });
+    }
+};
+
 export {
-    crearProducto, obtenerCatalogo, obtenerGestionAdmin
+    crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto
 };
