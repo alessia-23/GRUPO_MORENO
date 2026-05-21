@@ -367,7 +367,7 @@ const activarProducto = async (req, res) => {
 };
 
 
-// Explorar productos públicos
+// Explorar productos de manera pública con filtros de búsqueda, categoría y marca, con paginación
 const todosProductos = async (req, res) => {
     let etapaActual = 'inicializando exploración de productos';
     try {

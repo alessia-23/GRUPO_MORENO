@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto, desactivarProducto, activarProducto } from '../controllers/productoController.js';
+import { crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto, desactivarProducto, activarProducto, todosProductos } from '../controllers/productoController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
@@ -24,5 +24,8 @@ router.put('/desactivar/:id', protegerRuta, soloVendedor, desactivarProducto);
 
 // Activar producto
 router.put('/activar/:id', protegerRuta, soloVendedor, activarProducto);
+
+// Explorar todos los productos y búsqueda con sus respectivos filtros
+router.get('/explorar', todosProductos);
 
 export default router;
