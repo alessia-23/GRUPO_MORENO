@@ -367,16 +367,16 @@ const activarProducto = async (req, res) => {
 };
 
 
-// Explorar productos públicos con filtros 
+// Explorar productos públicos
 const todosProductos = async (req, res) => {
     let etapaActual = 'inicializando exploración de productos';
     try {
-        const { categoria, buscar, marca, color, precioMin, precioMax, ordenar, page = 1, limit = 20 } = req.query;
-        // Filtro base, es decir elñ producto siempre debe estar activo
+        const { categoria, buscar, marca, page = 1, limit = 20 } = req.query;
+        // Solo productos activos
         const filtro = { estado: true };
         etapaActual = 'revisando categorías activas';
+        // Filtrar por categoría
         if (categoria?.trim()) {
-            // Si filtran por una categoría específica, validamos que esté activa
             const categoriaExiste = await Categoria.findOne({
                 _id: categoria.trim(), estado: true
             });
@@ -387,60 +387,72 @@ const todosProductos = async (req, res) => {
             }
             filtro.categoria = categoria.trim();
         } else {
-            // Mongoose cuenta y trae solo los productos de categorías activas
-            const categoriasActivas = await Categoria.find({ estado: true }).select('_id');
-            const idsCategoriasActivas = categoriasActivas.map(c => c._id);
-            filtro.categoria = { $in: idsCategoriasActivas };
+            // Solo categorías activas
+            const categoriasActivas = await Categoria.find({
+                estado: true
+            }).select('_id');
+            const idsCategoriasActivas = categoriasActivas.map(
+                categoria => categoria._id
+            );
+            filtro.categoria = {
+                $in: idsCategoriasActivas
+            };
         }
-        // Buscar por nombre, marca o código
+        // Buscar por nombre
         if (buscar?.trim()) {
-            const textoBusqueda = buscar.trim();
-            filtro.$or = [
-                { nombre: { $regex: textoBusqueda, $options: 'i' } },
-                { marca: { $regex: textoBusqueda, $options: 'i' } },
-                { codigo: { $regex: textoBusqueda, $options: 'i' } }
-            ];
+            filtro.nombre = {
+                $regex: buscar.trim(), $options: 'i'
+            };
         }
         // Filtrar por marca
         if (marca?.trim()) {
             filtro.marca = { $regex: marca.trim(), $options: 'i' };
         }
-        // Filtrar por color
-        if (color?.trim()) {
-            filtro.color = { $regex: color.trim(), $options: 'i' };
-        }
-        // Configurar ordenamiento
-        let ordenamiento = { createdAt: -1 };
-        if (ordenar === 'precioAsc') ordenamiento = { precioVenta: 1 };
-        if (ordenar === 'precioDesc') ordenamiento = { precioVenta: -1 };
-        if (ordenar === 'nombreAsc') ordenamiento = { nombre: 1 };
-        if (ordenar === 'nombreDesc') ordenamiento = { nombre: -1 };
         // Configurar paginación
         const paginaActual = Math.max(Number(page), 1);
         const limite = Math.min(Math.max(Number(limit), 1), 50);
         const saltar = (paginaActual - 1) * limite;
         etapaActual = 'consultando productos';
-        // Ejecutar consultas en paralelo (Paginación matemática exacta)
+        // Consultas paralelas
         const [totalProductos, productos] = await Promise.all([
             Producto.countDocuments(filtro),
             Producto.find(filtro)
-                .populate('categoria', 'nombre imagen') // Ya no necesitas el match porque filtramos antes
+                .populate({ path: 'categoria', select: 'nombre imagen' })
                 .select(
-                    'nombre descripcion precioVenta imagen stock marca unidadMedida color material tamanio presentacion destacado categoria'
+                    `
+                    nombre
+                    descripcion
+                    codigo
+                    precioVenta
+                    precioMayorista
+                    cantidadMinimaMayorista
+                    imagen
+                    stock
+                    marca
+                    unidadMedida
+                    color
+                    material
+                    tamanio
+                    presentacion
+                    categoria
+                    `
                 )
-                .sort(ordenamiento).skip(saltar).limit(limite).lean()
+                .sort({ createdAt: -1 }).skip(saltar).limit(limite).lean()
         ]);
         return res.status(200).json({
             totalProductos, totalEnPagina: productos.length, paginaActual,
             totalPaginas: Math.ceil(totalProductos / limite), productos
         });
     } catch (error) {
-        console.error(`ERROR EXPLORAR PRODUCTOS [${etapaActual}]:`, error);
+        console.error(
+            `ERROR EXPLORAR PRODUCTOS [${etapaActual}]:`, error
+        );
         return res.status(500).json({
             msg: 'Error al explorar productos', etapa: etapaActual, error: error.message
         });
     }
 };
+
 export {
     crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto, desactivarProducto, activarProducto, todosProductos
 };
