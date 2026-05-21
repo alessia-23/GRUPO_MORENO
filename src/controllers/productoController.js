@@ -100,27 +100,32 @@ const crearProducto = async (req, res) => {
 // Listar productos para catálogo público
 const obtenerCatalogo = async (req, res) => {
     try {
+        // Cantidad máxima de productos destacados visibles
+        const limiteDestacados = 16;
+        // Obtener productos activos y marcados como destacados
         const productos = await Producto.find({
-            estado: true,
-            destacado: true
+            estado: true, destacado: true
         })
             .populate({
                 path: 'categoria',
-                match: { estado: true }, select: 'nombre imagen'
+                match: { estado: true }, // Solo categorías activas
+                select: 'nombre imagen'
             })
-            .select('nombre descripcion precioVenta imagen stock marca unidadMedida color material tamanio presentacion destacado categoria')
-            .sort({ nombre: 1 })
-            .limit(13)
-            .lean();
+            .select(
+                'nombre descripcion precioVenta imagen stock marca unidadMedida color material tamanio presentacion destacado categoria'
+            )
+            .sort({ nombre: 1 }).lean();
+        // Ocultar productos cuya categoría fue desactivada
         const productosVisibles = productos.filter(
             producto => producto.categoria !== null
         );
+        // Limitar cantidad final que se veran en el catálogo principal
+        const destacadosFinales = productosVisibles.slice(0, limiteDestacados);
         return res.status(200).json({
-            totalProductos: productosVisibles.length,
-            productos: productosVisibles
+            totalProductos: destacadosFinales.length, productos: destacadosFinales
         });
     } catch (error) {
-        console.error('ERROR CATALOGO PUBLICO:', error);
+        console.error('Error catalogo publico:', error);
         return res.status(500).json({
             msg: 'Error al cargar el catálogo público', error: error.message
         });
