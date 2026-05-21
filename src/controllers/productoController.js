@@ -326,6 +326,41 @@ const desactivarProducto = async (req, res) => {
     }
 };
 
+// Activar producto 
+const activarProducto = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const producto = await Producto.findById(id);
+        if (!producto) {
+            return res.status(404).json({
+                msg: 'Producto no encontrado'
+            });
+        }
+        // Validar si ya está activo
+        if (producto.estado) {
+            return res.status(400).json({
+                msg: 'El producto ya se encuentra activo'
+            });
+        }
+        // Validar categoría activa
+        const categoria = await Categoria.findById(producto.categoria);
+        if (!categoria || !categoria.estado) {
+            return res.status(400).json({
+                msg: 'No se puede activar el producto porque su categoría está inactiva'
+            });
+        }
+        producto.estado = true;
+        await producto.save();
+        return res.status(200).json({
+            msg: 'Producto activado correctamente'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al activar el producto', error: error.message
+        });
+    }
+};
+
 export {
-    crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto, desactivarProducto
+    crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto, desactivarProducto, activarProducto
 };
