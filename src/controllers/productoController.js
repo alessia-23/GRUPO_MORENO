@@ -367,11 +367,12 @@ const activarProducto = async (req, res) => {
 };
 
 
-// Explorar productos de manera pública con filtros de búsqueda, categoría y marca, con paginación
+// Explorar productos de manera pública con filtros de búsqueda, categoría, marca y destacados, con paginación
 const todosProductos = async (req, res) => {
     let etapaActual = 'inicializando exploración de productos';
     try {
-        const { categoria, buscar, marca, page = 1, limit = 20 } = req.query;
+        const {
+            categoria, buscar, marca, destacado, page = 1, limit = 20 } = req.query;
         // Solo productos activos
         const filtro = { estado: true };
         etapaActual = 'revisando categorías activas';
@@ -394,32 +395,35 @@ const todosProductos = async (req, res) => {
             const idsCategoriasActivas = categoriasActivas.map(
                 categoria => categoria._id
             );
-            filtro.categoria = {
-                $in: idsCategoriasActivas
-            };
+            filtro.categoria = { $in: idsCategoriasActivas };
         }
         // Buscar por nombre
         if (buscar?.trim()) {
-            filtro.nombre = {
-                $regex: buscar.trim(), $options: 'i'
-            };
+            filtro.nombre = { $regex: buscar.trim(), $options: 'i' };
         }
         // Filtrar por marca
         if (marca?.trim()) {
             filtro.marca = { $regex: marca.trim(), $options: 'i' };
         }
+        // Filtrar destacados
+        if (destacado !== undefined) {
+            filtro.destacado = destacado === 'true';
+        }
         // Configurar paginación
         const paginaActual = Math.max(Number(page), 1);
-        const limite = Math.min(Math.max(Number(limit), 1), 50);
+        const limite = Math.min(
+            Math.max(Number(limit), 1), 50
+        );
         const saltar = (paginaActual - 1) * limite;
         etapaActual = 'consultando productos';
         // Consultas paralelas
         const [totalProductos, productos] = await Promise.all([
             Producto.countDocuments(filtro),
             Producto.find(filtro)
-                .populate({ path: 'categoria', select: 'nombre imagen' })
-                .select(
-                    `
+                .populate({
+                    path: 'categoria', select: 'nombre imagen'
+                })
+                .select(`
                     nombre
                     descripcion
                     codigo
@@ -434,19 +438,21 @@ const todosProductos = async (req, res) => {
                     material
                     tamanio
                     presentacion
+                    destacado
                     categoria
-                    `
-                )
+                `)
                 .sort({ createdAt: -1 }).skip(saltar).limit(limite).lean()
         ]);
         return res.status(200).json({
             totalProductos, totalEnPagina: productos.length, paginaActual,
             totalPaginas: Math.ceil(totalProductos / limite), productos
         });
+
     } catch (error) {
         console.error(
             `ERROR EXPLORAR PRODUCTOS [${etapaActual}]:`, error
         );
+
         return res.status(500).json({
             msg: 'Error al explorar productos', etapa: etapaActual, error: error.message
         });

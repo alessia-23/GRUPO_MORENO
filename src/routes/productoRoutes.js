@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto, desactivarProducto, activarProducto, todosProductos } from '../controllers/productoController.js';
+import { crearProducto, obtenerGestionVende, actualizarProducto, desactivarProducto, activarProducto, todosProductos } from '../controllers/productoController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
@@ -11,7 +11,7 @@ const router = Router();
 router.post('/crear', protegerRuta, soloVendedor, crearProducto);
 
 // Catálogo público
-router.get('/catalogo', obtenerCatalogo);
+//router.get('/catalogo', obtenerCatalogo);
 
 // Gestión de productos
 router.get('/gestion', protegerRuta, soloVendedor, obtenerGestionVende);
