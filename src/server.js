@@ -10,6 +10,7 @@ import clienteRoutes from './routes/clienteRoutes.js';
 import categoriaRoutes from './routes/categoriaRoutes.js';
 import vendedorRoutes from './routes/vendedorRoutes.js';
 import productoRoutes from './routes/productoRoutes.js';
+import pedidoRoutes from './routes/pedidoRoutes.js';
 
 
 // Inicialización
@@ -46,7 +47,7 @@ app.use('/api/clientes', clienteRoutes); // Rutas de clientes
 app.use('/api/vendedores', vendedorRoutes); // Rutas de vendedores
 app.use('/api/categorias', categoriaRoutes); // Rutas de categorías
 app.use('/api/productos', productoRoutes); // Ruta para productos
-
+app.use('/api/pedidos', pedidoRoutes); // Ruta para pedidos
 
 // Exportar app
 export default app;
