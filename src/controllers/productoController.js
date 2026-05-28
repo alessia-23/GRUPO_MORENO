@@ -97,7 +97,7 @@ const crearProducto = async (req, res) => {
     }
 };
 
-// Listar productos para catálogo público
+/*Listar productos para catálogo público
 const obtenerCatalogo = async (req, res) => {
     try {
         // Cantidad máxima de productos destacados visibles
@@ -131,7 +131,7 @@ const obtenerCatalogo = async (req, res) => {
         });
     }
 };
-
+*/
 // Listar productos para gestión del vendedor
 const obtenerGestionVende = async (req, res) => {
     let etapaActual = 'inicializando consulta';
@@ -372,14 +372,19 @@ const todosProductos = async (req, res) => {
     let etapaActual = 'inicializando exploración de productos';
     try {
         const {
-            categoria, buscar, marca, destacado, page = 1, limit = 20 } = req.query;
-        // Solo productos activos
+            categoria,
+            buscar,
+            marca,
+            destacado,
+            page = 1,
+            limit = 20
+        } = req.query;
         const filtro = { estado: true };
         etapaActual = 'revisando categorías activas';
-        // Filtrar por categoría
         if (categoria?.trim()) {
             const categoriaExiste = await Categoria.findOne({
-                _id: categoria.trim(), estado: true
+                _id: categoria.trim(),
+                estado: true
             });
             if (!categoriaExiste) {
                 return res.status(404).json({
@@ -388,7 +393,6 @@ const todosProductos = async (req, res) => {
             }
             filtro.categoria = categoria.trim();
         } else {
-            // Solo categorías activas
             const categoriasActivas = await Categoria.find({
                 estado: true
             }).select('_id');
@@ -397,36 +401,32 @@ const todosProductos = async (req, res) => {
             );
             filtro.categoria = { $in: idsCategoriasActivas };
         }
-        // Buscar por nombre
         if (buscar?.trim()) {
             filtro.nombre = { $regex: buscar.trim(), $options: 'i' };
         }
-        // Filtrar por marca
         if (marca?.trim()) {
             filtro.marca = { $regex: marca.trim(), $options: 'i' };
         }
-        // Filtrar destacados
         if (destacado !== undefined) {
             filtro.destacado = destacado === 'true';
         }
-        // Configurar paginación
         const paginaActual = Math.max(Number(page), 1);
         const limite = Math.min(
-            Math.max(Number(limit), 1), 50
+            Math.max(Number(limit), 1),
+            50
         );
         const saltar = (paginaActual - 1) * limite;
         etapaActual = 'consultando productos';
-        // Consultas paralelas
         const [totalProductos, productos] = await Promise.all([
             Producto.countDocuments(filtro),
             Producto.find(filtro)
                 .populate({
-                    path: 'categoria', select: 'nombre imagen'
+                    path: 'categoria',
+                    select: 'nombre imagen'
                 })
                 .select(`
                     nombre
                     descripcion
-                    codigo
                     precioVenta
                     precioMayorista
                     cantidadMinimaMayorista
@@ -441,24 +441,33 @@ const todosProductos = async (req, res) => {
                     destacado
                     categoria
                 `)
-                .sort({ createdAt: -1 }).skip(saltar).limit(limite).lean()
+                .sort(
+                    destacado === 'true'
+                        ? { nombre: 1 }
+                        : { createdAt: -1 }
+                )
+                .skip(saltar)
+                .limit(limite)
+                .lean()
         ]);
         return res.status(200).json({
-            totalProductos, totalEnPagina: productos.length, paginaActual,
-            totalPaginas: Math.ceil(totalProductos / limite), productos
+            totalProductos,
+            totalEnPagina: productos.length,
+            paginaActual,
+            limite,
+            totalPaginas: Math.ceil(totalProductos / limite),
+            productos
         });
-
     } catch (error) {
-        console.error(
-            `ERROR EXPLORAR PRODUCTOS [${etapaActual}]:`, error
-        );
-
+        console.error(`ERROR EXPLORAR PRODUCTOS [${etapaActual}]:`, error);
         return res.status(500).json({
-            msg: 'Error al explorar productos', etapa: etapaActual, error: error.message
+            msg: 'Error al explorar productos',
+            etapa: etapaActual,
+            error: error.message
         });
     }
 };
 
 export {
-    crearProducto, obtenerCatalogo, obtenerGestionVende, actualizarProducto, desactivarProducto, activarProducto, todosProductos
+    crearProducto, obtenerGestionVende, actualizarProducto, desactivarProducto, activarProducto, todosProductos
 };

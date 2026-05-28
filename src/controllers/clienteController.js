@@ -1,4 +1,4 @@
-/*import Usuario from '../models/Usuario.js';
+import Usuario from '../models/Usuario.js';
 import Cliente from '../models/Cliente.js';
 import { hashPassword } from '../helpers/bcrypt.js';
 
@@ -92,4 +92,4 @@ const registrarCliente = async (req, res) => {
     }
 };
 
-export { registrarCliente };*/
+export { registrarCliente };

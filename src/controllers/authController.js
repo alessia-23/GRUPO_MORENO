@@ -14,23 +14,23 @@ const login = async (req, res) => {
         const { email, password } = req.body;
         // Validar que vengan datos
         if (!email || !password) {
-            return res.status(400).json({msg: 'Llenar todos los campos'});
+            return res.status(400).json({ msg: 'Llenar todos los campos' });
         }
         // Buscar usuario por email y traer nombre/apellido del perfil
         const usuario = await Usuario.findOne({
             email: email.toLowerCase().trim()
         }).populate('perfilId', 'nombre apellido');
         if (!usuario) {
-            return res.status(404).json({msg: 'Usuario no encontrado'});
+            return res.status(404).json({ msg: 'Usuario no encontrado' });
         }
         // Verificar si está activo
         if (!usuario.estado) {
-            return res.status(403).json({msg: 'Usuario inactivo'});
+            return res.status(403).json({ msg: 'Usuario inactivo' });
         }
         // Comparar contraseña
         const passwordValida = await comparePassword(password, usuario.password);
         if (!passwordValida) {
-            return res.status(401).json({msg: 'Contraseña incorrecta'});
+            return res.status(401).json({ msg: 'Contraseña incorrecta' });
         }
         // Generar token
         const token = crearTokenJWT(usuario);
@@ -49,7 +49,7 @@ const login = async (req, res) => {
             }
         });
     } catch (error) {
-        return res.status(500).json({msg: 'Error en el servidor',error: error.message});
+        return res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
 };
 

@@ -1,62 +1,29 @@
 import mongoose from 'mongoose';
+import { calcularTotales } from '../helpers/calcularTotal.js';
 
-const pedidoSchema = new mongoose.Schema({
-    cliente: {
+const articuloSchema = new mongoose.Schema({
+    producto: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Usuario',
-        required: [true, 'El cliente es obligatorio']
+        ref: 'Producto',
+        required: [true, 'El producto es obligatorio']
     },
 
-    vendedor: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Usuario',
-        default: null
+    cantidad: {
+        type: Number,
+        required: [true, 'La cantidad es obligatoria'],
+        min: [1, 'La cantidad mínima es 1']
     },
 
-    articulos: [
-        {
-            producto: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'Producto',
-                required: true
-            },
+    precioUnitario: {
+        type: Number,
+        required: [true, 'El precio unitario es obligatorio'],
+        min: [0, 'El precio no puede ser negativo']
+    },
 
-            cantidad: {
-                type: Number,
-                required: true,
-                min: 1
-            },
-
-            precioUnitario: {
-                type: Number,
-                required: true
-            },
-
-            ivaRate: {
-                type: Number,
-                default: 0.15
-            },
-
-            subtotalLinea: {
-                type: Number,
-                default: 0
-            },
-
-            ivaLinea: {
-                type: Number,
-                default: 0
-            },
-
-            totalLinea: {
-                type: Number,
-                default: 0
-            }
-        }
-    ],
-
-    comprobanteDigital: {
-        url: { type: String, default: null },
-        public_id: { type: String, default: null }
+    ivaRate: {
+        type: Number,
+        default: 0.15,
+        min: [0, 'El IVA no puede ser negativo']
     },
 
     subtotal: {
@@ -72,15 +39,70 @@ const pedidoSchema = new mongoose.Schema({
     total: {
         type: Number,
         default: 0
+    }
+}, {
+    _id: false
+});
+
+const pedidoSchema = new mongoose.Schema({
+    cliente: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Usuario',
+        required: [true, 'El cliente es obligatorio']
+    },
+
+    vendedor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Usuario',
+        default: null
+    },
+
+    articulos: {
+        type: [articuloSchema],
+        required: [true, 'Los artículos son obligatorios'],
+        validate: {
+            validator: function (articulos) {
+                return articulos.length > 0;
+            },
+            message: 'El pedido debe tener al menos un producto'
+        }
+    },
+
+    comprobanteDigital: {
+        url: {
+            type: String,
+            default: null
+        },
+        public_id: {
+            type: String,
+            default: null
+        }
+    },
+
+    subtotal: {
+        type: Number,
+        default: 0,
+        min: [0, 'El subtotal no puede ser negativo']
+    },
+
+    iva: {
+        type: Number,
+        default: 0,
+        min: [0, 'El IVA no puede ser negativo']
+    },
+
+    total: {
+        type: Number,
+        default: 0,
+        min: [0, 'El total no puede ser negativo']
     },
 
     estado: {
         type: String,
         enum: [
             'PENDIENTE',
-            'ASIGNADO',
-            'EN_PREPARACION',
-            'EN_CAMINO',
+            'EN_PROCESO',
+            'LISTO_RETIRO',
             'ENTREGADO',
             'CANCELADO'
         ],
@@ -92,7 +114,6 @@ const pedidoSchema = new mongoose.Schema({
         enum: ['EFECTIVO', 'TRANSFERENCIA', 'PENDIENTE_PAGO'],
         default: 'PENDIENTE_PAGO'
     },
-
     estadoPago: {
         type: String,
         enum: ['PENDIENTE', 'PAGADO', 'RECHAZADO'],
@@ -112,7 +133,8 @@ const pedidoSchema = new mongoose.Schema({
 
     observaciones: {
         type: String,
-        trim: true
+        trim: true,
+        default: ''
     }
 
 }, {
@@ -121,36 +143,16 @@ const pedidoSchema = new mongoose.Schema({
     collection: 'Pedidos'
 });
 
+// Calcular subtotal, IVA y total antes de guardar
 pedidoSchema.pre('save', function () {
+    const resultado = calcularTotales(this.articulos);
 
-    if (!this.articulos || this.articulos.length === 0) {
-        this.subtotal = 0;
-        this.iva = 0;
-        this.total = 0;
-        return;
-    }
-
-    let subtotal = 0;
-    let ivaTotal = 0;
-
-    this.articulos.forEach((item) => {
-
-        const subtotalLinea = item.cantidad * item.precioUnitario;
-        const ivaLinea = subtotalLinea * (item.ivaRate || 0.15);
-
-        item.subtotalLinea = Number(subtotalLinea.toFixed(2));
-        item.ivaLinea = Number(ivaLinea.toFixed(2));
-        item.totalLinea = Number((subtotalLinea + ivaLinea).toFixed(2));
-
-        subtotal += subtotalLinea;
-        ivaTotal += ivaLinea;
-    });
-
-    this.subtotal = Number(subtotal.toFixed(2));
-    this.iva = Number(ivaTotal.toFixed(2));
-    this.total = Number((subtotal + ivaTotal).toFixed(2));
+    this.articulos = resultado.itemsCalculados;
+    this.subtotal = resultado.subtotal;
+    this.iva = resultado.iva;
+    this.total = resultado.total;
 });
 
 const Pedido = mongoose.model('Pedido', pedidoSchema);
-export default Pedido;
 
+export default Pedido;

@@ -1,24 +1,50 @@
 import 'dotenv/config';
 
+import http from 'http';
+import { Server } from 'socket.io';
 
 import app from './server.js';
 import connection from './config/database.js';
 import createAdminSeed from './Seeds/AdministradorSeed.js';
-
-
+import pedidoSocket from './sockets/pedidoSocket.js';
 const PORT = process.env.PORT || 3000;
 
-// Conecta la BD, crea admin (solo una vez) y levanta servidor
+// Crear servidor HTTP
+const server = http.createServer(app);
+
+// Configurar Socket.IO
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST', 'PUT', 'DELETE']
+    }
+});
+
+// Guardar io en express
+app.set('io', io);
+pedidoSocket(io);
+
+// Eventos socket
+io.on('connection', (socket) => {
+    console.log('Cliente conectado:', socket.id);
+
+    socket.on('disconnect', () => {
+        console.log('Cliente desconectado:', socket.id);
+    });
+});
+
+// Iniciar servidor
 const iniciarServidor = async () => {
     try {
         await connection();
         await createAdminSeed();
 
-        app.listen(PORT, () => {
-            console.log(`Servidor corriendo en el puerto ${PORT}`);
+        server.listen(PORT, () => {
+            console.log(`Servidor corriendo en puerto ${PORT}`);
         });
+
     } catch (error) {
-        console.error('Error al iniciar el servidor:', error.message);
+        console.error('Error al iniciar servidor:', error.message);
     }
 };
 
