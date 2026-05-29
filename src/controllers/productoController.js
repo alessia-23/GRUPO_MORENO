@@ -2,6 +2,7 @@ import Producto from '../models/Producto.js';
 import Categoria from '../models/Categoria.js';
 import { subirImagenCloudinary } from '../helpers/uploadCloudinary.js';
 import { v2 as cloudinary } from 'cloudinary';
+import mongoose from 'mongoose';
 
 // Crear producto
 const crearProducto = async (req, res) => {
@@ -132,44 +133,66 @@ const obtenerCatalogo = async (req, res) => {
     }
 };
 */
-// Listar productos para gestión del vendedor
 const obtenerGestionVende = async (req, res) => {
     let etapaActual = 'inicializando consulta';
+
     try {
-        const { estado, buscar, page = 1, limit = 20 } = req.query;
+        const { estado, buscar, categoria, page = 1, limit = 20 } = req.query;
+
         const filtro = {};
-        // Filtrar por estado del producto
+
         if (estado !== undefined) {
             filtro.estado = estado === 'true';
         }
-        // Buscar por nombre o código interno
+
+        if (categoria?.trim()) {
+            if (!mongoose.Types.ObjectId.isValid(categoria)) {
+                return res.status(400).json({
+                    msg: 'El ID de la categoría no es válido'
+                });
+            }
+
+            filtro.categoria = categoria.trim();
+        }
+
         if (buscar?.trim()) {
             filtro.$or = [
                 { nombre: { $regex: buscar.trim(), $options: 'i' } },
                 { codigo: { $regex: buscar.trim(), $options: 'i' } }
             ];
         }
-        // Configurar paginación
+
         const paginaActual = Math.max(Number(page), 1);
         const limite = Math.min(Math.max(Number(limit), 1), 50);
         const saltar = (paginaActual - 1) * limite;
-        // Contar productos según filtros
+
         etapaActual = 'contando productos';
         const total = await Producto.countDocuments(filtro);
-        // Buscar productos paginados
+
         etapaActual = 'buscando productos en la base de datos';
         const productos = await Producto.find(filtro)
-            .populate('categoria', 'nombre estado').select('-createdAt -updatedAt -__v')
-            .sort({ createdAt: -1 }).skip(saltar).limit(limite).lean();
+            .populate('categoria', 'nombre estado')
+            .select('-createdAt -updatedAt -__v')
+            .sort({ createdAt: -1 })
+            .skip(saltar)
+            .limit(limite)
+            .lean();
+
         return res.status(200).json({
-            total, paginaActual, limite,
+            total,
+            paginaActual,
+            limite,
             totalPaginas: Math.ceil(total / limite),
             productos
         });
+
     } catch (error) {
-        console.error(`ERROR EN GESTIÓN ADMIN [${etapaActual}]:`, error);
+        console.error(`ERROR EN GESTIÓN PRODUCTOS [${etapaActual}]:`, error);
+
         return res.status(500).json({
-            msg: 'Error interno al cargar la gestión de productos', etapa: etapaActual, error: error.message
+            msg: 'Error interno al cargar la gestión de productos',
+            etapa: etapaActual,
+            error: error.message
         });
     }
 };
