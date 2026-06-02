@@ -12,7 +12,7 @@ const router = Router();
 router.post('/crear', protegerRuta,soloCliente, crearPedido);
 
 // Listar todos los pedidos
-router.get('/listar', protegerRuta, soloVendedor, soloAdmin, listarPedidos);
+router.get('/listar', protegerRuta, soloVendedor, listarPedidos);
 
 // Vendedor acepta/toma el pedido
 router.put('/asignar/:id', protegerRuta, soloVendedor, asignarPedido);
