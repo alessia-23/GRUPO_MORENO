@@ -5,12 +5,13 @@ const productoSchema = new mongoose.Schema({
         type: String,
         required: [true, 'El nombre del producto es obligatorio'],
         trim: true,
-        maxlength: [100, 'El nombre no puede exceder los 100 caracteres']
+        minlength: [3, 'El nombre debe tener mínimo 3 caracteres'],
+        maxlength: [40, 'El nombre no puede exceder los 40 caracteres']
     },
     descripcion: {
         type: String,
         trim: true,
-        maxlength: [500, 'La descripción no puede exceder los 500 caracteres']
+        maxlength: [80, 'La descripción no puede exceder los 80 caracteres']
     },
     codigo: {
         type: String,
@@ -78,12 +79,16 @@ const productoSchema = new mongoose.Schema({
     marca: {
         type: String,
         trim: true,
-        required: [true, 'La marca es obligatoria']
+        required: [true, 'La marca es obligatoria'],
+        minlength: [2, 'La marca debe tener mínimo 2 caracteres'],
+        maxlength: [20, 'La marca debe tener máximo 20 caracteres']
     },
     proveedor: {
         type: String,
         required: [true, 'El proveedor es obligatorio'],
-        trim: true
+        trim: true,
+        minlength: [2, 'El proveedor debe tener mínimo 2 caracteres'],
+        maxlength: [40, 'El proveedor debe tener máximo 40 caracteres']
     },
     unidadMedida: {
         type: String,
@@ -93,19 +98,23 @@ const productoSchema = new mongoose.Schema({
     },
     color: {
         type: String,
-        trim: true
+        trim: true,
+        maxlength: [20, 'El color no puede exceder 20 caracteres']
     },
     material: {
         type: String,
-        trim: true
+        trim: true,
+        maxlength: [30, 'El material no puede exceder 30 caracteres']
     },
     tamanio: {
         type: String,
-        trim: true
+        trim: true,
+        maxlength: [15, 'El tamaño no puede exceder 15 caracteres']
     },
     presentacion: {
         type: String,
-        trim: true
+        trim: true,
+        maxlength: [20, 'La presentación no puede exceder 20 caracteres']
     },
     imagen: {
         url: String,
