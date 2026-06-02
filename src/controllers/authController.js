@@ -6,6 +6,8 @@ import generarToken from '../helpers/generarToken.js';
 import Administrador from '../models/Administrador.js';
 import Cliente from '../models/Cliente.js';
 import Vendedor from '../models/Vendedor.js';
+import { v2 as cloudinary } from 'cloudinary';
+import { subirImagenCloudinary } from '../helpers/uploadCloudinary.js';
 
 // Login del sistema
 const login = async (req, res) => {
@@ -345,7 +347,7 @@ const actualizarFotoPerfil = async (req, res) => {
         const { secure_url, public_id } =
             await subirImagenCloudinary(
                 archivo.tempFilePath,
-                'Usuarios'
+                'usuarios'
             );
         imagenUsuario = {
             url: secure_url, public_id
