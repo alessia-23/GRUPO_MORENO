@@ -8,7 +8,6 @@ import Cliente from '../models/Cliente.js';
 import Vendedor from '../models/Vendedor.js';
 
 // Login del sistema
-// Login del sistema
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -300,5 +299,75 @@ const actualizarPassword = async (req, res) => {
         });
     }
 };
+
+// Actualizar foto de perfil
+const actualizarFotoPerfil = async (req, res) => {
+    let imagenUsuario = { url: null, public_id: null };
+    try {
+        const usuarioId = req.usuario.id;
+        // Validar archivo
+        if (!req.files?.imagen) {
+            return res.status(400).json({
+                msg: 'Debe seleccionar una imagen'
+            });
+        }
+        const archivo = req.files.imagen;
+        // Validar formato
+        const formatosPermitidos = [
+            'image/png', 'image/jpeg', 'image/jpg', 'image/webp'
+        ];
+        if (!formatosPermitidos.includes(archivo.mimetype)) {
+            return res.status(400).json({
+                msg: 'Solo se permiten imágenes PNG, JPG, JPEG y WEBP'
+            });
+        }
+        // Validar tamaño máximo (5MB)
+        const pesoMaximo = 5 * 1024 * 1024;
+        if (archivo.size > pesoMaximo) {
+            return res.status(400).json({
+                msg: 'La imagen supera el tamaño máximo permitido de 5MB'
+            });
+        }
+        // Buscar usuario
+        const usuario = await Usuario.findById(usuarioId);
+        if (!usuario) {
+            return res.status(404).json({
+                msg: 'Usuario no encontrado'
+            });
+        }
+        // Eliminar imagen anterior si existe
+        if (usuario.imagen?.public_id) {
+            await cloudinary.uploader.destroy(
+                usuario.imagen.public_id
+            );
+        }
+        // Subir nueva imagen
+        const { secure_url, public_id } =
+            await subirImagenCloudinary(
+                archivo.tempFilePath,
+                'Usuarios'
+            );
+        imagenUsuario = {
+            url: secure_url, public_id
+        };
+        // Actualizar usuario
+        usuario.imagen = imagenUsuario;
+        await usuario.save();
+        return res.status(200).json({
+            msg: 'Foto de perfil actualizada correctamente',
+            imagen: usuario.imagen
+        });
+    } catch (error) {
+        // Si la imagen ya se subió pero algo falló después, se elimina para no dejar basura en Cloudinary
+        if (imagenUsuario.public_id) {
+            await cloudinary.uploader.destroy(imagenUsuario.public_id);
+        }
+        console.log('ERROR ACTUALIZAR FOTO PERFIL:', error);
+        return res.status(500).json({
+            msg: 'Error al actualizar la foto de perfil', error: error.message
+        });
+    }
+};
+
 
 export { login, obtenerPerfil, actualizarPerfil, actualizarPassword, recuperarPassword, cambiarPasswordToken };
