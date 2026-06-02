@@ -46,7 +46,8 @@ const login = async (req, res) => {
                 nombre: usuario.perfilId?.nombre,
                 apellido: usuario.perfilId?.apellido,
                 perfilId: usuario.perfilId?._id,
-                perfilModelo: usuario.perfilModelo
+                perfilModelo: usuario.perfilModelo,
+                imagen: usuario.imagen
             }
         });
     } catch (error) {
