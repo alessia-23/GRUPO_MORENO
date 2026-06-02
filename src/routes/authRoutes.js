@@ -23,6 +23,6 @@ router.put('/perfil', protegerRuta, actualizarPerfil);
 router.put('/actualizar-password', protegerRuta, actualizarPassword);
 
 // Ruta para actualizar la foto de perfil del usuario logueado
-router.put('/actualizar-foto-perfil', protegerRuta, actualizarFotoPerfil);
+router.put('/actualizar-foto', protegerRuta, actualizarFotoPerfil);
 
 export default router;
