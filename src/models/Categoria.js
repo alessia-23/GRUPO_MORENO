@@ -7,12 +7,12 @@ const categoriaSchema = new mongoose.Schema({
         trim: true,
         unique: true,
         minlength: [3, 'El nombre debe tener mínimo 3 caracteres'],
-        maxlength: [50, 'El nombre debe tener máximo 50 caracteres']
+        maxlength: [30, 'El nombre debe tener máximo 30 caracteres']
     },
     descripcion: {
         type: String,
         trim: true,
-        maxlength: [200, 'La descripción debe tener máximo 200 caracteres']
+        maxlength: [70, 'La descripción debe tener máximo 70 caracteres']
     },
     imagen: {
         url: {
