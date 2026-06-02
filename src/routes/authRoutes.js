@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, obtenerPerfil, actualizarPerfil, actualizarPassword, recuperarPassword, cambiarPasswordToken } from '../controllers/authController.js';
+import { login, obtenerPerfil, actualizarPerfil, actualizarPassword, recuperarPassword, cambiarPasswordToken, actualizarFotoPerfil } from '../controllers/authController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 
 const router = Router();
@@ -21,5 +21,8 @@ router.put('/perfil', protegerRuta, actualizarPerfil);
 
 // Ruta para actualizar la contraseña del usuario logueado
 router.put('/actualizar-password', protegerRuta, actualizarPassword);
+
+// Ruta para actualizar la foto de perfil del usuario logueado
+router.put('/actualizar-foto-perfil', protegerRuta, actualizarFotoPerfil);
 
 export default router;

@@ -370,4 +370,4 @@ const actualizarFotoPerfil = async (req, res) => {
 };
 
 
-export { login, obtenerPerfil, actualizarPerfil, actualizarPassword, recuperarPassword, cambiarPasswordToken };
+export { login, obtenerPerfil, actualizarPerfil, actualizarPassword, recuperarPassword, cambiarPasswordToken, actualizarFotoPerfil };
