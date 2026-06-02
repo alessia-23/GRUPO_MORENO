@@ -6,12 +6,16 @@ const clienteSchema = new mongoose.Schema(
         nombre: {
             type: String,
             required: true,
-            trim: true
+            trim: true,
+            minlength: [3, 'El nombre debe tener mínimo 3 caracteres'],
+            maxlength: [15, 'El nombre debe tener máximo 15 caracteres']
         },
         apellido: {
             type: String,
             required: true,
-            trim: true
+            trim: true,
+            minlength: [3, 'El apellido debe tener mínimo 3 caracteres'],
+            maxlength: [20, 'El apellido debe tener máximo 20 caracteres']
         },
 
         // Cédula única
@@ -51,14 +55,18 @@ const clienteSchema = new mongoose.Schema(
         ciudad: {
             type: String,
             trim: true,
-            required:true
+            required: true,
+            minlength: [2, 'La ciudad debe tener mínimo 2 caracteres'],
+            maxlength: [25, 'La ciudad debe tener máximo 25 caracteres']
         },
 
         // Dirección básica
         direccion: {
             type: String,
             required: true,
-            trim: true
+            trim: true,
+            minlength: [5, 'La dirección debe tener mínimo 5 caracteres'],
+            maxlength: [50, 'La dirección debe tener máximo 50 caracteres']
         },
 
         // Teléfono 
