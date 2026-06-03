@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import validarIdentificacion from '../helpers/validarIdentificacion.js';
 
 const clienteSchema = new mongoose.Schema(
     {
@@ -25,10 +26,8 @@ const clienteSchema = new mongoose.Schema(
             unique: true,
             trim: true,
             validate: {
-                validator: function (v) {
-                    return v.length === 10 && !isNaN(v);
-                },
-                message: 'La cédula debe tener exactamente 10 dígitos'
+                validator: validarIdentificacion,
+                message: 'Ingrese una cédula o RUC válido'
             }
         },
 
