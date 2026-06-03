@@ -146,7 +146,7 @@ const pedidoSchema = new mongoose.Schema({
     collection: 'Pedidos'
 });
 // Validar dirección cuando es envío a domicilio
-pedidoSchema.pre('validate', function (next) {
+pedidoSchema.pre('validate', function () {
     if (this.tipoEntrega === 'ENVIO_DOMICILIO') {
         if (!this.direccionEntrega?.ciudad?.trim()) {
             this.invalidate(
@@ -154,6 +154,7 @@ pedidoSchema.pre('validate', function (next) {
                 'La ciudad de entrega es obligatoria'
             );
         }
+
         if (!this.direccionEntrega?.direccion?.trim()) {
             this.invalidate(
                 'direccionEntrega.direccion',
@@ -161,8 +162,6 @@ pedidoSchema.pre('validate', function (next) {
             );
         }
     }
-
-    next();
 });
 
 const Pedido = mongoose.model('Pedido', pedidoSchema);
