@@ -86,7 +86,7 @@ const pedidoSchema = new mongoose.Schema({
                     }
                     return true;
                 },
-                message: 'Ingrese un número celular ecuatoriano válido'
+                message: 'Ingrese un número celular válido'
             }
         }
     },
