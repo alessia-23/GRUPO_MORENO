@@ -85,7 +85,7 @@ const obtenerPedidosPendientes = async (req, res) => {
             });
         }
         const page = Math.max(Number(req.query.page) || 1, 1);
-        const limit = Math.min(Math.max(Number(req.query.limit) || 15, 1), 50);
+        const limit = 15;
         const desde = (page - 1) * limit;
         const filtro = {
             estado: 'PENDIENTE', vendedor: null
