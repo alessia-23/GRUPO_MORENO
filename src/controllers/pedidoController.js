@@ -296,6 +296,114 @@ const obtenerMisPedidos = async (req, res) => {
     }
 };
 
+// Ver detalle de un pedido por ID
+const obtenerDetallePedido = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Validar formato del ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID del pedido no es válido'
+            });
+        }
+     //Excluye los datos peligrosos sin romper el populate anidado
+        const pedido = await Pedido.findById(id)
+            .populate({
+                path: 'cliente',
+                select: '-password -token -createdAt -updatedAt -__v', 
+                populate: {
+                    path: 'perfilId',
+                    select: 'nombre apellido' 
+                }
+            })
+            .populate({
+                path: 'vendedor',
+                select: '-password -token -createdAt -updatedAt -__v', 
+                populate: {
+                    path: 'perfilId',
+                    select: 'nombre apellido' 
+                }
+            })
+            .select(
+                'cliente vendedor tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega estado observaciones createdAt updatedAt'
+            )
+            .lean();
+        if (!pedido) {
+            return res.status(404).json({
+                msg: 'Pedido no encontrado'
+            });
+        }
+        const usuarioId = req.usuario.id;
+        const rol = req.usuario.rol;
+        // Solo clientes y vendedores pueden consultar pedidos
+        if (!['CLIENTE', 'VENDEDOR'].includes(rol)) {
+            return res.status(403).json({
+                msg: 'No tiene permisos para ver pedidos'
+            });
+        }
+        // Cliente dueño del pedido (Soporta populado o ID plano)
+        const esClienteDelPedido =
+            (pedido.cliente?._id || pedido.cliente)?.toString() === usuarioId;
+        // Vendedor que aceptó el pedido (Soporta populado o ID plano)
+        const esVendedorDelPedido =
+            (pedido.vendedor?._id || pedido.vendedor)?.toString() === usuarioId;
+        // Pedido pendiente todavía visible en el muro
+        const estaDisponibleEnMuro =
+            pedido.estado === 'PENDIENTE' && pedido.vendedor === null;
+        // El cliente solo puede ver sus propios pedidos
+        if (rol === 'CLIENTE' && !esClienteDelPedido) {
+            return res.status(403).json({
+                msg: 'No tiene permisos para ver este pedido'
+            });
+        }
+        // El vendedor puede ver pedidos pendientes del muro o pedidos que él aceptó
+        if (rol === 'VENDEDOR' && !esVendedorDelPedido && !estaDisponibleEnMuro) {
+            return res.status(403).json({
+                msg: 'No tiene permisos para ver este pedido'
+            });
+        }
+        const pedidoRespuesta = {
+            _id: pedido._id,
+            cliente: pedido.cliente
+                ? {
+                    usuarioId: pedido.cliente._id,
+                    perfilId: pedido.cliente.perfilId?._id || pedido.cliente.perfilId,
+                    nombre: pedido.cliente.perfilId?.nombre || '',
+                    apellido: pedido.cliente.perfilId?.apellido || ''
+                }
+                : null,
+            vendedor: pedido.vendedor
+                ? {
+                    usuarioId: pedido.vendedor._id,
+                    perfilId: pedido.vendedor.perfilId?._id || pedido.vendedor.perfilId,
+                    nombre: pedido.vendedor.perfilId?.nombre || '',
+                    apellido: pedido.vendedor.perfilId?.apellido || ''
+                }
+                : null,
+            tipoPedido: pedido.tipoPedido,
+            nombrePedido: pedido.nombrePedido,
+            listaCliente: pedido.listaCliente,
+            articulos: pedido.articulos,
+            datosFacturacion: pedido.datosFacturacion,
+            tipoEntrega: pedido.tipoEntrega,
+            direccionEntrega: pedido.direccionEntrega,
+            estado: pedido.estado,
+            observaciones: pedido.observaciones,
+            createdAt: pedido.createdAt,
+            updatedAt: pedido.updatedAt
+        };
+        return res.status(200).json({
+            pedido: pedidoRespuesta
+        });f
+    } catch (error) {
+        console.log('ERROR OBTENER DETALLE PEDIDO:', error);
+        return res.status(500).json({
+            msg: 'Error al obtener el detalle del pedido',
+            error: error.message
+        });
+    }
+};
+
 export {
-    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos
+    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido
 };
