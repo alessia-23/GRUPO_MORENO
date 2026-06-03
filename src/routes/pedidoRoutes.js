@@ -19,7 +19,7 @@ router.put('/aceptar/:id', protegerRuta, soloVendedor, aceptarPedido);
 router.get('/mis-pedidos', protegerRuta, obtenerMisPedidos);
 
 // Vendedor cambia e estado del pedido
-router.put('/:id/estado',protegerRuta,soloVendedor,cambiarEstadoPedido);
+router.put('/estado/:id',protegerRuta,soloVendedor,cambiarEstadoPedido);
 
 // Obtener el detalle de un pedido específico
 router.get('/detalle/:id', protegerRuta, obtenerDetallePedido);
