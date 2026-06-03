@@ -177,20 +177,20 @@ const aceptarPedido = async (req, res) => {
         // Buscar un pedido que siga disponible en el muro
         const pedido = await Pedido.findOneAndUpdate(
             {
-                _id: id,estado: 'PENDIENTE',vendedor: null
+                _id: id, estado: 'PENDIENTE', vendedor: null
             },
             {
                 // El vendedor actual toma el pedido
                 vendedor: req.usuario.id,
                 estado: 'EN_PROCESO'
             },
-            {new: true}
+            { returnDocument: 'after' }
         )
             .populate({
                 path: 'cliente',
                 select: 'email perfilId perfilModelo',
                 populate: {
-                    path: 'perfilId',select: 'nombre apellido'
+                    path: 'perfilId', select: 'nombre apellido'
                 }
             })
             .select(
@@ -203,15 +203,99 @@ const aceptarPedido = async (req, res) => {
             });
         }
         return res.status(200).json({
-            msg: 'Pedido aceptado correctamente',pedido
+            msg: 'Pedido aceptado correctamente', pedido
         });
     } catch (error) {
         console.log('ERROR ACEPTAR PEDIDO:', error);
         return res.status(500).json({
-            msg: 'Error al aceptar el pedido',error: error.message
+            msg: 'Error al aceptar el pedido', error: error.message
         });
     }
 };
+
+// Listar mis pedidos según el rol del usuario autenticado
+const obtenerMisPedidos = async (req, res) => {
+    try {
+        const {
+            page = 1, estado, tipoPedido, tipoEntrega
+        } = req.query;
+        const paginaActual = Math.max(Number(page), 1);
+        const limite = 15;
+        const desde = (paginaActual - 1) * limite;
+        const filtro = {};
+        // Si es cliente, lista los pedidos que creó
+        if (req.usuario.rol === 'CLIENTE') {
+            filtro.cliente = req.usuario.id;
+        }
+        // Si es vendedor, lista los pedidos que tomó del muro
+        else if (req.usuario.rol === 'VENDEDOR') {
+            filtro.vendedor = req.usuario.id;
+        }
+        else {
+            return res.status(403).json({
+                msg: 'No tiene permisos para consultar pedidos'
+            });
+        }
+        if (estado) {
+            if (!['PENDIENTE', 'EN_PROCESO', 'ENTREGADO', 'CANCELADO'].includes(estado)) {
+                return res.status(400).json({
+                    msg: 'El estado del pedido no es válido'
+                });
+            }
+            filtro.estado = estado;
+        }
+        if (tipoPedido) {
+            if (!['FOTO_LISTA', 'CARRITO'].includes(tipoPedido)) {
+                return res.status(400).json({
+                    msg: 'El tipo de pedido no es válido'
+                });
+            }
+            filtro.tipoPedido = tipoPedido;
+        }
+        if (tipoEntrega) {
+            if (!['RETIRO_LOCAL', 'ENVIO_DOMICILIO'].includes(tipoEntrega)) {
+                return res.status(400).json({
+                    msg: 'El tipo de entrega no es válido'
+                });
+            }
+            filtro.tipoEntrega = tipoEntrega;
+        }
+        const [total, pedidos] = await Promise.all([
+            Pedido.countDocuments(filtro),
+            Pedido.find(filtro)
+                .populate({
+                    path: 'cliente', select: 'email perfilId perfilModelo',
+                    populate: {
+                        path: 'perfilId', select: 'nombre apellido'
+                    }
+                })
+                .populate({
+                    path: 'vendedor',
+                    select: 'email perfilId perfilModelo',
+                    populate: {
+                        path: 'perfilId', select: 'nombre apellido'
+                    }
+                })
+                .select(
+                    'cliente vendedor tipoPedido nombrePedido listaCliente articulos tipoEntrega direccionEntrega estado observaciones createdAt updatedAt'
+                )
+                .sort({ updatedAt: -1 })
+                .skip(desde)
+                .limit(limite)
+                .lean()
+        ]);
+        return res.status(200).json({
+            total, paginaActual, totalPaginas: Math.ceil(total / limite),
+            limite, rol: req.usuario.rol, pedidos
+        });
+    } catch (error) {
+        console.log('ERROR LISTAR MIS PEDIDOS:', error);
+        return res.status(500).json({
+            msg: 'Error al listar mis pedidos', error: error.message
+        });
+    }
+};
+
 export {
-    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido
+    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos
 };

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido} from '../controllers/pedidoController.js';
+import { crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos} from '../controllers/pedidoController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloCliente from '../middleware/clienteMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
@@ -14,5 +14,8 @@ router.get('/pendientes', protegerRuta, soloVendedor, obtenerPedidosPendientes);
 
 // Ruta para que el vendedor acepte un pedido del muro
 router.put('/aceptar/:id', protegerRuta, soloVendedor, aceptarPedido);
+
+// Obtener los pedidos de la persona autenticada
+router.get('/mis-pedidos', protegerRuta, obtenerMisPedidos);
 
 export default router;
