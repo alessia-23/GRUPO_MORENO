@@ -306,22 +306,22 @@ const obtenerDetallePedido = async (req, res) => {
                 msg: 'El ID del pedido no es válido'
             });
         }
-     //Excluye los datos peligrosos sin romper el populate anidado
+        //Excluye los datos peligrosos sin romper el populate anidado
         const pedido = await Pedido.findById(id)
             .populate({
                 path: 'cliente',
-                select: '-password -token -createdAt -updatedAt -__v', 
+                select: '-password -token -createdAt -updatedAt -__v',
                 populate: {
                     path: 'perfilId',
-                    select: 'nombre apellido' 
+                    select: 'nombre apellido'
                 }
             })
             .populate({
                 path: 'vendedor',
-                select: '-password -token -createdAt -updatedAt -__v', 
+                select: '-password -token -createdAt -updatedAt -__v',
                 populate: {
                     path: 'perfilId',
-                    select: 'nombre apellido' 
+                    select: 'nombre apellido'
                 }
             })
             .select(
@@ -394,7 +394,7 @@ const obtenerDetallePedido = async (req, res) => {
         };
         return res.status(200).json({
             pedido: pedidoRespuesta
-        });f
+        }); f
     } catch (error) {
         console.log('ERROR OBTENER DETALLE PEDIDO:', error);
         return res.status(500).json({
@@ -404,6 +404,49 @@ const obtenerDetallePedido = async (req, res) => {
     }
 };
 
+// Cambiar estado de un pedido asignado al vendedor
+const cambiarEstadoPedido = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { estado } = req.body;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID del pedido no es válido'
+            });
+        }
+        if (!['ENTREGADO', 'CANCELADO'].includes(estado)) {
+            return res.status(400).json({
+                msg: 'El estado solo puede ser ENTREGADO o CANCELADO'
+            });
+        }
+        const pedido = await Pedido.findById(id);
+        if (!pedido) {
+            return res.status(404).json({
+                msg: 'Pedido no encontrado'
+            });
+        }
+        if (pedido.vendedor?.toString() !== req.usuario.id) {
+            return res.status(403).json({
+                msg: 'No tiene permisos para modificar este pedido'
+            });
+        }
+        if (pedido.estado !== 'EN_PROCESO') {
+            return res.status(400).json({
+                msg: 'Solo se pueden actualizar pedidos en proceso'
+            });
+        }
+        pedido.estado = estado;
+        await pedido.save();
+        return res.status(200).json({
+            msg: `Pedido actualizado correctamente a ${estado}`, pedido
+        });
+    } catch (error) {
+        console.log('ERROR CAMBIAR ESTADO PEDIDO:', error);
+        return res.status(500).json({
+            msg: 'Error al cambiar el estado del pedido', error: error.message
+        });
+    }
+};
 export {
-    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido
+    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido
 };
