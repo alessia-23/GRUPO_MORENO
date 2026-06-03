@@ -2,19 +2,24 @@ import mongoose from 'mongoose';
 import validarIdentificacion from '../helpers/validarIdentificacion.js';
 
 const pedidoSchema = new mongoose.Schema({
-    // Cliente que creó el pedido
     cliente: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
         required: [true, 'El cliente es obligatorio']
     },
-    // Vendedor que toma el pedido
+
     vendedor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
         default: null
     },
-    // Nombre visible del pedido
+
+    tipoPedido: {
+        type: String,
+        enum: ['FOTO_LISTA', 'CARRITO'],
+        required: [true, 'El tipo de pedido es obligatorio']
+    },
+
     nombrePedido: {
         type: String,
         required: [true, 'El nombre del pedido es obligatorio'],
@@ -22,20 +27,51 @@ const pedidoSchema = new mongoose.Schema({
         minlength: [3, 'El nombre debe tener mínimo 3 caracteres'],
         maxlength: [60, 'El nombre no puede exceder los 60 caracteres']
     },
-    // Imagen de la lista enviada por el cliente
+
     listaCliente: {
         url: {
             type: String,
-            required: [true, 'La imagen de la lista es obligatoria'],
-            trim: true
+            trim: true,
+            default: null
         },
         public_id: {
             type: String,
-            required: [true, 'El public_id de la imagen es obligatorio'],
-            trim: true
+            trim: true,
+            default: null
         }
     },
-    // Datos para facturación
+
+    articulos: [
+        {
+            producto: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Producto'
+            },
+
+            nombreProducto: {
+                type: String,
+                trim: true
+            },
+
+            color: {
+                type: String,
+                trim: true,
+                default: ''
+            },
+
+            tamanio: {
+                type: String,
+                trim: true,
+                default: ''
+            },
+
+            cantidad: {
+                type: Number,
+                min: [1, 'La cantidad mínima es 1']
+            }
+        }
+    ],
+
     datosFacturacion: {
         nombreCompleto: {
             type: String,
@@ -50,6 +86,7 @@ const pedidoSchema = new mongoose.Schema({
                 message: 'El nombre solo puede contener letras'
             }
         },
+
         identificacion: {
             type: String,
             required: [true, 'La cédula o RUC es obligatorio'],
@@ -59,6 +96,7 @@ const pedidoSchema = new mongoose.Schema({
                 message: 'Ingrese una cédula o RUC válido'
             }
         },
+
         correo: {
             type: String,
             required: [true, 'El correo electrónico es obligatorio'],
@@ -70,33 +108,26 @@ const pedidoSchema = new mongoose.Schema({
                 'Ingrese un correo válido'
             ]
         },
+
         telefono: {
             type: String,
             required: [true, 'El teléfono es obligatorio'],
             trim: true,
             validate: {
                 validator: function (v) {
-                    // Debe empezar con 09 y tener 10 dígitos
-                    if (!/^09\d{8}$/.test(v)) {
-                        return false;
-                    }
-                    // Evita números repetidos 
-                    if (/^(\d)\1{9}$/.test(v)) {
-                        return false;
-                    }
-                    return true;
+                    return /^09\d{8}$/.test(v);
                 },
-                message: 'Ingrese un número celular válido'
+                message: 'Ingrese un número celular ecuatoriano válido'
             }
         }
     },
-    // Tipo de entrega seleccionado por el cliente
+
     tipoEntrega: {
         type: String,
         enum: ['RETIRO_LOCAL', 'ENVIO_DOMICILIO'],
         required: [true, 'El tipo de entrega es obligatorio']
     },
-    // Solo aplica cuando es envío a domicilio
+
     direccionEntrega: {
         ciudad: {
             type: String,
@@ -110,11 +141,13 @@ const pedidoSchema = new mongoose.Schema({
                 message: 'La ciudad solo puede contener letras'
             }
         },
+
         direccion: {
             type: String,
             trim: true,
             maxlength: [80, 'La dirección no puede exceder los 80 caracteres']
         },
+
         referencia: {
             type: String,
             trim: true,
@@ -122,7 +155,7 @@ const pedidoSchema = new mongoose.Schema({
             default: ''
         }
     },
-    // Estado operativo del pedido
+
     estado: {
         type: String,
         enum: [
@@ -133,7 +166,7 @@ const pedidoSchema = new mongoose.Schema({
         ],
         default: 'PENDIENTE'
     },
-    // Comentarios adicionales del cliente
+
     observaciones: {
         type: String,
         trim: true,
@@ -145,7 +178,7 @@ const pedidoSchema = new mongoose.Schema({
     versionKey: false,
     collection: 'Pedidos'
 });
-// Validar dirección cuando es envío a domicilio
+
 pedidoSchema.pre('validate', function () {
     if (this.tipoEntrega === 'ENVIO_DOMICILIO') {
         if (!this.direccionEntrega?.ciudad?.trim()) {
@@ -161,6 +194,34 @@ pedidoSchema.pre('validate', function () {
                 'La dirección de entrega es obligatoria'
             );
         }
+    }
+
+    if (this.tipoPedido === 'FOTO_LISTA') {
+        if (
+            !this.listaCliente?.url?.trim() ||
+            !this.listaCliente?.public_id?.trim()
+        ) {
+            this.invalidate(
+                'listaCliente.url',
+                'La imagen de la lista es obligatoria para este tipo de pedido'
+            );
+        }
+
+        this.articulos = [];
+    }
+
+    if (this.tipoPedido === 'CARRITO') {
+        if (!this.articulos || this.articulos.length === 0) {
+            this.invalidate(
+                'articulos',
+                'Un pedido por carrito debe contener al menos un artículo'
+            );
+        }
+
+        this.listaCliente = {
+            url: null,
+            public_id: null
+        };
     }
 });
 
