@@ -1,156 +1,85 @@
 import mongoose from 'mongoose';
-import { calcularTotales } from '../helpers/calcularTotal.js';
-
-const articuloSchema = new mongoose.Schema({
-    producto: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Producto',
-        required: [true, 'El producto es obligatorio']
-    },
-
-    cantidad: {
-        type: Number,
-        required: [true, 'La cantidad es obligatoria'],
-        min: [1, 'La cantidad mínima es 1']
-    },
-
-    precioUnitario: {
-        type: Number,
-        required: [true, 'El precio unitario es obligatorio'],
-        min: [0, 'El precio no puede ser negativo']
-    },
-
-    ivaRate: {
-        type: Number,
-        default: 0.15,
-        min: [0, 'El IVA no puede ser negativo']
-    },
-
-    subtotal: {
-        type: Number,
-        default: 0
-    },
-
-    iva: {
-        type: Number,
-        default: 0
-    },
-
-    total: {
-        type: Number,
-        default: 0
-    }
-}, {
-    _id: false
-});
 
 const pedidoSchema = new mongoose.Schema({
+    // Usuario cliente que creó el pedido. No se envía desde el frontend se toma desde el token
     cliente: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
         required: [true, 'El cliente es obligatorio']
     },
-
+    // Vendedor que acepta el pedido inicia en null para que aparezca en el muro de pedidos pendientes.
     vendedor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
         default: null
     },
-
-    articulos: {
-        type: [articuloSchema],
-        required: [true, 'Los artículos son obligatorios'],
-        validate: {
-            validator: function (articulos) {
-                return articulos.length > 0;
-            },
-            message: 'El pedido debe tener al menos un producto'
-        }
-    },
-
-    comprobanteDigital: {
+    // Imagen de la lista enviada por el cliente.
+    listaCliente: {
         url: {
             type: String,
-            default: null
+            required: [true, 'La imagen de la lista es obligatoria'],
+            trim: true
         },
         public_id: {
             type: String,
-            default: null
+            required: [true, 'El public_id de la imagen es obligatorio'],
+            trim: true
         }
     },
-
-    subtotal: {
-        type: Number,
-        default: 0,
-        min: [0, 'El subtotal no puede ser negativo']
-    },
-
-    iva: {
-        type: Number,
-        default: 0,
-        min: [0, 'El IVA no puede ser negativo']
-    },
-
-    total: {
-        type: Number,
-        default: 0,
-        min: [0, 'El total no puede ser negativo']
-    },
-
+    direccionEntrega: {
+        ciudad: {
+            type: String,
+            required: [true, 'La ciudad de entrega es obligatoria'],
+            trim: true,
+            minlength: [2, 'La ciudad debe tener mínimo 2 caracteres'],
+            maxlength: [25, 'La ciudad debe tener máximo 25 caracteres']
+        },
+        direccion: {
+            type: String,
+            required: [true, 'La dirección de entrega es obligatoria'],
+            trim: true,
+            minlength: [5, 'La dirección debe tener mínimo 5 caracteres'],
+            maxlength: [80, 'La dirección debe tener máximo 80 caracteres']
+        },
+        referencia: {
+            type: String,
+            trim: true,
+            maxlength: [100, 'La referencia no puede exceder los 100 caracteres'],
+            default: ''
+        },
+        telefono: {
+            type: String,
+            required: [true, 'El teléfono de contacto es obligatorio'],
+            trim: true,
+            validate: {
+                validator: function (v) {
+                    return v.length === 10 && !isNaN(v);
+                },
+                message: 'El teléfono debe tener exactamente 10 dígitos'
+            }
+        }
+    }, 
     estado: {
         type: String,
         enum: [
-            'PENDIENTE',
-            'EN_PROCESO',
-            'LISTO_RETIRO',
-            'ENTREGADO',
-            'CANCELADO'
+            'PENDIENTE', //aparece en el muro.
+            'EN_PROCESO', //un vendedor lo aceptó.
+            'ENTREGADO', //el pedido fue completado.
+            'CANCELADO' //el cliente canceló el pedido o el vendedor lo canceló por alguna razón.
         ],
         default: 'PENDIENTE'
     },
-
-    metodoPago: {
-        type: String,
-        enum: ['EFECTIVO', 'TRANSFERENCIA', 'PENDIENTE_PAGO'],
-        default: 'PENDIENTE_PAGO'
-    },
-    estadoPago: {
-        type: String,
-        enum: ['PENDIENTE', 'PAGADO', 'RECHAZADO'],
-        default: 'PENDIENTE'
-    },
-
-    referenciaTransaccion: {
-        type: String,
-        default: null,
-        trim: true
-    },
-
-    fechaPago: {
-        type: Date,
-        default: null
-    },
-
+    // Observaciones escritas por el cliente.
     observaciones: {
         type: String,
         trim: true,
+        maxlength: [300, 'La observación no puede exceder los 300 caracteres'],
         default: ''
     }
-
 }, {
     timestamps: true,
     versionKey: false,
     collection: 'Pedidos'
-});
-
-// Calcular subtotal, IVA y total antes de guardar
-pedidoSchema.pre('save', function () {
-    const resultado = calcularTotales(this.articulos);
-
-    this.articulos = resultado.itemsCalculados;
-    this.subtotal = resultado.subtotal;
-    this.iva = resultado.iva;
-    this.total = resultado.total;
 });
 
 const Pedido = mongoose.model('Pedido', pedidoSchema);
