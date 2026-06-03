@@ -1,6 +1,7 @@
 import Pedido from '../models/Pedido.js';
 import { subirImagenCloudinary } from '../helpers/uploadCloudinary.js';
 import { v2 as cloudinary } from 'cloudinary';
+import mongoose from 'mongoose';
 
 // Crear pedido por foto/lista enviada por el cliente
 const crearPedidoPorFoto = async (req, res) => {
@@ -167,41 +168,47 @@ const obtenerPedidosPendientes = async (req, res) => {
 const aceptarPedido = async (req, res) => {
     try {
         const { id } = req.params;
-        // Se busca un pedido que siga disponible en el muro
+        // Validar que el ID tenga formato correcto de MongoDB
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID del pedido no es válido'
+            });
+        }
+        // Buscar un pedido que siga disponible en el muro
         const pedido = await Pedido.findOneAndUpdate(
             {
-                _id: id,
-                estado: 'PENDIENTE',
-                vendedor: null
+                _id: id,estado: 'PENDIENTE',vendedor: null
             },
             {
                 // El vendedor actual toma el pedido
-                vendedor: req.usuario.id, estado: 'EN_PROCESO'
+                vendedor: req.usuario.id,
+                estado: 'EN_PROCESO'
             },
-            {
-                new: true
-            }
+            {new: true}
         )
             .populate({
                 path: 'cliente',
                 select: 'email perfilId perfilModelo',
                 populate: {
-                    path: 'perfilId', select: 'nombre apellido'
+                    path: 'perfilId',select: 'nombre apellido'
                 }
-            });
-        // Si no existe o alguien más ya lo tomó
+            })
+            .select(
+                'cliente vendedor tipoPedido nombrePedido listaCliente articulos tipoEntrega direccionEntrega estado observaciones createdAt updatedAt'
+            );
+        // Si no existe, ya fue tomado, cancelado o no está pendiente
         if (!pedido) {
             return res.status(400).json({
                 msg: 'El pedido ya fue tomado, cancelado o no existe'
             });
         }
         return res.status(200).json({
-            msg: 'Pedido aceptado correctamente', pedido
+            msg: 'Pedido aceptado correctamente',pedido
         });
     } catch (error) {
         console.log('ERROR ACEPTAR PEDIDO:', error);
         return res.status(500).json({
-            msg: 'Error al aceptar el pedido', error: error.message
+            msg: 'Error al aceptar el pedido',error: error.message
         });
     }
 };
