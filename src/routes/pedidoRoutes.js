@@ -1,10 +1,8 @@
 import { Router } from 'express';
-import { crearPedido, obtenerPedidosPendientes} from '../controllers/pedidoController.js';
+import { crearPedido, obtenerPedidosPendientes, aceptarPedido} from '../controllers/pedidoController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloCliente from '../middleware/clienteMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
-import soloAdmin from '../middleware/adminMiddleware.js';
-
 
 const router = Router();
 
@@ -13,5 +11,8 @@ router.post('/crear', protegerRuta,soloCliente, crearPedido);
 
 // Rutas para listar pedidos pendientes 
 router.get('/pendientes', protegerRuta, soloVendedor, obtenerPedidosPendientes);
+
+// Ruta para que el vendedor acepte un pedido del muro
+router.put('/aceptar/:id', protegerRuta, soloVendedor, aceptarPedido);
 
 export default router;

@@ -7,11 +7,6 @@ const crearPedido = async (req, res) => {
     let imagenPedido = { url: null, public_id: null };
     try {
         const clienteId = req.usuario.id;
-        if (req.usuario.rol !== 'CLIENTE') {
-            return res.status(403).json({
-                msg: 'Solo los clientes pueden crear pedidos'
-            });
-        }
         const { ciudad, direccion, referencia, telefono, observaciones
         } = req.body;
         if (!req.files?.imagen) {
@@ -74,16 +69,9 @@ const crearPedido = async (req, res) => {
     }
 };
 
-
 // Listar pedidos pendientes
 const obtenerPedidosPendientes = async (req, res) => {
     try {
-        // Solo vendedores pueden ver el muro
-        if (req.usuario.rol !== 'VENDEDOR') {
-            return res.status(403).json({
-                msg: 'No tienes permisos para ver los pedidos pendientes'
-            });
-        }
         const page = Math.max(Number(req.query.page) || 1, 1);
         const limit = 15;
         const desde = (page - 1) * limit;
@@ -119,6 +107,48 @@ const obtenerPedidosPendientes = async (req, res) => {
     }
 };
 
+// Aceptar un pedido del muro
+const aceptarPedido = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Se busca un pedido que siga disponible en el muro
+        const pedido = await Pedido.findOneAndUpdate(
+            {
+                _id: id,
+                estado: 'PENDIENTE',
+                vendedor: null
+            },
+            {
+                // El vendedor actual toma el pedido
+                vendedor: req.usuario.id, estado: 'EN_PROCESO'
+            },
+            {
+                new: true
+            }
+        )
+            .populate({
+                path: 'cliente',
+                select: 'email perfilId perfilModelo',
+                populate: {
+                    path: 'perfilId', select: 'nombre apellido'
+                }
+            });
+        // Si no existe o alguien más ya lo tomó
+        if (!pedido) {
+            return res.status(400).json({
+                msg: 'El pedido ya fue tomado, cancelado o no existe'
+            });
+        }
+        return res.status(200).json({
+            msg: 'Pedido aceptado correctamente', pedido
+        });
+    } catch (error) {
+        console.log('ERROR ACEPTAR PEDIDO:', error);
+        return res.status(500).json({
+            msg: 'Error al aceptar el pedido', error: error.message
+        });
+    }
+};
 export {
-    crearPedido, obtenerPedidosPendientes
+    crearPedido, obtenerPedidosPendientes, aceptarPedido
 };
