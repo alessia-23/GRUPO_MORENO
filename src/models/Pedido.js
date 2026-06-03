@@ -227,4 +227,5 @@ pedidoSchema.pre('validate', function () {
 
 const Pedido = mongoose.model('Pedido', pedidoSchema);
 
+
 export default Pedido;
