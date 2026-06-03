@@ -15,7 +15,7 @@ router.get('/pendientes', protegerRuta, soloVendedor, obtenerPedidosPendientes);
 // Ruta para que el vendedor acepte un pedido del muro
 router.put('/aceptar/:id', protegerRuta, soloVendedor, aceptarPedido);
 
-// Obtener los pedidos de la persona autenticada
+// Obtener los pedidos de la persona autenticada, con su respectivo rol
 router.get('/mis-pedidos', protegerRuta, obtenerMisPedidos);
 
 export default router;
