@@ -161,7 +161,7 @@ const pedidoSchema = new mongoose.Schema({
         enum: [
             'PENDIENTE',
             'EN_PROCESO',
-            'ENTREGADO',
+            'FINALIZADO',
             'CANCELADO'
         ],
         default: 'PENDIENTE'

@@ -247,7 +247,7 @@ const obtenerMisPedidos = async (req, res) => {
             });
         }
         if (estado) {
-            if (!['PENDIENTE', 'EN_PROCESO', 'ENTREGADO', 'CANCELADO'].includes(estado)) {
+            if (!['PENDIENTE', 'EN_PROCESO', 'FINALIZADO', 'CANCELADO'].includes(estado)) {
                 return res.status(400).json({
                     msg: 'El estado del pedido no es válido'
                 });
@@ -414,7 +414,7 @@ const obtenerDetallePedido = async (req, res) => {
     }
 };
 
-// Cambiar estado de un pedido asignado al vendedor
+// Cambiar estado de un pedido según el rol autenticado
 const cambiarEstadoPedido = async (req, res) => {
     try {
         const { id } = req.params;
@@ -424,9 +424,14 @@ const cambiarEstadoPedido = async (req, res) => {
                 msg: 'El ID del pedido no es válido'
             });
         }
-        if (!['ENTREGADO', 'CANCELADO'].includes(estado)) {
+        if (!estado?.trim()) {
             return res.status(400).json({
-                msg: 'El estado solo puede ser ENTREGADO o CANCELADO'
+                msg: 'El estado es obligatorio'
+            });
+        }
+        if (!['FINALIZADO', 'CANCELADO'].includes(estado)) {
+            return res.status(400).json({
+                msg: 'El estado solo puede ser FINALIZADO o CANCELADO'
             });
         }
         const pedido = await Pedido.findById(id);
@@ -435,20 +440,48 @@ const cambiarEstadoPedido = async (req, res) => {
                 msg: 'Pedido no encontrado'
             });
         }
-        if (pedido.vendedor?.toString() !== req.usuario.id) {
+        const usuarioId = req.usuario.id;
+        const rol = req.usuario.rol;
+        if (!['CLIENTE', 'VENDEDOR'].includes(rol)) {
             return res.status(403).json({
-                msg: 'No tiene permisos para modificar este pedido'
+                msg: 'No tiene permisos para cambiar el estado del pedido'
             });
         }
-        if (pedido.estado !== 'EN_PROCESO') {
-            return res.status(400).json({
-                msg: 'Solo se pueden actualizar pedidos en proceso'
-            });
+        if (rol === 'CLIENTE') {
+            const clienteIdString = (pedido.cliente?._id || pedido.cliente).toString();
+            if (clienteIdString !== usuarioId) {
+                return res.status(403).json({
+                    msg: 'No tiene permisos para cancelar este pedido'
+                });
+            }
+            if (estado !== 'CANCELADO') {
+                return res.status(400).json({
+                    msg: 'El cliente solo puede cancelar pedidos'
+                });
+            }
+            if (pedido.estado !== 'PENDIENTE') {
+                return res.status(400).json({
+                    msg: 'Solo puede cancelar pedidos que aún están pendientes'
+                });
+            }
+        }
+        if (rol === 'VENDEDOR') {
+            const vendedorIdString = (pedido.vendedor?._id || pedido.vendedor)?.toString();
+            if (vendedorIdString !== usuarioId) {
+                return res.status(403).json({
+                    msg: 'No tiene permisos para modificar este pedido'
+                });
+            }
+            if (pedido.estado !== 'EN_PROCESO') {
+                return res.status(400).json({
+                    msg: 'Solo se pueden actualizar pedidos en proceso'
+                });
+            }
         }
         pedido.estado = estado;
         await pedido.save();
         return res.status(200).json({
-            msg: `Pedido actualizado correctamente a ${estado}`, pedido
+            msg: `Pedido correctamente ${estado}`, pedido
         });
     } catch (error) {
         console.log('ERROR CAMBIAR ESTADO PEDIDO:', error);
@@ -457,6 +490,7 @@ const cambiarEstadoPedido = async (req, res) => {
         });
     }
 };
+
 export {
     crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido
 };
