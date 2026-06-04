@@ -1,71 +1,71 @@
-import mongoose from 'mongoose';
 import Pedido from '../models/Pedido.js';
 
 const pedidoSocket = (io) => {
     io.on('connection', (socket) => {
         console.log('Cliente conectado:', socket.id);
 
-        socket.on('pedidos:listar', async (filtros = {}) => {
+        // Sala para vendedores
+        socket.on('vendedores:unirse', () => {
+            socket.join('vendedores');
+            console.log(`Socket ${socket.id} unido a sala vendedores`);
+        });
+
+        // Sala para cliente específico
+        socket.on('cliente:unirse', (clienteId) => {
+            if (clienteId) {
+                socket.join(`cliente:${clienteId}`);
+                console.log(`Socket ${socket.id} unido a sala cliente:${clienteId}`);
+            }
+        });
+
+        // Listar pedidos pendientes del muro
+        socket.on('pedidos:pendientes', async (filtros = {}) => {
             try {
                 const {
                     page = 1,
-                    limit = 10,
-                    estado,
-                    cliente,
-                    vendedor
+                    tipoPedido,
+                    tipoEntrega
                 } = filtros;
 
-                const paginaActual = Number(page);
-                const limite = Number(limit);
-
-                if (paginaActual < 1 || limite < 1) {
-                    return socket.emit('pedidos:error', {
-                        msg: 'La página y el límite deben ser mayores a 0'
-                    });
-                }
-
+                const paginaActual = Math.max(Number(page), 1);
+                const limite = 15;
                 const desde = (paginaActual - 1) * limite;
 
-                const filtro = {};
+                const filtro = {
+                    estado: 'PENDIENTE',
+                    vendedor: null
+                };
 
-                if (estado) {
-                    filtro.estado = estado;
+                if (tipoPedido) {
+                    filtro.tipoPedido = tipoPedido;
                 }
 
-                if (cliente) {
-                    if (!mongoose.Types.ObjectId.isValid(cliente)) {
-                        return socket.emit('pedidos:error', {
-                            msg: 'El ID del cliente no es válido'
-                        });
-                    }
-
-                    filtro.cliente = cliente;
-                }
-
-                if (vendedor) {
-                    if (!mongoose.Types.ObjectId.isValid(vendedor)) {
-                        return socket.emit('pedidos:error', {
-                            msg: 'El ID del vendedor no es válido'
-                        });
-                    }
-
-                    filtro.vendedor = vendedor;
+                if (tipoEntrega) {
+                    filtro.tipoEntrega = tipoEntrega;
                 }
 
                 const [total, pedidos] = await Promise.all([
                     Pedido.countDocuments(filtro),
 
                     Pedido.find(filtro)
-                        .select('cliente vendedor total estado metodoPago estadoPago createdAt')
-                        .populate('cliente', 'nombre email')
-                        .populate('vendedor', 'nombre email')
+                        .populate({
+                            path: 'cliente',
+                            select: 'email perfilId perfilModelo',
+                            populate: {
+                                path: 'perfilId',
+                                select: 'nombre apellido'
+                            }
+                        })
+                        .select(
+                            'cliente tipoPedido nombrePedido listaCliente articulos tipoEntrega direccionEntrega estado observaciones createdAt'
+                        )
                         .sort({ createdAt: -1 })
                         .skip(desde)
                         .limit(limite)
                         .lean()
                 ]);
 
-                socket.emit('pedidos:listado', {
+                socket.emit('pedidos:pendientes:listado', {
                     total,
                     paginaActual,
                     totalPaginas: Math.ceil(total / limite),
@@ -75,7 +75,7 @@ const pedidoSocket = (io) => {
 
             } catch (error) {
                 socket.emit('pedidos:error', {
-                    msg: 'Error al listar pedidos',
+                    msg: 'Error al listar pedidos pendientes',
                     error: error.message
                 });
             }

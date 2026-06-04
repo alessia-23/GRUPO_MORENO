@@ -227,21 +227,35 @@ const aceptarPedido = async (req, res) => {
 const obtenerMisPedidos = async (req, res) => {
     try {
         const {
-            page = 1, estado, tipoPedido, tipoEntrega
+            page = 1,
+            estado,
+            tipoPedido,
+            tipoEntrega,
+            buscar
         } = req.query;
         const paginaActual = Math.max(Number(page), 1);
         const limite = 15;
         const desde = (paginaActual - 1) * limite;
         const filtro = {};
-        // Si es cliente, lista los pedidos que creó
         if (req.usuario.rol === 'CLIENTE') {
             filtro.cliente = req.usuario.id;
-        }
-        // Si es vendedor, lista los pedidos que tomó del muro
-        else if (req.usuario.rol === 'VENDEDOR') {
+            // Cliente busca por nombre/título del pedido
+            if (buscar?.trim()) {
+                filtro.nombrePedido = {
+                    $regex: buscar.trim(),
+                    $options: 'i'
+                };
+            }
+        } else if (req.usuario.rol === 'VENDEDOR') {
             filtro.vendedor = req.usuario.id;
-        }
-        else {
+            // Vendedor busca por nombre del cliente en datos de facturación
+            if (buscar?.trim()) {
+                filtro['datosFacturacion.nombreCompleto'] = {
+                    $regex: buscar.trim(),
+                    $options: 'i'
+                };
+            }
+        } else {
             return res.status(403).json({
                 msg: 'No tiene permisos para consultar pedidos'
             });
@@ -274,20 +288,23 @@ const obtenerMisPedidos = async (req, res) => {
             Pedido.countDocuments(filtro),
             Pedido.find(filtro)
                 .populate({
-                    path: 'cliente', select: 'email perfilId perfilModelo',
+                    path: 'cliente',
+                    select: 'email perfilId perfilModelo',
                     populate: {
-                        path: 'perfilId', select: 'nombre apellido'
+                        path: 'perfilId',
+                        select: 'nombre apellido'
                     }
                 })
                 .populate({
                     path: 'vendedor',
                     select: 'email perfilId perfilModelo',
                     populate: {
-                        path: 'perfilId', select: 'nombre apellido'
+                        path: 'perfilId',
+                        select: 'nombre apellido'
                     }
                 })
                 .select(
-                    'cliente vendedor tipoPedido nombrePedido listaCliente articulos tipoEntrega direccionEntrega estado observaciones createdAt updatedAt'
+                    'cliente vendedor tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega estado observaciones createdAt updatedAt'
                 )
                 .sort({ updatedAt: -1 })
                 .skip(desde)
@@ -295,8 +312,12 @@ const obtenerMisPedidos = async (req, res) => {
                 .lean()
         ]);
         return res.status(200).json({
-            total, paginaActual, totalPaginas: Math.ceil(total / limite),
-            limite, rol: req.usuario.rol, pedidos
+            total,
+            paginaActual,
+            totalPaginas: Math.ceil(total / limite),
+            limite,
+            rol: req.usuario.rol,
+            pedidos
         });
     } catch (error) {
         console.log('ERROR LISTAR MIS PEDIDOS:', error);
