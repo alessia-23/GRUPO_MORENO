@@ -418,7 +418,7 @@ const obtenerDetallePedido = async (req, res) => {
 const cambiarEstadoPedido = async (req, res) => {
     try {
         const { id } = req.params;
-        const { estado } = req.body;
+        const { estado } = req.body || {};
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 msg: 'El ID del pedido no es válido'
