@@ -112,12 +112,12 @@ const carritoSchema = new mongoose.Schema(
     }
 );
 
-carritoSchema.pre('save', function (next) {
+carritoSchema.pre('save', function () {
     if (!this.articulos || this.articulos.length === 0) {
         this.subtotalGeneral = 0;
         this.ivaGeneral = 0;
         this.totalGeneral = 0;
-        return next();
+        return;
     }
 
     const resultado = calcularTotales(this.articulos);
@@ -126,8 +126,6 @@ carritoSchema.pre('save', function (next) {
     this.subtotalGeneral = resultado.subtotalGeneral;
     this.ivaGeneral = resultado.ivaGeneral;
     this.totalGeneral = resultado.totalGeneral;
-
-    next();
 });
 
 const Carrito = mongoose.model('Carrito', carritoSchema);
