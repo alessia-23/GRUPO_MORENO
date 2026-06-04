@@ -112,15 +112,18 @@ const crearPedidoPorFoto = async (req, res) => {
 const obtenerPedidosPendientes = async (req, res) => {
     try {
         const {
-            page = 1, limit = 10, tipoPedido, tipoEntrega
+            page = 1,
+            tipoPedido,
+            tipoEntrega
         } = req.query;
         const paginaActual = Math.max(Number(page), 1);
-        const limite = Math.max(Number(limit), 1);
+        const limite = 15;
         const desde = (paginaActual - 1) * limite;
         const filtro = {
-            estado: 'PENDIENTE', vendedor: null
+            estado: 'PENDIENTE',
+            vendedor: null
         };
-        // Filtro opcional: FOTO_LISTA o CARRITO
+        // Filtrar por tipo de pedido: FOTO_LISTA o CARRITO
         if (tipoPedido) {
             if (!['FOTO_LISTA', 'CARRITO'].includes(tipoPedido)) {
                 return res.status(400).json({
@@ -129,7 +132,7 @@ const obtenerPedidosPendientes = async (req, res) => {
             }
             filtro.tipoPedido = tipoPedido;
         }
-        // Filtro opcional: RETIRO_LOCAL o ENVIO_DOMICILIO
+        // Filtrar por tipo de entrega: RETIRO_LOCAL o ENVIO_DOMICILIO
         if (tipoEntrega) {
             if (!['RETIRO_LOCAL', 'ENVIO_DOMICILIO'].includes(tipoEntrega)) {
                 return res.status(400).json({
@@ -142,18 +145,25 @@ const obtenerPedidosPendientes = async (req, res) => {
             Pedido.countDocuments(filtro),
             Pedido.find(filtro)
                 .populate({
-                    path: 'cliente', select: 'email perfilId perfilModelo',
+                    path: 'cliente',
+                    select: 'email perfilId perfilModelo',
                     populate: {
-                        path: 'perfilId', select: 'nombre apellido'
+                        path: 'perfilId',
+                        select: 'nombre apellido'
                     }
                 })
                 .select(
                     'cliente tipoPedido nombrePedido listaCliente articulos tipoEntrega direccionEntrega estado observaciones createdAt'
                 )
-                .sort({ createdAt: -1 }).skip(desde).limit(limite).lean()
+                .sort({ createdAt: -1 })
+                .skip(desde)
+                .limit(limite)
+                .lean()
         ]);
         return res.status(200).json({
-            total, paginaActual, totalPaginas: Math.ceil(total / limite),
+            total,
+            paginaActual,
+            totalPaginas: Math.ceil(total / limite),
             limite, pedidos
         });
     } catch (error) {
@@ -394,7 +404,7 @@ const obtenerDetallePedido = async (req, res) => {
         };
         return res.status(200).json({
             pedido: pedidoRespuesta
-        }); f
+        });
     } catch (error) {
         console.log('ERROR OBTENER DETALLE PEDIDO:', error);
         return res.status(500).json({
