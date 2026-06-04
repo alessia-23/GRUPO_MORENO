@@ -481,7 +481,7 @@ const cambiarEstadoPedido = async (req, res) => {
         pedido.estado = estado;
         await pedido.save();
         return res.status(200).json({
-            msg: `Pedido correctamente ${estado}`, pedido
+            msg: `Pedido correctamente ${estado}`
         });
     } catch (error) {
         console.log('ERROR CAMBIAR ESTADO PEDIDO:', error);
