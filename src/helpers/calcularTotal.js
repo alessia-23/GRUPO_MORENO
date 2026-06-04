@@ -1,41 +1,34 @@
-// Redondear números decimales a 2 dígitos
-const redondear = (valor) => {
-    return Number(valor.toFixed(2));
+// Redondear números decimales a 2 dígitos de forma segura
+const redondear = (valor = 0) => {
+    return Number(Number(valor || 0).toFixed(2));
 };
 
-// Calcular subtotal, IVA y total del pedido
+// Calcular subtotal, IVA y total general del carrito
 const calcularTotales = (items = []) => {
-    let subtotal = 0;
-    let iva = 0;
+    let subtotalGeneral = 0;
+    let ivaGeneral = 0;
 
     const itemsCalculados = items.map((item) => {
-        const cantidad = Number(item.cantidad);
-        const precio = Number(item.precioUnitario);
-
-        const porcentajeIva =
-            item.ivaRate !== undefined
-                ? Number(item.ivaRate)
-                : 0.15;
+        const cantidad = Number(item.cantidad || 1);
+        const precio = Number(item.precioUnitario || 0);
+        const porcentajeIva = Number(item.porcentajeIva || 0);
 
         const subtotalProducto = cantidad * precio;
         const ivaProducto = subtotalProducto * porcentajeIva;
-        const totalProducto = subtotalProducto + ivaProducto;
 
-        subtotal += subtotalProducto;
-        iva += ivaProducto;
+        subtotalGeneral += subtotalProducto;
+        ivaGeneral += ivaProducto;
 
         item.subtotal = redondear(subtotalProducto);
-        item.iva = redondear(ivaProducto);
-        item.total = redondear(totalProducto);
 
         return item;
     });
 
     return {
         itemsCalculados,
-        subtotal: redondear(subtotal),
-        iva: redondear(iva),
-        total: redondear(subtotal + iva)
+        subtotalGeneral: redondear(subtotalGeneral),
+        ivaGeneral: redondear(ivaGeneral),
+        totalGeneral: redondear(subtotalGeneral + ivaGeneral)
     };
 };
 
