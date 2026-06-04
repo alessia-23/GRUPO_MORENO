@@ -11,7 +11,7 @@ import categoriaRoutes from './routes/categoriaRoutes.js';
 import vendedorRoutes from './routes/vendedorRoutes.js';
 import productoRoutes from './routes/productoRoutes.js';
 import pedidoRoutes from './routes/pedidoRoutes.js';
-
+import carritoRoutes from './routes/carritoRoutes.js';
 
 // Inicialización
 const app = express();
@@ -48,6 +48,7 @@ app.use('/api/vendedores', vendedorRoutes); // Rutas de vendedores
 app.use('/api/categorias', categoriaRoutes); // Rutas de categorías
 app.use('/api/productos', productoRoutes); // Ruta para productos
 app.use('/api/pedidos', pedidoRoutes); // Ruta para pedidos
+app.use('/api/carrito', carritoRoutes); // Ruta para carrito de compras
 
 // Exportar app
 export default app;
