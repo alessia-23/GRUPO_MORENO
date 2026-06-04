@@ -57,13 +57,23 @@ const carritoSchema = new mongoose.Schema(
                     type: Number,
                     required: [true, 'La cantidad es obligatoria'],
                     min: [1, 'La cantidad mínima es 1'],
-                    default: 1
+                    default: 1,
+                    validate: {
+                        validator: Number.isInteger,
+                        message: 'La cantidad debe ser un número entero'
+                    }
                 },
 
                 precioUnitario: {
                     type: Number,
-                    required: true,
-                    min: [0, 'El precio unitario no puede ser negativo']
+                    required: [true, 'El precio unitario es obligatorio'],
+                    min: [0, 'El precio unitario no puede ser negativo'],
+                    validate: {
+                        validator: function (valor) {
+                            return typeof valor === 'number' && !Number.isNaN(valor);
+                        },
+                        message: 'El precio unitario debe ser un número válido'
+                    }
                 },
 
                 tipoPrecio: {
@@ -80,24 +90,28 @@ const carritoSchema = new mongoose.Schema(
 
                 subtotal: {
                     type: Number,
-                    default: 0
+                    default: 0,
+                    min: [0, 'El subtotal no puede ser negativo']
                 }
             }
         ],
 
         subtotalGeneral: {
             type: Number,
-            default: 0
+            default: 0,
+            min: [0, 'El subtotal general no puede ser negativo']
         },
 
         ivaGeneral: {
             type: Number,
-            default: 0
+            default: 0,
+            min: [0, 'El IVA general no puede ser negativo']
         },
 
         totalGeneral: {
             type: Number,
-            default: 0
+            default: 0,
+            min: [0, 'El total general no puede ser negativo']
         },
 
         estado: {

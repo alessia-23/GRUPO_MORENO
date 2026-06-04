@@ -11,11 +11,32 @@ const crearProducto = async (req, res) => {
         const { nombre, descripcion, codigo, codigoBarras, precioCompra, precioVenta, tipoIVA, precioMayorista, cantidadMinimaMayorista, stock,
             stockMinimo, marca, proveedor, unidadMedida, color, material, tamanio, presentacion, destacado, categoria } = req.body;
         // Validar campos obligatorios
-        if (!nombre?.trim() || !codigo?.trim() || !precioCompra || !precioVenta || stock === undefined || stockMinimo === undefined || !marca?.trim() ||
-            !proveedor?.trim() || !unidadMedida?.trim() || !categoria?.trim()
+        if (
+            !nombre?.trim() ||
+            !codigo?.trim() ||
+            !precioCompra ||
+            !precioVenta ||
+            stock === undefined ||
+            stockMinimo === undefined ||
+            !marca?.trim() ||
+            !proveedor?.trim() ||
+            !unidadMedida?.trim() ||
+            !categoria?.trim()
         ) {
             return res.status(400).json({
                 msg: 'Todos los campos obligatorios deben ser completados'
+            });
+        }
+
+        // Validar números
+        if (
+            isNaN(Number(precioCompra)) ||
+            isNaN(Number(precioVenta)) ||
+            isNaN(Number(stock)) ||
+            isNaN(Number(stockMinimo))
+        ) {
+            return res.status(400).json({
+                msg: 'Los precios y stocks deben ser números válidos'
             });
         }
         // Validar código interno duplicado

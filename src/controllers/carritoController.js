@@ -141,7 +141,88 @@ const agregarAlCarrito = async (req, res) => {
     }
 };
 
+// Actualizar cantidad
+const actualizarCantidadCarrito = async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id;
+        const { id } = req.params;
+        const { cantidad } = req.body;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID del producto no es válido'
+            });
+        }
+        const nuevaCantidad = Number(cantidad);
+        if (!Number.isInteger(nuevaCantidad) || nuevaCantidad < 1) {
+            return res.status(400).json({
+                msg: 'La cantidad debe ser un número entero mayor o igual a 1'
+            });
+        }
+        const producto = await Producto.findOne({
+            _id: id,
+            estado: true
+        });
+        if (!producto) {
+            return res.status(404).json({
+                msg: 'El producto no existe o no está disponible'
+            });
+        }
+        if (producto.stock < nuevaCantidad) {
+            return res.status(400).json({
+                msg: `Stock insuficiente. Solo hay ${producto.stock} unidades disponibles`
+            });
+        }
+        const carrito = await Carrito.findOne({
+            cliente: usuarioId,
+            estado: true
+        });
+        if (!carrito) {
+            return res.status(404).json({
+                msg: 'El carrito está vacío'
+            });
+        }
+        const articulo = carrito.articulos.find(
+            (item) => item.producto.toString() === id
+        );
+        if (!articulo) {
+            return res.status(404).json({
+                msg: 'El producto no está en el carrito'
+            });
+        }
+        let precioUnitario = producto.precioVenta;
+        let tipoPrecio = 'NORMAL';
+        if (
+            producto.precioMayorista &&
+            producto.cantidadMinimaMayorista &&
+            nuevaCantidad >= producto.cantidadMinimaMayorista
+        ) {
+            precioUnitario = producto.precioMayorista;
+            tipoPrecio = 'MAYORISTA';
+        }
+        articulo.cantidad = nuevaCantidad;
+        articulo.precioUnitario = precioUnitario;
+        articulo.tipoPrecio = tipoPrecio;
+        articulo.porcentajeIva = producto.tipoIVA === '15%' ? 0.15 : 0;
+        await carrito.save();
+        return res.status(200).json({
+            msg: 'Cantidad actualizada correctamente',
+            carrito: {
+                _id: carrito._id,
+                cliente: carrito.cliente,
+                articulos: carrito.articulos,
+                subtotalGeneral: carrito.subtotalGeneral,
+                ivaGeneral: carrito.ivaGeneral,
+                totalGeneral: carrito.totalGeneral
+            }
+        });
+    } catch (error) {
+        console.log('Error al actualizar cantidad:', error);
+        return res.status(500).json({
+            msg: 'Error al actualizar cantidad', error: error.message
+        });
+    }
+};
+
 export {
-    obtenerCarrito,
-    agregarAlCarrito
+    obtenerCarrito, agregarAlCarrito, actualizarCantidadCarrito
 };
