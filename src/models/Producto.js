@@ -18,7 +18,9 @@ const productoSchema = new mongoose.Schema({
         required: [true, 'El código interno del producto es obligatorio'],
         unique: true,
         trim: true,
-        uppercase: true
+        uppercase: true,
+        minlength: [3, 'El código debe tener mínimo 3 caracteres'],
+        maxlength: [10, 'El código no puede exceder los 10 caracteres']
     },
     codigoBarras: {
         type: String,
