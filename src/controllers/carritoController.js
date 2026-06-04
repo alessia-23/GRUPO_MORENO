@@ -18,7 +18,7 @@ const obtenerCarrito = async (req, res) => {
                     articulos: [],
                     subtotalGeneral: 0,
                     ivaGeneral: 0,
-                    totalGeneral: 0, 
+                    totalGeneral: 0,
                     estado: true
                 }
             });
@@ -39,11 +39,7 @@ const obtenerCarrito = async (req, res) => {
 const agregarAlCarrito = async (req, res) => {
     try {
         const usuarioId = req.usuario.id;
-        const {
-            productoId,
-            cantidad = 1,
-            color
-        } = req.body;
+        const { productoId, cantidad = 1 } = req.body;
         if (!productoId) {
             return res.status(400).json({
                 msg: 'El producto es obligatorio'
@@ -69,32 +65,6 @@ const agregarAlCarrito = async (req, res) => {
                 msg: 'El producto no existe o no está disponible'
             });
         }
-        const coloresDisponibles = Array.isArray(producto.color)
-            ? producto.color
-            : [];
-        let colorSeleccionado = '';
-        if (coloresDisponibles.length > 0) {
-            if (!color?.trim()) {
-                return res.status(400).json({
-                    msg: 'Debe seleccionar un color para este producto'
-                });
-            }
-            colorSeleccionado = color.trim();
-            const colorExiste = coloresDisponibles.some(
-                (colorProducto) =>
-                    colorProducto.toLowerCase() === colorSeleccionado.toLowerCase()
-            );
-            if (!colorExiste) {
-                return res.status(400).json({
-                    msg: 'El color seleccionado no está disponible para este producto'
-                });
-            }
-            const colorReal = coloresDisponibles.find(
-                (colorProducto) =>
-                    colorProducto.toLowerCase() === colorSeleccionado.toLowerCase()
-            );
-            colorSeleccionado = colorReal;
-        }
         let carrito = await Carrito.findOne({
             cliente: usuarioId,
             estado: true
@@ -106,9 +76,7 @@ const agregarAlCarrito = async (req, res) => {
             });
         }
         const indiceArticulo = carrito.articulos.findIndex(
-            (item) =>
-                item.producto.toString() === productoId &&
-                item.color === colorSeleccionado
+            (item) => item.producto.toString() === productoId
         );
         let cantidadFinal = cantidadAgregar;
         if (indiceArticulo !== -1) {
@@ -145,7 +113,7 @@ const agregarAlCarrito = async (req, res) => {
                     url: producto.imagen?.url || null,
                     public_id: producto.imagen?.public_id || null
                 },
-                color: colorSeleccionado,
+                color: producto.color || '',
                 tamanio: producto.tamanio || '',
                 cantidad: cantidadFinal,
                 precioUnitario,
