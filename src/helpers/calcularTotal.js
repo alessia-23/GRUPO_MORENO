@@ -9,7 +9,7 @@ const calcularTotales = (items = []) => {
     let ivaGeneral = 0;
 
     const itemsCalculados = items.map((item) => {
-        const cantidad = Number(item.cantidad || 1);
+        const cantidad = Number(item.cantidad || 0);
         const precio = Number(item.precioUnitario || 0);
         const porcentajeIva = Number(item.porcentajeIva || 0);
 
