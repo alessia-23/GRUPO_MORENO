@@ -153,7 +153,7 @@ const obtenerPedidosPendientes = async (req, res) => {
                     }
                 })
                 .select(
-                    'cliente tipoPedido nombrePedido listaCliente articulos tipoEntrega direccionEntrega estado observaciones createdAt'
+                    'cliente tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega estado observaciones createdAt'
                 )
                 .sort({ createdAt: -1 })
                 .skip(desde)
