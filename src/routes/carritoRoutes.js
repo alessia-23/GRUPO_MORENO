@@ -1,5 +1,5 @@
 import{Router} from 'express';
-import {obtenerCarrito, agregarAlCarrito, actualizarCantidadCarrito, eliminarProductoCarrito} from '../controllers/carritoController.js';
+import {obtenerCarrito, agregarAlCarrito, actualizarCantidadCarrito, eliminarProductoCarrito, vaciarCarrito} from '../controllers/carritoController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloCliente from '../middleware/clienteMiddleware.js';
 
@@ -16,5 +16,8 @@ router.put('/actualizar/:productoId', protegerRuta, soloCliente, actualizarCanti
 
 // Eliminar un producto del carrito del cliente
 router.delete('/eliminar/:productoId', protegerRuta, soloCliente, eliminarProductoCarrito);  // Recordar que el id es del producto no del carrito
+
+// Vaciar el carrito del cliente
+router.delete('/vaciar', protegerRuta, soloCliente, vaciarCarrito);
 
 export default router;

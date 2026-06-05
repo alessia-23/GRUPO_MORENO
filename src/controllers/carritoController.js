@@ -272,6 +272,41 @@ const eliminarProductoCarrito = async (req, res) => {
     }
 };
 
+
+// Vaciar carrito
+const vaciarCarrito = async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id;
+        const carrito = await Carrito.findOne({
+            cliente: usuarioId,
+            estado: true
+        });
+        if (!carrito) {
+            return res.status(404).json({
+                msg: 'El carrito ya está vacío'
+            });
+        }
+        carrito.articulos = [];
+        await carrito.save();
+        return res.status(200).json({
+            msg: 'Carrito vaciado correctamente',
+            carrito: {
+                _id: carrito._id,
+                cliente: carrito.cliente,
+                articulos: carrito.articulos,
+                subtotalGeneral: carrito.subtotalGeneral,
+                ivaGeneral: carrito.ivaGeneral,
+                totalGeneral: carrito.totalGeneral
+            }
+        });
+    } catch (error) {
+        console.log('Error al vaciar carrito:', error);
+        return res.status(500).json({
+            msg: 'Error al vaciar carrito',
+            error: error.message
+        });
+    }
+};
 export {
-    obtenerCarrito, agregarAlCarrito, actualizarCantidadCarrito, eliminarProductoCarrito
+    obtenerCarrito, agregarAlCarrito, actualizarCantidadCarrito, eliminarProductoCarrito, vaciarCarrito
 };
