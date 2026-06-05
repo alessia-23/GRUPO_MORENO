@@ -24,6 +24,7 @@ const crearProducto = async (req, res) => {
             !marca?.trim() ||
             !proveedor?.trim() ||
             !unidadMedida?.trim() ||
+            !tipoIVA?.trim() ||
             !categoria?.trim()
         ) {
             return res.status(400).json({
