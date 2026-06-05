@@ -145,9 +145,9 @@ const agregarAlCarrito = async (req, res) => {
 const actualizarCantidadCarrito = async (req, res) => {
     try {
         const usuarioId = req.usuario.id;
-        const { id } = req.params;
+        const { productoId } = req.params;
         const { cantidad } = req.body;
-        if (!mongoose.Types.ObjectId.isValid(id)) {
+        if (!mongoose.Types.ObjectId.isValid(productoId)) {
             return res.status(400).json({
                 msg: 'El ID del producto no es válido'
             });
@@ -159,7 +159,7 @@ const actualizarCantidadCarrito = async (req, res) => {
             });
         }
         const producto = await Producto.findOne({
-            _id: id,
+            _id: productoId,
             estado: true
         });
         if (!producto) {
@@ -182,7 +182,7 @@ const actualizarCantidadCarrito = async (req, res) => {
             });
         }
         const articulo = carrito.articulos.find(
-            (item) => item.producto.toString() === id
+            (item) => item.producto.toString() === productoId
         );
         if (!articulo) {
             return res.status(404).json({
@@ -223,6 +223,55 @@ const actualizarCantidadCarrito = async (req, res) => {
     }
 };
 
+// Eliminar producto del carrito
+const eliminarProductoCarrito = async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id;
+        const { productoId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(productoId)) {
+            return res.status(400).json({
+                msg: 'El ID del producto no es válido'
+            });
+        }
+        const carrito = await Carrito.findOne({
+            cliente: usuarioId,
+            estado: true
+        });
+        if (!carrito) {
+            return res.status(404).json({
+                msg: 'El carrito está vacío'
+            });
+        }
+        const cantidadAntes = carrito.articulos.length;
+        carrito.articulos = carrito.articulos.filter(
+            (item) => item.producto.toString() !== productoId
+        );
+        if (carrito.articulos.length === cantidadAntes) {
+            return res.status(404).json({
+                msg: 'El producto no está en el carrito'
+            });
+        }
+        await carrito.save();
+        return res.status(200).json({
+            msg: 'Producto eliminado del carrito correctamente',
+            carrito: {
+                _id: carrito._id,
+                cliente: carrito.cliente,
+                articulos: carrito.articulos,
+                subtotalGeneral: carrito.subtotalGeneral,
+                ivaGeneral: carrito.ivaGeneral,
+                totalGeneral: carrito.totalGeneral
+            }
+        });
+    } catch (error) {
+        console.log('Error al eliminar producto del carrito:', error);
+        return res.status(500).json({
+            msg: 'Error al eliminar producto del carrito',
+            error: error.message
+        });
+    }
+};
+
 export {
-    obtenerCarrito, agregarAlCarrito, actualizarCantidadCarrito
+    obtenerCarrito, agregarAlCarrito, actualizarCantidadCarrito, eliminarProductoCarrito
 };
