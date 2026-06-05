@@ -10,6 +10,9 @@ const crearProducto = async (req, res) => {
     try {
         const { nombre, descripcion, codigo, codigoBarras, precioCompra, precioVenta, tipoIVA, precioMayorista, cantidadMinimaMayorista, stock,
             stockMinimo, marca, proveedor, unidadMedida, color, material, tamanio, presentacion, destacado, categoria } = req.body;
+        console.log('BODY RECIBIDO CREAR PRODUCTO:', req.body);
+        console.log('FILES RECIBIDOS CREAR PRODUCTO:', req.files);
+        console.log('BASE DE DATOS USADA:', mongoose.connection.name);
         // Validar campos obligatorios
         if (
             !nombre?.trim() ||
@@ -87,6 +90,13 @@ const crearProducto = async (req, res) => {
             presentacion: presentacion?.trim() || '', destacado: destacado === 'true' || destacado === true, categoria, imagen: imagenProducto
         });
         await nuevoProducto.save();
+        console.log('PRODUCTO GUARDADO CORRECTAMENTE:', {
+            id: nuevoProducto._id,
+            nombre: nuevoProducto.nombre,
+            codigo: nuevoProducto.codigo,
+            base: mongoose.connection.name,
+            coleccion: Producto.collection.name
+        });
         // Convertir a objeto y ocultar fechas
         const productoRespuesta = nuevoProducto.toObject();
         delete productoRespuesta.createdAt;
