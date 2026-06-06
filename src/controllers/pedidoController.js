@@ -8,10 +8,7 @@ const crearPedidoPorFoto = async (req, res) => {
     let imagenPedido = { url: null, public_id: null };
     try {
         const clienteId = req.usuario.id;
-        const {
-            nombrePedido, nombreCompleto, identificacion, correo, telefono, tipoEntrega, ciudad, direccion,
-            referencia, observaciones
-        } = req.body;
+        const { nombrePedido, nombreCompleto, identificacion, correo, telefono, tipoEntrega, direccion, referencia, observaciones } = req.body;
         if (!req.files?.imagen) {
             return res.status(400).json({
                 msg: 'Debe subir la imagen de la lista'
@@ -40,9 +37,9 @@ const crearPedidoPorFoto = async (req, res) => {
             });
         }
         if (tipoEntrega === 'ENVIO_DOMICILIO') {
-            if (!ciudad?.trim() || !direccion?.trim()) {
+            if (!direccion?.trim()) {
                 return res.status(400).json({
-                    msg: 'La ciudad y dirección son obligatorias para envío a domicilio'
+                    msg: 'La dirección es obligatoria para envío a domicilio'
                 });
             }
         }
@@ -79,7 +76,6 @@ const crearPedidoPorFoto = async (req, res) => {
             tipoEntrega,
             direccionEntrega: tipoEntrega === 'ENVIO_DOMICILIO'
                 ? {
-                    ciudad: ciudad.trim(),
                     direccion: direccion.trim(),
                     referencia: referencia?.trim() || ''
                 }

@@ -129,18 +129,6 @@ const pedidoSchema = new mongoose.Schema({
     },
 
     direccionEntrega: {
-        ciudad: {
-            type: String,
-            trim: true,
-            maxlength: [25, 'La ciudad no puede exceder los 25 caracteres'],
-            validate: {
-                validator: function (v) {
-                    if (!v) return true;
-                    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(v);
-                },
-                message: 'La ciudad solo puede contener letras'
-            }
-        },
 
         direccion: {
             type: String,
@@ -181,13 +169,6 @@ const pedidoSchema = new mongoose.Schema({
 
 pedidoSchema.pre('validate', function () {
     if (this.tipoEntrega === 'ENVIO_DOMICILIO') {
-        if (!this.direccionEntrega?.ciudad?.trim()) {
-            this.invalidate(
-                'direccionEntrega.ciudad',
-                'La ciudad de entrega es obligatoria'
-            );
-        }
-
         if (!this.direccionEntrega?.direccion?.trim()) {
             this.invalidate(
                 'direccionEntrega.direccion',
