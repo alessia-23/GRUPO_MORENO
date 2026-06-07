@@ -149,7 +149,7 @@ const obtenerPedidosPendientes = async (req, res) => {
                     }
                 })
                 .select(
-                    'cliente tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega estado observaciones createdAt'
+                    'cliente vendedor tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega metodoPago estadoPago estadoCotizacion resumenPago estado observaciones createdAt updatedAt'
                 )
                 .sort({ createdAt: -1 })
                 .skip(desde)
@@ -200,8 +200,8 @@ const aceptarPedido = async (req, res) => {
                 }
             })
             .select(
-                'cliente vendedor tipoPedido nombrePedido listaCliente articulos tipoEntrega direccionEntrega estado observaciones createdAt updatedAt'
-            );
+                'cliente vendedor tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega metodoPago estadoPago estadoCotizacion resumenPago estado observaciones createdAt updatedAt'
+            )
         // Si no existe, ya fue tomado, cancelado o no está pendiente
         if (!pedido) {
             return res.status(400).json({
@@ -300,7 +300,7 @@ const obtenerMisPedidos = async (req, res) => {
                     }
                 })
                 .select(
-                    'cliente vendedor tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega estado observaciones createdAt updatedAt'
+                    'cliente vendedor tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega metodoPago estadoPago estadoCotizacion resumenPago estado observaciones createdAt updatedAt'
                 )
                 .sort({ updatedAt: -1 })
                 .skip(desde)
@@ -352,7 +352,7 @@ const obtenerDetallePedido = async (req, res) => {
                 }
             })
             .select(
-                'cliente vendedor tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega estado observaciones createdAt updatedAt'
+                'cliente vendedor tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega metodoPago estadoPago estadoCotizacion resumenPago estado observaciones createdAt updatedAt'
             )
             .lean();
         if (!pedido) {
@@ -414,6 +414,10 @@ const obtenerDetallePedido = async (req, res) => {
             datosFacturacion: pedido.datosFacturacion,
             tipoEntrega: pedido.tipoEntrega,
             direccionEntrega: pedido.direccionEntrega,
+            metodoPago: pedido.metodoPago,
+            estadoPago: pedido.estadoPago,
+            estadoCotizacion: pedido.estadoCotizacion,
+            resumenPago: pedido.resumenPago,
             estado: pedido.estado,
             observaciones: pedido.observaciones,
             createdAt: pedido.createdAt,
