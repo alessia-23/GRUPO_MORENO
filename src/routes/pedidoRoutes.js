@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido, crearPedidoDesdeCarrito } from '../controllers/pedidoController.js';
+import { crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido, crearPedidoDesdeCarrito, armarPedidoDesdeFoto } from '../controllers/pedidoController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloCliente from '../middleware/clienteMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
@@ -26,4 +26,8 @@ router.get('/detalle/:id', protegerRuta, obtenerDetallePedido);
 
 // Crear un pedido a partir del carrito
 router.post('/crear-desde-carrito', protegerRuta, soloCliente, crearPedidoDesdeCarrito);
+
+// Armar un pedido a partir de una foto
+router.put('/armar-desde-foto/:id', protegerRuta, soloVendedor, armarPedidoDesdeFoto);
+
 export default router;

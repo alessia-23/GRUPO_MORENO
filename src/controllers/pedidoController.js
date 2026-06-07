@@ -658,6 +658,122 @@ const crearPedidoDesdeCarrito = async (req, res) => {
     }
 };
 
+// Vendedor arma un pedido creado mediante foto
+const armarPedidoDesdeFoto = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { articulos } = req.body;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'ID de pedido no válido'
+            });
+        }
+        if (!Array.isArray(articulos) || articulos.length === 0) {
+            return res.status(400).json({
+                msg: 'Debe enviar al menos un artículo'
+            });
+        }
+        const pedido = await Pedido.findById(id);
+        if (!pedido) {
+            return res.status(404).json({
+                msg: 'Pedido no encontrado'
+            });
+        }
+        if (pedido.tipoPedido !== 'FOTO_LISTA') {
+            return res.status(400).json({
+                msg: 'Solo los pedidos por foto pueden ser armados'
+            });
+        }
+        if (pedido.estado !== 'EN_PROCESO') {
+            return res.status(400).json({
+                msg: 'El pedido debe estar en proceso'
+            });
+        }
+        if (!pedido.vendedor) {
+            return res.status(400).json({
+                msg: 'El pedido aún no tiene vendedor asignado'
+            });
+        }
+        if (pedido.vendedor.toString() !== req.usuario.id) {
+            return res.status(403).json({
+                msg: 'No tiene permisos para modificar este pedido'
+            });
+        }
+        const articulosParaCalcular = [];
+        for (const item of articulos) {
+            const { producto: productoId, cantidad } = item;
+            if (!mongoose.Types.ObjectId.isValid(productoId)) {
+                return res.status(400).json({
+                    msg: `Producto inválido: ${productoId}`
+                });
+            }
+            const producto = await Producto.findOne({
+                _id: productoId,
+                estado: true
+            });
+            if (!producto) {
+                return res.status(404).json({
+                    msg: 'Uno de los productos seleccionados no existe o está inactivo'
+                });
+            }
+            const cantidadNumerica = Number(cantidad);
+
+            if (
+                !cantidadNumerica ||
+                cantidadNumerica < 1 ||
+                !Number.isInteger(cantidadNumerica)
+            ) {
+                return res.status(400).json({
+                    msg: `La cantidad para "${producto.nombre}" debe ser un número entero mayor a cero`
+                });
+            }
+            if (producto.stock < cantidadNumerica) {
+                return res.status(400).json({
+                    msg: `Stock insuficiente para "${producto.nombre}". Disponible: ${producto.stock}`
+                });
+            }
+            const porcentajeIva = producto.tipoIVA === '15%' ? 0.15 : 0;
+            articulosParaCalcular.push({
+                producto: producto._id,
+                nombreProducto: producto.nombre,
+                codigo: producto.codigo,
+                color: producto.color || '',
+                tamanio: producto.tamanio || '',
+                cantidad: cantidadNumerica,
+                precioUnitario: producto.precioVenta,
+                porcentajeIva
+            });
+        }
+        const totalesCalculados = calcularTotales(articulosParaCalcular);
+        pedido.articulos = totalesCalculados.itemsCalculados;
+        pedido.resumenPago.subtotalProductos = totalesCalculados.subtotalGeneral;
+        pedido.resumenPago.ivaProductos = totalesCalculados.ivaGeneral;
+        await pedido.save();
+        return res.status(200).json({
+            msg: 'Pedido armado correctamente desde la foto',
+            pedido: {
+                id: pedido._id,
+                nombrePedido: pedido.nombrePedido,
+                tipoPedido: pedido.tipoPedido,
+                estado: pedido.estado,
+                estadoPago: pedido.estadoPago,
+                tipoEntrega: pedido.tipoEntrega,
+                articulos: pedido.articulos,
+                resumenPago: pedido.resumenPago,
+                updatedAt: pedido.updatedAt
+            }
+        });
+    } catch (error) {
+        console.log('ERROR AL ARMAR PEDIDO DESDE FOTO:', error);
+        return res.status(500).json({
+            msg: 'Error al armar el pedido desde la foto',
+            error: error.message
+        });
+    }
+};
+
+
+
 export {
-    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido, crearPedidoDesdeCarrito
+    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido, crearPedidoDesdeCarrito, armarPedidoDesdeFoto
 };
