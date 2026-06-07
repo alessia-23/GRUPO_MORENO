@@ -28,7 +28,8 @@ const calcularTotales = (items = []) => {
         itemsCalculados,
         subtotalGeneral: redondear(subtotalGeneral),
         ivaGeneral: redondear(ivaGeneral),
-        totalGeneral: redondear(subtotalGeneral + ivaGeneral)
+        costoEnvio: redondear(costoEnvio),
+        totalGeneral: redondear(subtotalGeneral + ivaGeneral + costoEnvio)
     };
 };
 
