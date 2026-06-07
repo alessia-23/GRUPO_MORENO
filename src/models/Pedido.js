@@ -50,24 +50,59 @@ const pedidoSchema = new mongoose.Schema({
 
             nombreProducto: {
                 type: String,
-                trim: true
+                trim: true,
+                maxlength: [60, 'El nombre del producto no puede exceder los 60 caracteres']
+            },
+
+            codigo: {
+                type: String,
+                trim: true,
+                uppercase: true,
+                maxlength: [15, 'El código no puede exceder los 15 caracteres']
             },
 
             color: {
                 type: String,
                 trim: true,
-                default: ''
+                default: '',
+                maxlength: [20, 'El color no puede exceder los 20 caracteres']
             },
 
             tamanio: {
                 type: String,
                 trim: true,
-                default: ''
+                default: '',
+                maxlength: [15, 'El tamaño no puede exceder los 15 caracteres']
             },
 
             cantidad: {
                 type: Number,
-                min: [1, 'La cantidad mínima es 1']
+                min: [1, 'La cantidad mínima es 1'],
+                validate: {
+                    validator: function (valor) {
+                        if (valor === undefined || valor === null) return true;
+                        return Number.isInteger(valor);
+                    },
+                    message: 'La cantidad debe ser un número entero'
+                }
+            },
+
+            precioUnitario: {
+                type: Number,
+                default: 0,
+                min: [0, 'El precio unitario no puede ser negativo']
+            },
+
+            porcentajeIva: {
+                type: Number,
+                enum: [0, 0.15],
+                default: 0.15
+            },
+
+            subtotal: {
+                type: Number,
+                default: 0,
+                min: [0, 'El subtotal no puede ser negativo']
             }
         }
     ],
@@ -129,7 +164,6 @@ const pedidoSchema = new mongoose.Schema({
     },
 
     direccionEntrega: {
-
         direccion: {
             type: String,
             trim: true,
@@ -141,6 +175,50 @@ const pedidoSchema = new mongoose.Schema({
             trim: true,
             maxlength: [80, 'La referencia no puede exceder los 80 caracteres'],
             default: ''
+        }
+    },
+
+    metodoPago: {
+        type: String,
+        enum: ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA_STRIPE'],
+        default: null
+    },
+
+    estadoPago: {
+        type: String,
+        enum: ['PENDIENTE', 'PAGADO'],
+        default: 'PENDIENTE'
+    },
+
+    estadoCotizacion: {
+        type: String,
+        enum: ['SIN_COTIZAR', 'COTIZADA', 'ACEPTADA', 'RECHAZADA'],
+        default: 'SIN_COTIZAR'
+    },
+
+    resumenPago: {
+        subtotalProductos: {
+            type: Number,
+            default: 0,
+            min: [0, 'El subtotal de productos no puede ser negativo']
+        },
+
+        ivaProductos: {
+            type: Number,
+            default: 0,
+            min: [0, 'El IVA de productos no puede ser negativo']
+        },
+
+        costoEnvio: {
+            type: Number,
+            default: 0,
+            min: [0, 'El costo de envío no puede ser negativo']
+        },
+
+        totalPagar: {
+            type: Number,
+            default: 0,
+            min: [0, 'El total a pagar no puede ser negativo']
         }
     },
 
@@ -168,6 +246,10 @@ const pedidoSchema = new mongoose.Schema({
 });
 
 pedidoSchema.pre('validate', function () {
+    if (!this.resumenPago) {
+        this.resumenPago = {};
+    }
+
     if (this.tipoEntrega === 'ENVIO_DOMICILIO') {
         if (!this.direccionEntrega?.direccion?.trim()) {
             this.invalidate(
@@ -175,6 +257,12 @@ pedidoSchema.pre('validate', function () {
                 'La dirección de entrega es obligatoria'
             );
         }
+
+        this.resumenPago.costoEnvio = 3.50;
+    }
+
+    if (this.tipoEntrega === 'RETIRO_LOCAL') {
+        this.resumenPago.costoEnvio = 0;
     }
 
     if (this.tipoPedido === 'FOTO_LISTA') {
@@ -189,6 +277,10 @@ pedidoSchema.pre('validate', function () {
         }
 
         this.articulos = [];
+
+        if (!this.estadoCotizacion || this.estadoCotizacion === 'ACEPTADA') {
+            this.estadoCotizacion = 'SIN_COTIZAR';
+        }
     }
 
     if (this.tipoPedido === 'CARRITO') {
@@ -203,10 +295,19 @@ pedidoSchema.pre('validate', function () {
             url: null,
             public_id: null
         };
+
+        if (!this.estadoCotizacion || this.estadoCotizacion === 'SIN_COTIZAR') {
+            this.estadoCotizacion = 'ACEPTADA';
+        }
     }
+
+    const subtotal = Number(this.resumenPago.subtotalProductos || 0);
+    const iva = Number(this.resumenPago.ivaProductos || 0);
+    const envio = Number(this.resumenPago.costoEnvio || 0);
+
+    this.resumenPago.totalPagar = Number((subtotal + iva + envio).toFixed(2));
 });
 
 const Pedido = mongoose.model('Pedido', pedidoSchema);
-
 
 export default Pedido;

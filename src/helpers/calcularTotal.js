@@ -3,7 +3,7 @@ const redondear = (valor = 0) => {
     return Number(Number(valor || 0).toFixed(2));
 };
 
-// Calcular subtotal, IVA y total general del carrito
+// Calcular subtotal, IVA y total de los productos
 const calcularTotales = (items = []) => {
     let subtotalGeneral = 0;
     let ivaGeneral = 0;
@@ -28,8 +28,7 @@ const calcularTotales = (items = []) => {
         itemsCalculados,
         subtotalGeneral: redondear(subtotalGeneral),
         ivaGeneral: redondear(ivaGeneral),
-        costoEnvio: redondear(costoEnvio),
-        totalGeneral: redondear(subtotalGeneral + ivaGeneral + costoEnvio)
+        totalGeneral: redondear(subtotalGeneral + ivaGeneral)
     };
 };
 
