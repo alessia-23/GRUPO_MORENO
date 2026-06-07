@@ -272,7 +272,6 @@ const eliminarProductoCarrito = async (req, res) => {
     }
 };
 
-
 // Vaciar carrito
 const vaciarCarrito = async (req, res) => {
     try {
@@ -307,6 +306,85 @@ const vaciarCarrito = async (req, res) => {
         });
     }
 };
+
+// Validar si el carrito puede avanzar al proceso de compra
+const validarCompraCarrito = async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id;
+        // Buscar el carrito activo del cliente
+        const carrito = await Carrito.findOne({
+            cliente: usuarioId,
+            estado: true
+        });
+        // Verificar que el carrito exista y tenga artículos
+        if (!carrito || carrito.articulos.length === 0) {
+            return res.status(400).json({
+                puedeComprar: false,
+                msg: 'El carrito está vacío'
+            });
+        }
+        // Guardar los productos que tengan inconvenientes de stock
+        const productosConProblemas = [];
+        // Comparar cada artículo del carrito con el stock actual
+        for (const item of carrito.articulos) {
+            const producto = await Producto.findOne({
+                _id: item.producto,
+                estado: true
+            });
+            // Validar que el producto siga disponible
+            if (!producto) {
+                productosConProblemas.push({
+                    productoId: item.producto,
+                    nombreProducto: item.nombreProducto,
+                    cantidadSolicitada: item.cantidad,
+                    stockDisponible: 0,
+                    motivo: 'El producto ya no está disponible',
+                    accionSugerida: 'Elimina este producto del carrito'
+                });
+                continue;
+            }
+            // Validar que exista suficiente stock
+            if (producto.stock < item.cantidad) {
+                productosConProblemas.push({
+                    productoId: producto._id,
+                    nombreProducto: item.nombreProducto,
+                    cantidadSolicitada: item.cantidad,
+                    stockDisponible: producto.stock,
+                    motivo: `Solo hay ${producto.stock} unidades disponibles`,
+                    accionSugerida: producto.stock > 0
+                        ? `Actualiza la cantidad a ${producto.stock}`
+                        : 'Elimina este producto del carrito'
+                });
+            }
+        }
+        // Si existen problemas, impedir continuar con la compra
+        if (productosConProblemas.length > 0) {
+            return res.status(200).json({
+                puedeComprar: false,
+                msg: 'Algunos productos no tienen stock suficiente', productosConProblemas
+            });
+        }
+        // Confirmar que el carrito está listo para avanzar
+        return res.status(200).json({
+            puedeComprar: true,
+            msg: 'El carrito está listo para continuar con la compra',
+            carrito: {
+                _id: carrito._id,
+                cliente: carrito.cliente,
+                articulos: carrito.articulos,
+                subtotalGeneral: carrito.subtotalGeneral,
+                ivaGeneral: carrito.ivaGeneral,
+                totalGeneral: carrito.totalGeneral
+            }
+        });
+    } catch (error) {
+        console.log('Error al validar compra del carrito:', error);
+        return res.status(500).json({
+            puedeComprar: false,
+            msg: 'Error al validar compra del carrito', error: error.message
+        });
+    }
+};
 export {
-    obtenerCarrito, agregarAlCarrito, actualizarCantidadCarrito, eliminarProductoCarrito, vaciarCarrito
+    obtenerCarrito, agregarAlCarrito, actualizarCantidadCarrito, eliminarProductoCarrito, vaciarCarrito, validarCompraCarrito
 };
