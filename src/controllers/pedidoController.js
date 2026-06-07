@@ -2,6 +2,9 @@ import Pedido from '../models/Pedido.js';
 import { subirImagenCloudinary } from '../helpers/uploadCloudinary.js';
 import { v2 as cloudinary } from 'cloudinary';
 import mongoose from 'mongoose';
+import Carrito from '../models/Carrito.js';
+import Producto from '../models/Producto.js';
+import { calcularTotales } from '../helpers/calcularTotal.js';
 
 // Crear pedido por foto/lista enviada por el cliente
 const crearPedidoPorFoto = async (req, res) => {
@@ -512,6 +515,149 @@ const cambiarEstadoPedido = async (req, res) => {
     }
 };
 
+// Crear pedido desde el carrito del cliente
+const crearPedidoDesdeCarrito = async (req, res) => {
+    try {
+        const clienteId = req.usuario.id;
+        const {
+            nombrePedido, nombreCompleto, identificacion, correo, telefono, tipoEntrega, direccion, referencia,
+            metodoPago, observaciones } = req.body;
+        // Validar datos básicos
+        if (!nombrePedido?.trim()) {
+            return res.status(400).json({
+                msg: 'El nombre del pedido es obligatorio'
+            });
+        }
+        if (
+            !nombreCompleto?.trim() ||
+            !identificacion?.trim() ||
+            !correo?.trim() ||
+            !telefono?.trim()
+        ) {
+            return res.status(400).json({
+                msg: 'Los datos de facturación son obligatorios'
+            });
+        }
+        if (!tipoEntrega?.trim()) {
+            return res.status(400).json({
+                msg: 'El tipo de entrega es obligatorio'
+            });
+        }
+        if (!['RETIRO_LOCAL', 'ENVIO_DOMICILIO'].includes(tipoEntrega)) {
+            return res.status(400).json({
+                msg: 'El tipo de entrega no es válido'
+            });
+        }
+        if (tipoEntrega === 'ENVIO_DOMICILIO' && !direccion?.trim()) {
+            return res.status(400).json({
+                msg: 'La dirección es obligatoria para envío a domicilio'
+            });
+        }
+        if (!metodoPago?.trim()) {
+            return res.status(400).json({
+                msg: 'El método de pago es obligatorio'
+            });
+        }
+        if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
+            return res.status(400).json({
+                msg: 'El método de pago no es válido'
+            });
+        }
+        // Buscar carrito activo del cliente
+        const carrito = await Carrito.findOne({
+            cliente: clienteId,
+            estado: true
+        });
+        if (!carrito || carrito.articulos.length === 0) {
+            return res.status(400).json({
+                msg: 'El carrito está vacío'
+            });
+        }
+        const articulosPedido = [];
+        // Validar stock real y armar artículos del pedido
+        for (const item of carrito.articulos) {
+            const producto = await Producto.findOne({
+                _id: item.producto,
+                estado: true
+            });
+            if (!producto) {
+                return res.status(404).json({
+                    msg: `El producto "${item.nombreProducto}" ya no está disponible`
+                });
+            }
+            if (producto.stock < item.cantidad) {
+                return res.status(400).json({
+                    msg: `Stock insuficiente para "${item.nombreProducto}". Solo hay ${producto.stock} unidades disponibles`
+                });
+            }
+            articulosPedido.push({
+                producto: producto._id,
+                nombreProducto: item.nombreProducto,
+                codigo: item.codigo,
+                color: item.color || '',
+                tamanio: item.tamanio || '',
+                cantidad: item.cantidad,
+                precioUnitario: item.precioUnitario,
+                porcentajeIva: item.porcentajeIva
+            });
+        }
+        // Calcular subtotal e IVA de productos
+        const totales = calcularTotales(articulosPedido);
+        // Crear pedido tipo carrito
+        const pedido = new Pedido({
+            cliente: clienteId,
+            tipoPedido: 'CARRITO',
+            nombrePedido: nombrePedido.trim(),
+            articulos: totales.itemsCalculados,
+            datosFacturacion: {
+                nombreCompleto: nombreCompleto.trim(),
+                identificacion: identificacion.trim(),
+                correo: correo.trim(),
+                telefono: telefono.trim()
+            },
+            tipoEntrega,
+            direccionEntrega: tipoEntrega === 'ENVIO_DOMICILIO'
+                ? {
+                    direccion: direccion.trim(),
+                    referencia: referencia?.trim() || ''
+                }
+                : undefined,
+            metodoPago,
+            estadoPago: 'PENDIENTE',
+            resumenPago: {
+                subtotalProductos: totales.subtotalGeneral,
+                ivaProductos: totales.ivaGeneral
+            },
+            observaciones: observaciones?.trim() || '',
+            estado: 'PENDIENTE'
+        });
+        await pedido.save();
+        // Vaciar carrito después de crear el pedido
+        carrito.articulos = [];
+        await carrito.save();
+        const pedidoRespuesta = pedido.toObject();
+        delete pedidoRespuesta.listaCliente;
+        if (pedidoRespuesta.tipoEntrega === 'RETIRO_LOCAL') {
+            delete pedidoRespuesta.direccionEntrega;
+        }
+        return res.status(201).json({
+            msg: 'Pedido creado desde el carrito correctamente',
+            pedido: pedidoRespuesta
+        });
+    } catch (error) {
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                msg: Object.values(error.errors)[0].message
+            });
+        }
+        console.log('ERROR CREAR PEDIDO DESDE CARRITO:', error);
+        return res.status(500).json({
+            msg: 'Error al crear pedido desde carrito',
+            error: error.message
+        });
+    }
+};
+
 export {
-    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido
+    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido, crearPedidoDesdeCarrito
 };

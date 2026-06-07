@@ -180,7 +180,7 @@ const pedidoSchema = new mongoose.Schema({
 
     metodoPago: {
         type: String,
-        enum: ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA_STRIPE'],
+        enum: ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'],
         default: null
     },
 
@@ -262,6 +262,7 @@ pedidoSchema.pre('validate', function () {
     }
 
     if (this.tipoEntrega === 'RETIRO_LOCAL') {
+        this.direccionEntrega = undefined;
         this.resumenPago.costoEnvio = 0;
     }
 
@@ -290,11 +291,7 @@ pedidoSchema.pre('validate', function () {
                 'Un pedido por carrito debe contener al menos un artículo'
             );
         }
-
-        this.listaCliente = {
-            url: null,
-            public_id: null
-        };
+        this.listaCliente = undefined;
 
         if (!this.estadoCotizacion || this.estadoCotizacion === 'SIN_COTIZAR') {
             this.estadoCotizacion = 'ACEPTADA';
