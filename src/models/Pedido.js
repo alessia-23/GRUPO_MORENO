@@ -190,12 +190,6 @@ const pedidoSchema = new mongoose.Schema({
         default: 'PENDIENTE'
     },
 
-    estadoCotizacion: {
-        type: String,
-        enum: ['SIN_COTIZAR', 'COTIZADA', 'ACEPTADA', 'RECHAZADA'],
-        default: 'SIN_COTIZAR'
-    },
-
     resumenPago: {
         subtotalProductos: {
             type: Number,
@@ -277,10 +271,8 @@ pedidoSchema.pre('validate', function () {
             );
         }
 
-        this.articulos = [];
-
-        if (!this.estadoCotizacion || this.estadoCotizacion === 'ACEPTADA') {
-            this.estadoCotizacion = 'SIN_COTIZAR';
+        if (this.isNew) {
+            this.articulos = [];
         }
     }
 
@@ -292,10 +284,6 @@ pedidoSchema.pre('validate', function () {
             );
         }
         this.listaCliente = undefined;
-
-        if (!this.estadoCotizacion || this.estadoCotizacion === 'SIN_COTIZAR') {
-            this.estadoCotizacion = 'ACEPTADA';
-        }
     }
 
     const subtotal = Number(this.resumenPago.subtotalProductos || 0);
