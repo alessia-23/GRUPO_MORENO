@@ -367,6 +367,177 @@ const confirmarTransferenciaVenta = async (req, res) => {
         });
     }
 };
+
+// Crear una venta a partir de un pedido
+const crearVentaDesdePedido = async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const { metodoPago, referenciaPago = '', observaciones = '' } = req.body || {};
+        const vendedorId = req.usuario.id;
+        if (!mongoose.Types.ObjectId.isValid(pedidoId)) {
+            return res.status(400).json({
+                msg: 'El ID del pedido no es válido'
+            });
+        }
+        if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
+            return res.status(400).json({
+                msg: 'Método de pago no válido'
+            });
+        }
+        const pedido = await Pedido.findById(pedidoId);
+        if (!pedido) {
+            return res.status(404).json({
+                msg: 'Pedido no encontrado'
+            });
+        }
+        if (pedido.vendedor?.toString() !== vendedorId) {
+            return res.status(403).json({
+                msg: 'No tiene permisos para cobrar este pedido'
+            });
+        }
+        if (pedido.estado !== 'EN_PROCESO') {
+            return res.status(400).json({
+                msg: 'Solo se pueden cobrar pedidos en proceso'
+            });
+        }
+        if (pedido.estadoPago === 'PAGADO') {
+            return res.status(400).json({
+                msg: 'Este pedido ya fue pagado'
+            });
+        }
+        const ventaExistente = await Venta.findOne({
+            pedido: pedido._id,
+            origen: 'PEDIDO',
+            estado: { $ne: 'CANCELADO' }
+        });
+        if (ventaExistente) {
+            return res.status(400).json({
+                msg: 'Ya existe una venta activa asociada a este pedido'
+            });
+        }
+        if (!pedido.articulos || pedido.articulos.length === 0) {
+            return res.status(400).json({
+                msg: 'El pedido no tiene artículos para cobrar'
+            });
+        }
+        const articulosVenta = [];
+        for (const item of pedido.articulos) {
+            if (!item.producto) {
+                return res.status(400).json({
+                    msg: `El artículo "${item.nombreProducto}" no tiene producto asociado`
+                });
+            }
+            const producto = await Producto.findOne({
+                _id: item.producto,
+                estado: true
+            });
+            if (!producto) {
+                return res.status(404).json({
+                    msg: `El producto "${item.nombreProducto}" ya no está disponible`
+                });
+            }
+            if (producto.stock < item.cantidad) {
+                return res.status(400).json({
+                    msg: `Stock insuficiente para "${item.nombreProducto}". Disponible: ${producto.stock}`
+                });
+            }
+            articulosVenta.push({
+                producto: item.producto,
+                nombreProducto: item.nombreProducto,
+                codigo: item.codigo,
+                color: item.color || '',
+                tamanio: item.tamanio || '',
+                cantidad: item.cantidad,
+                precioUnitario: item.precioUnitario,
+                tipoPrecio: item.tipoPrecio || 'NORMAL',
+                porcentajeIva: item.porcentajeIva,
+                subtotal: item.subtotal
+            });
+        }
+        const esPagoInmediato = ['EFECTIVO', 'TARJETA'].includes(metodoPago);
+        const venta = new Venta({
+            origen: 'PEDIDO',
+            pedido: pedido._id,
+            cliente: pedido.cliente,
+            vendedor: vendedorId,
+            articulos: articulosVenta,
+            datosFacturacion: pedido.datosFacturacion,
+            metodoPago,
+            referenciaPago,
+            observaciones: observaciones?.trim() || pedido.observaciones || '',
+            estadoPago: esPagoInmediato ? 'PAGADO' : 'PENDIENTE',
+            estado: esPagoInmediato ? 'FINALIZADO' : 'EN_PROCESO',
+            resumenPago: {
+                costoEnvio: pedido.resumenPago?.costoEnvio || 0
+            }
+        });
+        await venta.validate();
+        if (esPagoInmediato) {
+            for (const item of articulosVenta) {
+                const resultadoDescuento = await Producto.updateOne(
+                    {
+                        _id: item.producto,
+                        estado: true,
+                        stock: { $gte: item.cantidad }
+                    },
+                    {
+                        $inc: { stock: -item.cantidad }
+                    }
+                );
+                if (resultadoDescuento.modifiedCount === 0) {
+                    return res.status(400).json({
+                        msg: `Stock insuficiente para "${item.nombreProducto}". Otro vendedor pudo haber vendido este producto antes.`
+                    });
+                }
+            }
+            pedido.estadoPago = 'PAGADO';
+            pedido.metodoPago = metodoPago;
+            pedido.estado = 'FINALIZADO';
+        } else {
+            pedido.metodoPago = metodoPago;
+            pedido.estadoPago = 'PENDIENTE';
+            pedido.estado = 'EN_PROCESO';
+        }
+        await venta.save();
+        await pedido.save();
+        return res.status(201).json({
+            msg: esPagoInmediato
+                ? 'Venta creada desde pedido correctamente. Pedido finalizado y stock descontado'
+                : 'Venta creada desde pedido. Pendiente de confirmar transferencia',
+            venta: {
+                id: venta._id,
+                origen: venta.origen,
+                pedido: venta.pedido,
+                cliente: venta.cliente,
+                vendedor: venta.vendedor,
+                metodoPago: venta.metodoPago,
+                estadoPago: venta.estadoPago,
+                estado: venta.estado,
+                articulos: venta.articulos,
+                datosFacturacion: venta.datosFacturacion,
+                resumenPago: venta.resumenPago,
+                createdAt: venta.createdAt
+            },
+            pedido: {
+                id: pedido._id,
+                estado: pedido.estado,
+                estadoPago: pedido.estadoPago,
+                metodoPago: pedido.metodoPago
+            }
+        });
+    } catch (error) {
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                msg: Object.values(error.errors)[0].message
+            });
+        }
+        console.log('ERROR AL CREAR VENTA DESDE PEDIDO:', error);
+        return res.status(500).json({
+            msg: 'Error al crear venta desde pedido', error: error.message
+        });
+    }
+};
+
 export {
-    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta
+    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido
 };
