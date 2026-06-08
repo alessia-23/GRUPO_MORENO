@@ -9,7 +9,6 @@ const carritoSchema = new mongoose.Schema(
             required: [true, 'El cliente es obligatorio'],
             unique: true
         },
-
         articulos: [
             {
                 producto: {
@@ -17,19 +16,16 @@ const carritoSchema = new mongoose.Schema(
                     ref: 'Producto',
                     required: [true, 'El producto es obligatorio']
                 },
-
                 nombreProducto: {
                     type: String,
                     required: true,
                     trim: true
                 },
-
                 codigo: {
                     type: String,
                     trim: true,
                     uppercase: true
                 },
-
                 imagen: {
                     url: {
                         type: String,
@@ -40,19 +36,16 @@ const carritoSchema = new mongoose.Schema(
                         default: null
                     }
                 },
-
                 color: {
                     type: String,
                     trim: true,
                     default: ''
                 },
-
                 tamanio: {
                     type: String,
                     trim: true,
                     default: ''
                 },
-
                 cantidad: {
                     type: Number,
                     required: [true, 'La cantidad es obligatoria'],
@@ -63,7 +56,6 @@ const carritoSchema = new mongoose.Schema(
                         message: 'La cantidad debe ser un número entero'
                     }
                 },
-
                 precioUnitario: {
                     type: Number,
                     required: [true, 'El precio unitario es obligatorio'],
@@ -75,19 +67,16 @@ const carritoSchema = new mongoose.Schema(
                         message: 'El precio unitario debe ser un número válido'
                     }
                 },
-
                 tipoPrecio: {
                     type: String,
                     enum: ['NORMAL', 'MAYORISTA'],
                     default: 'NORMAL'
                 },
-
                 porcentajeIva: {
                     type: Number,
                     enum: [0, 0.15],
                     default: 0.15
                 },
-
                 subtotal: {
                     type: Number,
                     default: 0,
@@ -95,25 +84,21 @@ const carritoSchema = new mongoose.Schema(
                 }
             }
         ],
-
         subtotalGeneral: {
             type: Number,
             default: 0,
             min: [0, 'El subtotal general no puede ser negativo']
         },
-
         ivaGeneral: {
             type: Number,
             default: 0,
             min: [0, 'El IVA general no puede ser negativo']
         },
-
         totalGeneral: {
             type: Number,
             default: 0,
             min: [0, 'El total general no puede ser negativo']
         },
-
         estado: {
             type: Boolean,
             default: true
@@ -133,15 +118,12 @@ carritoSchema.pre('save', function () {
         this.totalGeneral = 0;
         return;
     }
-
     const resultado = calcularTotales(this.articulos);
-
     this.articulos = resultado.itemsCalculados;
     this.subtotalGeneral = resultado.subtotalGeneral;
     this.ivaGeneral = resultado.ivaGeneral;
     this.totalGeneral = resultado.totalGeneral;
 });
-
 const Carrito = mongoose.model('Carrito', carritoSchema);
 
 export default Carrito;
