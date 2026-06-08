@@ -169,6 +169,69 @@ const crearVentaDirecta = async (req, res) => {
     }
 };
 
+
+const obtenerMisVentas = async (req, res) => {
+    try {
+        const {
+            page = 1, estado, estadoPago, metodoPago, origen, buscar } = req.query;
+        const paginaActual = Math.max(Number(page), 1);
+        const limite = 15;
+        const desde = (paginaActual - 1) * limite;
+        const filtro = { vendedor: req.usuario.id };
+        if (estado) {
+            if (!['PENDIENTE_PAGO', 'FINALIZADA', 'CANCELADA'].includes(estado)) {
+                return res.status(400).json({ msg: 'El estado de la venta no es válido' });
+            }
+            filtro.estado = estado;
+        }
+        if (estadoPago) {
+            if (!['PENDIENTE', 'PAGADO'].includes(estadoPago)) {
+                return res.status(400).json({ msg: 'El estado de pago no es válido' });
+            }
+            filtro.estadoPago = estadoPago;
+        }
+        if (metodoPago) {
+            if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
+                return res.status(400).json({ msg: 'El método de pago no es válido' });
+            }
+            filtro.metodoPago = metodoPago;
+        }
+        if (origen) {
+            if (!['PEDIDO', 'DIRECTA'].includes(origen)) {
+                return res.status(400).json({ msg: 'El origen de la venta no es válido' });
+            }
+            filtro.origen = origen;
+        }
+        if (buscar?.trim()) {
+            filtro['datosFacturacion.nombreCompleto'] = {
+                $regex: buscar.trim(),
+                $options: 'i'
+            };
+        }
+        const [total, ventas] = await Promise.all([
+            Venta.countDocuments(filtro),
+            Venta.find(filtro)
+                .select(
+                    'origen pedido cliente vendedor metodoPago estadoPago estado datosFacturacion resumenPago createdAt updatedAt'
+                )
+                .populate('cliente', 'email')
+                .populate('vendedor', 'email')
+                .sort({ createdAt: -1 })
+                .skip(desde)
+                .limit(limite)
+                .lean()
+        ]);
+        return res.status(200).json({
+            total, paginaActual, totalPaginas: Math.ceil(total / limite),
+            limite, ventas
+        });
+    } catch (error) {
+        console.log('ERROR AL LISTAR MIS VENTAS:', error);
+        return res.status(500).json({
+            msg: 'Error al listar mis ventas', error: error.message
+        });
+    }
+};
 export {
-    crearVentaDirecta
+    crearVentaDirecta, obtenerMisVentas
 };
