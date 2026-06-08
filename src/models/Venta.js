@@ -34,35 +34,30 @@ const ventaSchema = new mongoose.Schema({
                 ref: 'Producto',
                 required: [true, 'El producto es obligatorio']
             },
-
             nombreProducto: {
                 type: String,
                 required: [true, 'El nombre del producto es obligatorio'],
                 trim: true,
                 maxlength: [60, 'El nombre del producto no puede exceder los 60 caracteres']
             },
-
             codigo: {
                 type: String,
                 trim: true,
                 uppercase: true,
                 maxlength: [15, 'El código no puede exceder los 15 caracteres']
             },
-
             color: {
                 type: String,
                 trim: true,
                 default: '',
                 maxlength: [20, 'El color no puede exceder los 20 caracteres']
             },
-
             tamanio: {
                 type: String,
                 trim: true,
                 default: '',
                 maxlength: [15, 'El tamaño no puede exceder los 15 caracteres']
             },
-
             cantidad: {
                 type: Number,
                 required: [true, 'La cantidad es obligatoria'],
@@ -72,25 +67,21 @@ const ventaSchema = new mongoose.Schema({
                     message: 'La cantidad debe ser un número entero'
                 }
             },
-
             precioUnitario: {
                 type: Number,
                 required: [true, 'El precio unitario es obligatorio'],
                 min: [0, 'El precio unitario no puede ser negativo']
             },
-
             tipoPrecio: {
                 type: String,
                 enum: ['NORMAL', 'MAYORISTA'],
                 default: 'NORMAL'
             },
-
             porcentajeIva: {
                 type: Number,
                 enum: [0, 0.15],
                 default: 0.15
             },
-
             subtotal: {
                 type: Number,
                 default: 0,
@@ -100,48 +91,57 @@ const ventaSchema = new mongoose.Schema({
     ],
 
     datosFacturacion: {
+        esConsumidorFinal: {
+            type: Boolean,
+            default: false
+        },
         nombreCompleto: {
             type: String,
-            required: [true, 'El nombre completo es obligatorio'],
             trim: true,
-            minlength: [3, 'El nombre debe tener mínimo 3 caracteres'],
+            default: '',
             maxlength: [80, 'El nombre no puede exceder los 80 caracteres'],
             validate: {
                 validator: function (v) {
+                    if (this.datosFacturacion?.esConsumidorFinal) return true;
+                    if (!v?.trim()) return false;
                     return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(v);
                 },
                 message: 'El nombre solo puede contener letras'
             }
         },
-
         identificacion: {
             type: String,
-            required: [true, 'La cédula o RUC es obligatorio'],
             trim: true,
+            default: '',
             validate: {
-                validator: validarIdentificacion,
+                validator: function (v) {
+                    if (this.datosFacturacion?.esConsumidorFinal) return true;
+                    return validarIdentificacion(v);
+                },
                 message: 'Ingrese una cédula o RUC válido'
             }
         },
-
         correo: {
             type: String,
-            required: [true, 'El correo electrónico es obligatorio'],
             trim: true,
             lowercase: true,
+            default: '',
             maxlength: [100, 'El correo no puede exceder los 100 caracteres'],
-            match: [
-                /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                'Ingrese un correo válido'
-            ]
-        },
-
-        telefono: {
-            type: String,
-            required: [true, 'El teléfono es obligatorio'],
-            trim: true,
             validate: {
                 validator: function (v) {
+                    if (this.datosFacturacion?.esConsumidorFinal) return true;
+                    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+                },
+                message: 'Ingrese un correo válido'
+            }
+        },
+        telefono: {
+            type: String,
+            trim: true,
+            default: '',
+            validate: {
+                validator: function (v) {
+                    if (this.datosFacturacion?.esConsumidorFinal) return true;
                     return /^09\d{8}$/.test(v);
                 },
                 message: 'Ingrese un número celular ecuatoriano válido'
@@ -162,16 +162,17 @@ const ventaSchema = new mongoose.Schema({
     },
 
     comprobantePago: {
-        url: {
-            type: String,
-            trim: true,
-            default: null
+        type: {
+            url: {
+                type: String,
+                trim: true
+            },
+            public_id: {
+                type: String,
+                trim: true
+            }
         },
-        public_id: {
-            type: String,
-            trim: true,
-            default: null
-        }
+        default: undefined
     },
 
     referenciaPago: {
@@ -189,21 +190,21 @@ const ventaSchema = new mongoose.Schema({
     },
 
     stripe: {
-        sessionId: {
-            type: String,
-            trim: true,
-            default: null
+        type: {
+            sessionId: {
+                type: String,
+                trim: true
+            },
+            paymentIntentId: {
+                type: String,
+                trim: true
+            },
+            urlPago: {
+                type: String,
+                trim: true
+            }
         },
-        paymentIntentId: {
-            type: String,
-            trim: true,
-            default: null
-        },
-        urlPago: {
-            type: String,
-            trim: true,
-            default: null
-        }
+        default: undefined
     },
 
     resumenPago: {
@@ -212,19 +213,16 @@ const ventaSchema = new mongoose.Schema({
             default: 0,
             min: [0, 'El subtotal de productos no puede ser negativo']
         },
-
         ivaProductos: {
             type: Number,
             default: 0,
             min: [0, 'El IVA de productos no puede ser negativo']
         },
-
         costoEnvio: {
             type: Number,
             default: 0,
             min: [0, 'El costo de envío no puede ser negativo']
         },
-
         totalPagar: {
             type: Number,
             default: 0,
@@ -269,27 +267,57 @@ ventaSchema.pre('validate', function () {
         this.resumenPago.costoEnvio = 0;
     }
 
+    if (!this.datosFacturacion) {
+        this.invalidate(
+            'datosFacturacion',
+            'Los datos de facturación son obligatorios'
+        );
+        return;
+    }
+
+    if (this.datosFacturacion.esConsumidorFinal) {
+        this.datosFacturacion.nombreCompleto = 'CONSUMIDOR FINAL';
+        this.datosFacturacion.identificacion = '9999999999999';
+        this.datosFacturacion.correo = '';
+        this.datosFacturacion.telefono = '';
+    } else {
+        if (!this.datosFacturacion.nombreCompleto?.trim()) {
+            this.invalidate(
+                'datosFacturacion.nombreCompleto',
+                'El nombre completo es obligatorio'
+            );
+        }
+
+        if (!this.datosFacturacion.identificacion?.trim()) {
+            this.invalidate(
+                'datosFacturacion.identificacion',
+                'La identificación es obligatoria'
+            );
+        }
+
+        if (!this.datosFacturacion.correo?.trim()) {
+            this.invalidate(
+                'datosFacturacion.correo',
+                'El correo es obligatorio'
+            );
+        }
+
+        if (!this.datosFacturacion.telefono?.trim()) {
+            this.invalidate(
+                'datosFacturacion.telefono',
+                'El teléfono es obligatorio'
+            );
+        }
+    }
+
     if (this.metodoPago === 'EFECTIVO') {
-        this.comprobantePago = {
-            url: null,
-            public_id: null
-        };
-
-        this.stripe = {
-            sessionId: null,
-            paymentIntentId: null,
-            urlPago: null
-        };
-
+        this.comprobantePago = undefined;
+        this.stripe = undefined;
         this.referenciaPago = '';
     }
 
     if (this.metodoPago === 'TRANSFERENCIA') {
-        this.stripe = {
-            sessionId: null,
-            paymentIntentId: null,
-            urlPago: null
-        };
+        this.stripe = undefined;
     }
 
     if (!this.articulos || this.articulos.length === 0) {
