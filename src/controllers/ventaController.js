@@ -549,6 +549,59 @@ const crearVentaDesdePedido = async (req, res) => {
     }
 };
 
+// Cancelar una venta pendiente
+const cancelarVenta = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID de la venta no es válido'
+            });
+        }
+        const venta = await Venta.findById(id);
+        if (!venta) {
+            return res.status(404).json({
+                msg: 'Venta no encontrada'
+            });
+        }
+        // No permitir cancelar una venta ya finalizada
+        if (venta.estado === 'FINALIZADO') {
+            return res.status(400).json({
+                msg: 'No se puede cancelar una venta finalizada'
+            });
+        }
+        if (venta.estado === 'CANCELADO') {
+            return res.status(400).json({
+                msg: 'La venta ya se encuentra cancelada'
+            });
+        }
+        venta.estado = 'CANCELADO';
+        await venta.save();
+        // Si proviene de un pedido también cancelar el pedido
+        if (venta.origen === 'PEDIDO' && venta.pedido) {
+            await Pedido.findByIdAndUpdate(
+                venta.pedido,
+                {
+                    estado: 'CANCELADO'
+                }
+            );
+        }
+        return res.status(200).json({
+            msg: 'Venta cancelada correctamente',
+            venta: {
+                id: venta._id,
+                estado: venta.estado
+            }
+        });
+    } catch (error) {
+        console.log('ERROR AL CANCELAR VENTA:', error);
+        return res.status(500).json({
+            msg: 'Error al cancelar la venta', error: error.message
+        });
+    }
+};
+
 export {
-    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido
+    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta
 };
