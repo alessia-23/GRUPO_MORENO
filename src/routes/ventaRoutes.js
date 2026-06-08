@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido } from '../controllers/ventaController.js';
+import { crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta } from '../controllers/ventaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
 
@@ -19,5 +19,8 @@ router.put('/confirmar-transferencia/:id', protegerRuta, soloVendedor, confirmar
 
 // Crear una venta desde un pedido
 router.post('/crear-desde-pedido/:pedidoId', protegerRuta, soloVendedor, crearVentaDesdePedido);
+
+// Cancelar una venta pendiente
+router.put('/cancelar/:id', protegerRuta, soloVendedor, cancelarVenta);
 
 export default router;
