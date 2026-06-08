@@ -338,6 +338,16 @@ const confirmarTransferenciaVenta = async (req, res) => {
         }
         venta.estadoPago = 'PAGADO';
         venta.estado = 'FINALIZADO';
+        if (venta.origen === 'PEDIDO' && venta.pedido) {
+            await Pedido.findByIdAndUpdate(
+                venta.pedido,
+                {
+                    estadoPago: 'PAGADO',
+                    estado: 'FINALIZADO',
+                    metodoPago: 'TRANSFERENCIA'
+                }
+            );
+        }
         await venta.save();
         return res.status(200).json({
             msg: 'Transferencia confirmada correctamente. Venta finalizada y stock descontado',
