@@ -282,6 +282,91 @@ const obtenerDetalleVenta = async (req, res) => {
         });
     }
 };
+
+// Confirmar una venta por transferencia
+const confirmarTransferenciaVenta = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { referenciaPago = '' } = req.body || {};
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID de la venta no es válido'
+            });
+        }
+        const venta = await Venta.findById(id);
+        if (!venta) {
+            return res.status(404).json({
+                msg: 'Venta no encontrada'
+            });
+        }
+        if (venta.metodoPago !== 'TRANSFERENCIA') {
+            return res.status(400).json({
+                msg: 'Solo se pueden confirmar ventas pagadas por transferencia'
+            });
+        }
+        if (venta.estado !== 'EN_PROCESO' || venta.estadoPago !== 'PENDIENTE') {
+            return res.status(400).json({
+                msg: 'La venta no está pendiente de confirmación'
+            });
+        }
+        if (!venta.articulos || venta.articulos.length === 0) {
+            return res.status(400).json({
+                msg: 'La venta no contiene artículos'
+            });
+        }
+        // Descontar stock de forma segura
+        for (const item of venta.articulos) {
+            const resultadoDescuento = await Producto.updateOne(
+                {
+                    _id: item.producto,
+                    estado: true,
+                    stock: { $gte: item.cantidad }
+                },
+                {
+                    $inc: { stock: -item.cantidad }
+                }
+            );
+            if (resultadoDescuento.modifiedCount === 0) {
+                return res.status(400).json({
+                    msg: `Stock insuficiente para "${item.nombreProducto}". No se pudo confirmar la venta.`
+                });
+            }
+        }
+        if (referenciaPago?.trim()) {
+            venta.referenciaPago = referenciaPago.trim();
+        }
+        venta.estadoPago = 'PAGADO';
+        venta.estado = 'FINALIZADO';
+        await venta.save();
+        return res.status(200).json({
+            msg: 'Transferencia confirmada correctamente. Venta finalizada y stock descontado',
+            venta: {
+                id: venta._id,
+                origen: venta.origen,
+                pedido: venta.pedido,
+                cliente: venta.cliente,
+                vendedor: venta.vendedor,
+                metodoPago: venta.metodoPago,
+                referenciaPago: venta.referenciaPago,
+                estadoPago: venta.estadoPago,
+                estado: venta.estado,
+                articulos: venta.articulos,
+                resumenPago: venta.resumenPago,
+                updatedAt: venta.updatedAt
+            }
+        });
+    } catch (error) {
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                msg: Object.values(error.errors)[0].message
+            });
+        }
+        console.log('ERROR AL CONFIRMAR TRANSFERENCIA:', error);
+        return res.status(500).json({
+            msg: 'Error al confirmar la transferencia', error: error.message
+        });
+    }
+};
 export {
-    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta
+    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta
 };
