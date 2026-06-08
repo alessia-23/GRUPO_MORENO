@@ -232,6 +232,56 @@ const obtenerMisVentas = async (req, res) => {
         });
     }
 };
+
+//  Obtener los detalles de una venta específica realizada por el vendedor
+const obtenerDetalleVenta = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID de la venta no es válido'
+            });
+        }
+        const venta = await Venta.findById(id)
+            .populate({
+                path: 'cliente',
+                select: 'email perfilId',
+                populate: {
+                    path: 'perfilId',
+                    select: 'nombre apellido'
+                }
+            })
+            .populate({
+                path: 'vendedor',
+                select: 'email perfilId',
+                populate: {
+                    path: 'perfilId',
+                    select: 'nombre apellido'
+                }
+            })
+            .populate({
+                path: 'pedido',
+                select: 'nombrePedido tipoPedido estado estadoPago'
+            })
+            .select(
+                'origen pedido cliente vendedor articulos datosFacturacion metodoPago estadoPago comprobantePago referenciaPago stripe resumenPago estado observaciones createdAt updatedAt'
+            )
+            .lean();
+        if (!venta) {
+            return res.status(404).json({
+                msg: 'Venta no encontrada'
+            });
+        }
+        return res.status(200).json({
+            venta
+        });
+    } catch (error) {
+        console.log('ERROR AL OBTENER DETALLE DE VENTA:', error);
+        return res.status(500).json({
+            msg: 'Error al obtener el detalle de la venta', error: error.message
+        });
+    }
+};
 export {
-    crearVentaDirecta, obtenerMisVentas
+    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta
 };
