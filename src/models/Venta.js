@@ -232,8 +232,8 @@ const ventaSchema = new mongoose.Schema({
 
     estado: {
         type: String,
-        enum: ['PENDIENTE_PAGO', 'FINALIZADA', 'CANCELADA'],
-        default: 'PENDIENTE_PAGO'
+        enum: ['PENDIENTE', 'EN_PROCESO', 'FINALIZADO', 'CANCELADO'],
+        default: 'PENDIENTE'
     },
 
     observaciones: {

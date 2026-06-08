@@ -113,7 +113,7 @@ const crearVentaDirecta = async (req, res) => {
             referenciaPago,
             observaciones,
             estadoPago: esPagoInmediato ? 'PAGADO' : 'PENDIENTE',
-            estado: esPagoInmediato ? 'FINALIZADA' : 'PENDIENTE_PAGO'
+            estado: esPagoInmediato ? 'FINALIZADO' : 'EN_PROCESO'
         });
         // Validar la venta antes de tocar el stock
         await venta.validate();
@@ -179,7 +179,7 @@ const obtenerMisVentas = async (req, res) => {
         const desde = (paginaActual - 1) * limite;
         const filtro = { vendedor: req.usuario.id };
         if (estado) {
-            if (!['PENDIENTE_PAGO', 'FINALIZADA', 'CANCELADA'].includes(estado)) {
+            if (!['PENDIENTE', 'EN_PROCESO', 'FINALIZADO', 'CANCELADO'].includes(estado)) {
                 return res.status(400).json({ msg: 'El estado de la venta no es válido' });
             }
             filtro.estado = estado;
