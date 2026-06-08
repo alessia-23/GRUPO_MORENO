@@ -8,25 +8,21 @@ const ventaSchema = new mongoose.Schema({
         enum: ['PEDIDO', 'DIRECTA'],
         required: [true, 'El origen de la venta es obligatorio']
     },
-
     pedido: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Pedido',
         default: null
     },
-
     cliente: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
         default: null
     },
-
     vendedor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
         required: [true, 'El vendedor es obligatorio']
     },
-
     articulos: [
         {
             producto: {
@@ -89,7 +85,6 @@ const ventaSchema = new mongoose.Schema({
             }
         }
     ],
-
     datosFacturacion: {
         esConsumidorFinal: {
             type: Boolean,
@@ -148,19 +143,16 @@ const ventaSchema = new mongoose.Schema({
             }
         }
     },
-
     metodoPago: {
         type: String,
         enum: ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'],
         required: [true, 'El método de pago es obligatorio']
     },
-
     estadoPago: {
         type: String,
         enum: ['PENDIENTE', 'PAGADO'],
         default: 'PENDIENTE'
     },
-
     comprobantePago: {
         type: {
             url: {
@@ -174,7 +166,6 @@ const ventaSchema = new mongoose.Schema({
         },
         default: undefined
     },
-
     referenciaPago: {
         type: String,
         trim: true,
@@ -188,7 +179,6 @@ const ventaSchema = new mongoose.Schema({
         },
         default: ''
     },
-
     stripe: {
         type: {
             sessionId: {
@@ -206,7 +196,6 @@ const ventaSchema = new mongoose.Schema({
         },
         default: undefined
     },
-
     resumenPago: {
         subtotalProductos: {
             type: Number,
@@ -229,13 +218,11 @@ const ventaSchema = new mongoose.Schema({
             min: [0, 'El total a pagar no puede ser negativo']
         }
     },
-
     estado: {
         type: String,
         enum: ['PENDIENTE', 'EN_PROCESO', 'FINALIZADO', 'CANCELADO'],
         default: 'PENDIENTE'
     },
-
     observaciones: {
         type: String,
         trim: true,
@@ -247,12 +234,10 @@ const ventaSchema = new mongoose.Schema({
     versionKey: false,
     collection: 'Ventas'
 });
-
 ventaSchema.pre('validate', function () {
     if (!this.resumenPago) {
         this.resumenPago = {};
     }
-
     if (this.origen === 'PEDIDO') {
         if (!this.pedido) {
             this.invalidate(
@@ -261,12 +246,10 @@ ventaSchema.pre('validate', function () {
             );
         }
     }
-
     if (this.origen === 'DIRECTA') {
         this.pedido = null;
         this.resumenPago.costoEnvio = 0;
     }
-
     if (!this.datosFacturacion) {
         this.invalidate(
             'datosFacturacion',
@@ -287,21 +270,18 @@ ventaSchema.pre('validate', function () {
                 'El nombre completo es obligatorio'
             );
         }
-
         if (!this.datosFacturacion.identificacion?.trim()) {
             this.invalidate(
                 'datosFacturacion.identificacion',
                 'La identificación es obligatoria'
             );
         }
-
         if (!this.datosFacturacion.correo?.trim()) {
             this.invalidate(
                 'datosFacturacion.correo',
                 'El correo es obligatorio'
             );
         }
-
         if (!this.datosFacturacion.telefono?.trim()) {
             this.invalidate(
                 'datosFacturacion.telefono',
@@ -309,17 +289,14 @@ ventaSchema.pre('validate', function () {
             );
         }
     }
-
     if (this.metodoPago === 'EFECTIVO') {
         this.comprobantePago = undefined;
         this.stripe = undefined;
         this.referenciaPago = '';
     }
-
     if (this.metodoPago === 'TRANSFERENCIA') {
         this.stripe = undefined;
     }
-
     if (!this.articulos || this.articulos.length === 0) {
         this.invalidate(
             'articulos',
@@ -327,17 +304,13 @@ ventaSchema.pre('validate', function () {
         );
         return;
     }
-
     const resultado = calcularTotales(this.articulos);
-
     this.articulos = resultado.itemsCalculados;
     this.resumenPago.subtotalProductos = resultado.subtotalGeneral;
     this.resumenPago.ivaProductos = resultado.ivaGeneral;
-
     const subtotal = Number(this.resumenPago.subtotalProductos || 0);
     const iva = Number(this.resumenPago.ivaProductos || 0);
     const envio = Number(this.resumenPago.costoEnvio || 0);
-
     this.resumenPago.totalPagar = Number((subtotal + iva + envio).toFixed(2));
 });
 
