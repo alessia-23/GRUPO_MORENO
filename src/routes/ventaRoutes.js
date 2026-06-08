@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta } from '../controllers/ventaController.js';
+import { crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta } from '../controllers/ventaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
 
@@ -13,5 +13,8 @@ router.get('/mis-ventas', protegerRuta, soloVendedor, obtenerMisVentas);
 
 // Obtener el detalle de una venta realizada por el vendedor
 router.get('/detalle/:id', protegerRuta, soloVendedor, obtenerDetalleVenta);
+
+// Confirmar la transferencia de una venta
+router.put('/confirmar-transferencia/:id', protegerRuta, soloVendedor, confirmarTransferenciaVenta);
 
 export default router;
