@@ -395,7 +395,6 @@ const crearVentaDesdePedido = async (req, res) => {
                 msg: 'Pedido no encontrado'
             });
         }
-        // Heredar el método de pago que el cliente escogió en el checkout
         const metodoPago = pedido.metodoPago;
         if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
             return res.status(400).json({
@@ -443,6 +442,7 @@ const crearVentaDesdePedido = async (req, res) => {
                 _id: item.producto,
                 estado: true
             });
+
             if (!producto) {
                 return res.status(404).json({
                     msg: `El producto "${item.nombreProducto}" ya no está disponible`
@@ -496,6 +496,7 @@ const crearVentaDesdePedido = async (req, res) => {
                         $inc: { stock: -item.cantidad }
                     }
                 );
+
                 if (resultadoDescuento.modifiedCount === 0) {
                     return res.status(400).json({
                         msg: `Stock insuficiente para "${item.nombreProducto}". Otro vendedor pudo haber vendido este producto antes.`
@@ -503,13 +504,12 @@ const crearVentaDesdePedido = async (req, res) => {
                 }
             }
             pedido.estadoPago = 'PAGADO';
-            pedido.metodoPago = metodoPago;
             pedido.estado = 'FINALIZADO';
         } else {
-            pedido.metodoPago = metodoPago;
             pedido.estadoPago = 'PENDIENTE';
             pedido.estado = 'EN_PROCESO';
         }
+        pedido.metodoPago = metodoPago;
         await venta.save();
         await pedido.save();
         return res.status(201).json({
@@ -550,6 +550,7 @@ const crearVentaDesdePedido = async (req, res) => {
         });
     }
 };
+
 // Cancelar una venta pendiente
 const cancelarVenta = async (req, res) => {
     try {
