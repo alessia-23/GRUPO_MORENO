@@ -3,7 +3,9 @@ import Venta from '../models/Venta.js';
 import Producto from '../models/Producto.js';
 import Usuario from '../models/Usuario.js';
 import Pedido from '../models/Pedido.js';
-import { cobrarVentaConTarjeta } from '../helpers/stripeHelper.js';
+import Carrito from '../models/Carrito.js';
+import { calcularTotales } from '../helpers/calcularTotal.js';
+import { cobrarConTarjeta } from '../helpers/stripeHelper.js';
 
 // Crear una venta directa en el local
 const crearVentaDirecta = async (req, res) => {
