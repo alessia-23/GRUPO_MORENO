@@ -734,6 +734,181 @@ const pagarVentaConTarjeta = async (req, res) => {
     }
 };
 
+// Pagar carrito con tarjeta: crea pedido, venta, descuenta stock y vacía carrito
+const pagarCarritoConTarjeta = async (req, res) => {
+    try {
+        const clienteId = req.usuario.id;
+
+        const {
+            paymentMethodId,nombrePedido,nombreCompleto,identificacion,correo,telefono,tipoEntrega,direccion,referencia,
+            observaciones = ''} = req.body || {};
+        if (!paymentMethodId?.trim()) {
+            return res.status(400).json({ msg: 'El paymentMethodId es obligatorio' });
+        }
+        if (!nombrePedido?.trim()) {
+            return res.status(400).json({ msg: 'El nombre del pedido es obligatorio' });
+        }
+        if (!nombreCompleto?.trim() || !identificacion?.trim() || !correo?.trim() || !telefono?.trim()) {
+            return res.status(400).json({ msg: 'Los datos de facturación son obligatorios' });
+        }
+        if (!['RETIRO_LOCAL', 'ENVIO_DOMICILIO'].includes(tipoEntrega)) {
+            return res.status(400).json({ msg: 'El tipo de entrega no es válido' });
+        }
+        if (tipoEntrega === 'ENVIO_DOMICILIO' && !direccion?.trim()) {
+            return res.status(400).json({ msg: 'La dirección es obligatoria para envío a domicilio' });
+        }
+        const carrito = await Carrito.findOne({
+            cliente: clienteId,
+            estado: true
+        });
+        if (!carrito || carrito.articulos.length === 0) {
+            return res.status(400).json({ msg: 'El carrito está vacío' });
+        }
+        const articulosPedido = [];
+        for (const item of carrito.articulos) {
+            const producto = await Producto.findOne({
+                _id: item.producto,
+                estado: true
+            });
+            if (!producto) {
+                return res.status(404).json({
+                    msg: `El producto "${item.nombreProducto}" ya no está disponible`
+                });
+            }
+            if (producto.stock < item.cantidad) {
+                return res.status(400).json({
+                    msg: `Stock insuficiente para "${item.nombreProducto}". Solo hay ${producto.stock} unidades disponibles`
+                });
+            }
+            articulosPedido.push({
+                producto: producto._id,
+                nombreProducto: item.nombreProducto,
+                codigo: item.codigo,
+                color: item.color || '',
+                tamanio: item.tamanio || '',
+                cantidad: item.cantidad,
+                precioUnitario: item.precioUnitario,
+                tipoPrecio: item.tipoPrecio || 'NORMAL',
+                porcentajeIva: item.porcentajeIva
+            });
+        }
+        const totales = calcularTotales(articulosPedido);
+        const costoEnvio = tipoEntrega === 'ENVIO_DOMICILIO' ? 3.50 : 0;
+        const totalPagar = Number((totales.subtotalGeneral + totales.ivaGeneral + costoEnvio).toFixed(2));
+        const payment = await cobrarConTarjeta({
+            totalPagar,
+            correo: correo.trim(),
+            paymentMethodId,
+            descripcion: 'Pago de pedido por carrito'
+        });
+        if (payment.status !== 'succeeded') {
+            return res.status(400).json({
+                msg: 'El pago no se completó',
+                estadoStripe: payment.status
+            });
+        }
+        const pedido = new Pedido({
+            cliente: clienteId,
+            tipoPedido: 'CARRITO',
+            nombrePedido: nombrePedido.trim(),
+            articulos: totales.itemsCalculados,
+            datosFacturacion: {
+                nombreCompleto: nombreCompleto.trim(),
+                identificacion: identificacion.trim(),
+                correo: correo.trim(),
+                telefono: telefono.trim()
+            },
+            tipoEntrega,
+            direccionEntrega: tipoEntrega === 'ENVIO_DOMICILIO'
+                ? {
+                    direccion: direccion.trim(),
+                    referencia: referencia?.trim() || ''
+                }
+                : undefined,
+            metodoPago: 'TARJETA',
+            estadoPago: 'PAGADO',
+            resumenPago: {
+                subtotalProductos: totales.subtotalGeneral,
+                ivaProductos: totales.ivaGeneral,
+                costoEnvio
+            },
+            observaciones: observaciones?.trim() || '',
+            estado: 'PENDIENTE'
+        });
+        await pedido.save();
+        const venta = new Venta({
+            origen: 'PEDIDO',
+            pedido: pedido._id,
+            cliente: clienteId,
+            vendedor: null,
+            articulos: totales.itemsCalculados,
+            datosFacturacion: pedido.datosFacturacion,
+            metodoPago: 'TARJETA',
+            estadoPago: 'PAGADO',
+            estado: 'FINALIZADO',
+            stripe: {
+                paymentIntentId: payment.id
+            },
+            resumenPago: {
+                costoEnvio
+            },
+            observaciones: observaciones?.trim() || ''
+        });
+        await venta.validate();
+        for (const item of totales.itemsCalculados) {
+            const resultadoDescuento = await Producto.updateOne(
+                {
+                    _id: item.producto,
+                    estado: true,
+                    stock: { $gte: item.cantidad }
+                },
+                {
+                    $inc: { stock: -item.cantidad }
+                }
+            );
+            if (resultadoDescuento.modifiedCount === 0) {
+                return res.status(400).json({
+                    msg: `El pago fue realizado, pero no hay stock suficiente para "${item.nombreProducto}". Revisar manualmente.`
+                });
+            }
+        }
+        await venta.save();
+        carrito.articulos = [];
+        await carrito.save();
+        const pedidoRespuesta = pedido.toObject();
+        if (pedidoRespuesta.tipoEntrega === 'RETIRO_LOCAL') {
+            delete pedidoRespuesta.direccionEntrega;
+        }
+        return res.status(201).json({
+            msg: 'Pago con tarjeta realizado correctamente. Pedido y venta creados, stock descontado',
+            pedido: pedidoRespuesta,
+            venta: {
+                id: venta._id,
+                origen: venta.origen,
+                pedido: venta.pedido,
+                cliente: venta.cliente,
+                metodoPago: venta.metodoPago,
+                estadoPago: venta.estadoPago,
+                estado: venta.estado,
+                stripe: venta.stripe,
+                resumenPago: venta.resumenPago,
+                createdAt: venta.createdAt
+            }
+        });
+    } catch (error) {
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                msg: Object.values(error.errors)[0].message
+            });
+        }
+        console.log('ERROR AL PAGAR CARRITO CON TARJETA:', error);
+        return res.status(500).json({
+            msg: 'Error al pagar el carrito con tarjeta',
+            error: error.message
+        });
+    }
+};
+
 export {
-    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarVentaConTarjeta
+    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarVentaConTarjeta, pagarCarritoConTarjeta
 };
