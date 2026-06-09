@@ -211,9 +211,7 @@ const aceptarPedido = async (req, res) => {
                 msg: 'El pedido ya fue tomado, cancelado o no existe'
             });
         }
-        return res.status(200).json({
-            msg: 'Pedido aceptado correctamente', pedido
-        });
+       
     } catch (error) {
         console.log('ERROR ACEPTAR PEDIDO:', error);
         return res.status(500).json({
