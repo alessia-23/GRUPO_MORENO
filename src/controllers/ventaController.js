@@ -3,6 +3,7 @@ import Venta from '../models/Venta.js';
 import Producto from '../models/Producto.js';
 import Usuario from '../models/Usuario.js';
 import Pedido from '../models/Pedido.js';
+import { cobrarVentaConTarjeta } from '../helpers/stripeHelper.js';
 
 // Crear una venta directa en el local
 const crearVentaDirecta = async (req, res) => {
@@ -23,9 +24,9 @@ const crearVentaDirecta = async (req, res) => {
             });
         }
         // Validar método de pago
-        if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
+        if (!['EFECTIVO', 'TRANSFERENCIA'].includes(metodoPago)) {
             return res.status(400).json({
-                msg: 'Método de pago no válido'
+                msg: 'En venta directa solo se permite EFECTIVO o TRANSFERENCIA'
             });
         }
         // Buscar si el correo pertenece a un cliente registrado
@@ -101,8 +102,8 @@ const crearVentaDirecta = async (req, res) => {
                 porcentajeIva
             });
         }
-        // EFECTIVO y TARJETA se consideran pagos inmediatos en caja
-        const esPagoInmediato = ['EFECTIVO', 'TARJETA'].includes(metodoPago);
+        // En venta directa solo EFECTIVO se considera pago inmediato
+        const esPagoInmediato = metodoPago === 'EFECTIVO';
         const venta = new Venta({
             origen: 'DIRECTA',
             pedido: null,
@@ -384,6 +385,7 @@ const crearVentaDesdePedido = async (req, res) => {
         const { pedidoId } = req.params;
         const { observaciones = '' } = req.body || {};
         const vendedorId = req.usuario.id;
+
         if (!mongoose.Types.ObjectId.isValid(pedidoId)) {
             return res.status(400).json({
                 msg: 'El ID del pedido no es válido'
@@ -396,7 +398,12 @@ const crearVentaDesdePedido = async (req, res) => {
             });
         }
         const metodoPago = pedido.metodoPago;
-        if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
+        if (metodoPago === 'TARJETA') {
+            return res.status(400).json({
+                msg: 'Los pedidos con tarjeta se pagan primero. La venta se genera automáticamente después del pago exitoso.'
+            });
+        }
+        if (!['EFECTIVO', 'TRANSFERENCIA'].includes(metodoPago)) {
             return res.status(400).json({
                 msg: 'El pedido no tiene un método de pago válido'
             });
@@ -442,7 +449,6 @@ const crearVentaDesdePedido = async (req, res) => {
                 _id: item.producto,
                 estado: true
             });
-
             if (!producto) {
                 return res.status(404).json({
                     msg: `El producto "${item.nombreProducto}" ya no está disponible`
@@ -466,7 +472,7 @@ const crearVentaDesdePedido = async (req, res) => {
                 subtotal: item.subtotal
             });
         }
-        const esPagoInmediato = ['EFECTIVO', 'TARJETA'].includes(metodoPago);
+        const esPagoInmediato = metodoPago === 'EFECTIVO';
         const venta = new Venta({
             origen: 'PEDIDO',
             pedido: pedido._id,
@@ -525,6 +531,7 @@ const crearVentaDesdePedido = async (req, res) => {
                 metodoPago: venta.metodoPago,
                 estadoPago: venta.estadoPago,
                 estado: venta.estado,
+                stripe: venta.stripe,
                 articulos: venta.articulos,
                 datosFacturacion: venta.datosFacturacion,
                 resumenPago: venta.resumenPago,
@@ -604,6 +611,127 @@ const cancelarVenta = async (req, res) => {
     }
 };
 
+// Pagar una venta con tarjeta usando Stripe PaymentIntent
+const pagarVentaConTarjeta = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { paymentMethodId } = req.body || {};
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID de la venta no es válido'
+            });
+        }
+        if (!paymentMethodId?.trim()) {
+            return res.status(400).json({
+                msg: 'El paymentMethodId es obligatorio'
+            });
+        }
+        const venta = await Venta.findById(id);
+        if (!venta) {
+            return res.status(404).json({
+                msg: 'Venta no encontrada'
+            });
+        }
+        if (venta.metodoPago !== 'TARJETA') {
+            return res.status(400).json({
+                msg: 'Esta venta no fue registrada con método de pago tarjeta'
+            });
+        }
+        if (venta.estadoPago === 'PAGADO' || venta.estado === 'FINALIZADO') {
+            return res.status(400).json({
+                msg: 'Esta venta ya fue pagada'
+            });
+        }
+        if (venta.estado !== 'EN_PROCESO' || venta.estadoPago !== 'PENDIENTE') {
+            return res.status(400).json({
+                msg: 'La venta no está pendiente de pago'
+            });
+        }
+        if (!venta.articulos || venta.articulos.length === 0) {
+            return res.status(400).json({
+                msg: 'La venta no contiene artículos'
+            });
+        }
+        // Primero cobrar con Stripe
+        const payment = await cobrarVentaConTarjeta({
+            venta,
+            paymentMethodId
+        });
+        if (payment.status !== 'succeeded') {
+            return res.status(400).json({
+                msg: 'El pago no se completó',
+                estadoStripe: payment.status
+            });
+        }
+        // Si Stripe cobró correctamente, descontar stock
+        for (const item of venta.articulos) {
+            const resultadoDescuento = await Producto.updateOne(
+                {
+                    _id: item.producto,
+                    estado: true,
+                    stock: { $gte: item.cantidad }
+                },
+                {
+                    $inc: { stock: -item.cantidad }
+                }
+            );
+            if (resultadoDescuento.modifiedCount === 0) {
+                return res.status(400).json({
+                    msg: `El pago fue realizado, pero no hay stock suficiente para "${item.nombreProducto}". Revisar manualmente.`
+                });
+            }
+        }
+        venta.estadoPago = 'PAGADO';
+        venta.estado = 'FINALIZADO';
+        venta.stripe = {
+            paymentIntentId: payment.id
+        };
+        await venta.save();
+        let pedidoActualizado = null;
+        if (venta.origen === 'PEDIDO' && venta.pedido) {
+            pedidoActualizado = await Pedido.findByIdAndUpdate(
+                venta.pedido,
+                {
+                    estadoPago: 'PAGADO',
+                    estado: 'FINALIZADO',
+                    metodoPago: 'TARJETA'
+                },
+                { new: true }
+            ).select('_id estado estadoPago metodoPago');
+        }
+        return res.status(200).json({
+            msg: 'Pago con tarjeta realizado correctamente. Venta finalizada y stock descontado',
+            venta: {
+                id: venta._id,
+                origen: venta.origen,
+                pedido: venta.pedido,
+                cliente: venta.cliente,
+                vendedor: venta.vendedor,
+                metodoPago: venta.metodoPago,
+                estadoPago: venta.estadoPago,
+                estado: venta.estado,
+                stripe: venta.stripe,
+                resumenPago: venta.resumenPago,
+                updatedAt: venta.updatedAt
+            },
+            pedido: pedidoActualizado
+                ? {
+                    id: pedidoActualizado._id,
+                    estado: pedidoActualizado.estado,
+                    estadoPago: pedidoActualizado.estadoPago,
+                    metodoPago: pedidoActualizado.metodoPago
+                }
+                : null
+        });
+    } catch (error) {
+        console.log('ERROR AL PAGAR CON TARJETA:', error);
+        return res.status(500).json({
+            msg: 'Error al procesar el pago con tarjeta',
+            error: error.message
+        });
+    }
+};
+
 export {
-    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta
+    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarVentaConTarjeta
 };
