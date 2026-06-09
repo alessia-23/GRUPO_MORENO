@@ -170,7 +170,6 @@ const crearVentaDirecta = async (req, res) => {
     }
 };
 
-
 const obtenerMisVentas = async (req, res) => {
     try {
         const {
@@ -383,22 +382,24 @@ const confirmarTransferenciaVenta = async (req, res) => {
 const crearVentaDesdePedido = async (req, res) => {
     try {
         const { pedidoId } = req.params;
-        const { metodoPago, referenciaPago = '', observaciones = '' } = req.body || {};
+        const { observaciones = '' } = req.body || {};
         const vendedorId = req.usuario.id;
         if (!mongoose.Types.ObjectId.isValid(pedidoId)) {
             return res.status(400).json({
                 msg: 'El ID del pedido no es válido'
             });
         }
-        if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
-            return res.status(400).json({
-                msg: 'Método de pago no válido'
-            });
-        }
         const pedido = await Pedido.findById(pedidoId);
         if (!pedido) {
             return res.status(404).json({
                 msg: 'Pedido no encontrado'
+            });
+        }
+        // Heredar el método de pago que el cliente escogió en el checkout
+        const metodoPago = pedido.metodoPago;
+        if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
+            return res.status(400).json({
+                msg: 'El pedido no tiene un método de pago válido'
             });
         }
         if (pedido.vendedor?.toString() !== vendedorId) {
@@ -474,7 +475,7 @@ const crearVentaDesdePedido = async (req, res) => {
             articulos: articulosVenta,
             datosFacturacion: pedido.datosFacturacion,
             metodoPago,
-            referenciaPago,
+            referenciaPago: '',
             observaciones: observaciones?.trim() || pedido.observaciones || '',
             estadoPago: esPagoInmediato ? 'PAGADO' : 'PENDIENTE',
             estado: esPagoInmediato ? 'FINALIZADO' : 'EN_PROCESO',
@@ -544,11 +545,11 @@ const crearVentaDesdePedido = async (req, res) => {
         }
         console.log('ERROR AL CREAR VENTA DESDE PEDIDO:', error);
         return res.status(500).json({
-            msg: 'Error al crear venta desde pedido', error: error.message
+            msg: 'Error al crear venta desde pedido',
+            error: error.message
         });
     }
 };
-
 // Cancelar una venta pendiente
 const cancelarVenta = async (req, res) => {
     try {
