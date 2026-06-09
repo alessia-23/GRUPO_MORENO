@@ -558,9 +558,9 @@ const crearPedidoDesdeCarrito = async (req, res) => {
                 msg: 'El método de pago es obligatorio'
             });
         }
-        if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
+        if (!['EFECTIVO', 'TRANSFERENCIA'].includes(metodoPago)) {
             return res.status(400).json({
-                msg: 'El método de pago no es válido'
+                msg: 'Para pedidos con tarjeta use otra sección'
             });
         }
         // Buscar carrito activo del cliente
