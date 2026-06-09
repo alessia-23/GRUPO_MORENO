@@ -177,19 +177,18 @@ const obtenerPedidosPendientes = async (req, res) => {
 const aceptarPedido = async (req, res) => {
     try {
         const { id } = req.params;
-        // Validar que el ID tenga formato correcto de MongoDB
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 msg: 'El ID del pedido no es válido'
             });
         }
-        // Buscar un pedido que siga disponible en el muro
         const pedido = await Pedido.findOneAndUpdate(
             {
-                _id: id, estado: 'PENDIENTE', vendedor: null
+                _id: id,
+                estado: 'PENDIENTE',
+                vendedor: null
             },
             {
-                // El vendedor actual toma el pedido
                 vendedor: req.usuario.id,
                 estado: 'EN_PROCESO'
             },
@@ -199,19 +198,22 @@ const aceptarPedido = async (req, res) => {
                 path: 'cliente',
                 select: 'email perfilId perfilModelo',
                 populate: {
-                    path: 'perfilId', select: 'nombre apellido'
+                    path: 'perfilId',
+                    select: 'nombre apellido'
                 }
             })
             .select(
                 'cliente vendedor tipoPedido nombrePedido listaCliente articulos datosFacturacion tipoEntrega direccionEntrega metodoPago estadoPago estadoCotizacion resumenPago estado observaciones createdAt updatedAt'
-            )
-        // Si no existe, ya fue tomado, cancelado o no está pendiente
+            );
         if (!pedido) {
             return res.status(400).json({
                 msg: 'El pedido ya fue tomado, cancelado o no existe'
             });
         }
-       
+        return res.status(200).json({
+            msg: 'Pedido aceptado correctamente',
+            pedido
+        });
     } catch (error) {
         console.log('ERROR ACEPTAR PEDIDO:', error);
         return res.status(500).json({
