@@ -5,17 +5,17 @@ const crearQuejaSugerencia = async (req, res) => {
     try {
         const usuarioId = req.usuario.id;
         const rolUsuario = req.usuario.rol;
-        const { tipo, mensaje } = req.body;
-        // Solo clientes y vendedores pueden crear quejas o sugerencias
+        const { asunto, mensaje } = req.body;
+        // Solo clientes y vendedores pueden enviar quejas o sugerencias
         if (!['CLIENTE', 'VENDEDOR'].includes(rolUsuario)) {
             return res.status(403).json({
                 msg: 'No tienes permiso para enviar quejas o sugerencias'
             });
         }
-        // Validar tipo
-        if (!tipo || !['QUEJA', 'SUGERENCIA'].includes(tipo)) {
+        // Validar asunto
+        if (!asunto || !asunto.trim()) {
             return res.status(400).json({
-                msg: 'El tipo debe ser QUEJA o SUGERENCIA'
+                msg: 'El asunto es obligatorio'
             });
         }
         // Validar mensaje
@@ -24,21 +24,15 @@ const crearQuejaSugerencia = async (req, res) => {
                 msg: 'El mensaje es obligatorio'
             });
         }
-        const nuevaQuejaSugerencia = await QuejaSugerencia.create({
+        // Guardar queja o sugerencia en la base de datos
+        await QuejaSugerencia.create({
             usuario: usuarioId,
             rolUsuario,
-            tipo,
+            asunto: asunto.trim(),
             mensaje: mensaje.trim()
         });
         return res.status(201).json({
-            msg: 'Queja o sugerencia enviada correctamente',
-            quejaSugerencia: {
-                id: nuevaQuejaSugerencia._id,
-                tipo: nuevaQuejaSugerencia.tipo,
-                mensaje: nuevaQuejaSugerencia.mensaje,
-                estado: nuevaQuejaSugerencia.estado,
-                createdAt: nuevaQuejaSugerencia.createdAt
-            }
+            msg: 'Queja o sugerencia enviada correctamente'
         });
     } catch (error) {
         console.error('Error al crear queja o sugerencia:', error);
