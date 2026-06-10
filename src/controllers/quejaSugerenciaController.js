@@ -171,6 +171,45 @@ const responderQuejaSugerencia = async (req, res) => {
     }
 };
 
+// Obtener detalle de una queja o sugerencia
+const obtenerDetalleQuejaSugerencia = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Validar ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID no es válido'
+            });
+        }
+        const quejaSugerencia = await QuejaSugerencia.findById(id)
+            .populate(
+                'usuario',
+                'email rol'
+            )
+            .populate(
+                'respondidoPor',
+                'email rol'
+            );
+        if (!quejaSugerencia) {
+            return res.status(404).json({
+                msg: 'La queja o sugerencia no existe'
+            });
+        }
+        return res.status(200).json({
+            msg: 'Detalle obtenido correctamente',
+            quejaSugerencia
+        });
+    } catch (error) {
+        console.error(
+            'Error al obtener detalle de la queja o sugerencia:',
+            error
+        );
+        return res.status(500).json({
+            msg: 'Error al obtener el detalle'
+        });
+    }
+};
+
 export {
-    crearQuejaSugerencia, obtenerMisQuejasSugerencias, obtenerQuejasSugerenciasAdmin, responderQuejaSugerencia
+    crearQuejaSugerencia, obtenerMisQuejasSugerencias, obtenerQuejasSugerenciasAdmin, responderQuejaSugerencia, obtenerDetalleQuejaSugerencia
 };
