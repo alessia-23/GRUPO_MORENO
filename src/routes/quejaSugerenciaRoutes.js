@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import protegerRuta from '../middleware/authMiddleware.js';
-import { crearQuejaSugerencia, obtenerMisQuejasSugerencias, obtenerQuejasSugerenciasAdmin, responderQuejaSugerencia } from '../controllers/quejaSugerenciaController.js';
+import { crearQuejaSugerencia, obtenerMisQuejasSugerencias, obtenerQuejasSugerenciasAdmin, responderQuejaSugerencia, obtenerDetalleQuejaSugerencia } from '../controllers/quejaSugerenciaController.js';
 import soloAdmin from '../middleware/adminMiddleware.js';
 
 const router = Router();
@@ -16,5 +16,8 @@ router.get('/admin', protegerRuta, soloAdmin, obtenerQuejasSugerenciasAdmin);
 
 // Responder una queja o sugerencia
 router.patch('/responder/:id', protegerRuta, soloAdmin, responderQuejaSugerencia);
+
+// Obtener detalle de una queja o sugerencia
+router.get('/detalle/:id', protegerRuta, obtenerDetalleQuejaSugerencia);
 
 export default router;
