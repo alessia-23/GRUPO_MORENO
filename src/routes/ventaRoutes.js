@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarCarritoConTarjeta } from '../controllers/ventaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
+import soloCliente from '../middleware/clienteMiddleware.js';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.put('/confirmar-transferencia/:id', protegerRuta, soloVendedor, confirmar
 router.post('/crear-desde-pedido/:pedidoId', protegerRuta, soloVendedor, crearVentaDesdePedido);
 
 // Pagar carrito con tarjeta
-router.post('/pagar-carrito-tarjeta', protegerRuta, pagarCarritoConTarjeta);
+router.post('/pagar-carrito-tarjeta', protegerRuta, soloCliente, pagarCarritoConTarjeta);
 
 // Cancelar una venta pendiente
 router.put('/cancelar/:id', protegerRuta, soloVendedor, cancelarVenta);

@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import Carrito from '../models/Carrito.js';
 import Producto from '../models/Producto.js';
 import { calcularTotales } from '../helpers/calcularTotal.js';
+import { cobrarConTarjeta } from '../helpers/stripeHelper.js';
 
 // Crear pedido por foto/lista enviada por el cliente
 const crearPedidoPorFoto = async (req, res) => {
@@ -438,79 +439,112 @@ const obtenerDetallePedido = async (req, res) => {
     }
 };
 
-// Cambiar estado de un pedido según el rol autenticado
+// Cambiar estado de un pedido según el rol autenticado// solo cancelar pedido
 const cambiarEstadoPedido = async (req, res) => {
     try {
         const { id } = req.params;
         const { estado } = req.body || {};
+
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 msg: 'El ID del pedido no es válido'
             });
         }
+
         if (!estado?.trim()) {
             return res.status(400).json({
                 msg: 'El estado es obligatorio'
             });
         }
-        if (!['FINALIZADO', 'CANCELADO'].includes(estado)) {
+
+        // Este endpoint solo permite cancelar.
+        // FINALIZADO solo debe hacerlo crearVentaDesdePedido.
+        if (estado !== 'CANCELADO') {
             return res.status(400).json({
-                msg: 'El estado solo puede ser FINALIZADO o CANCELADO'
+                msg: 'Este endpoint solo permite cancelar pedidos. Para finalizar use la venta'
             });
         }
+
         const pedido = await Pedido.findById(id);
+
         if (!pedido) {
             return res.status(404).json({
                 msg: 'Pedido no encontrado'
             });
         }
+
         const usuarioId = req.usuario.id;
         const rol = req.usuario.rol;
+
         if (!['CLIENTE', 'VENDEDOR'].includes(rol)) {
             return res.status(403).json({
                 msg: 'No tiene permisos para cambiar el estado del pedido'
             });
         }
+
+        if (pedido.estado === 'FINALIZADO') {
+            return res.status(400).json({
+                msg: 'No se puede cancelar un pedido finalizado'
+            });
+        }
+
+        if (pedido.estado === 'CANCELADO') {
+            return res.status(400).json({
+                msg: 'El pedido ya está cancelado'
+            });
+        }
+
         if (rol === 'CLIENTE') {
             const clienteIdString = (pedido.cliente?._id || pedido.cliente).toString();
+
             if (clienteIdString !== usuarioId) {
                 return res.status(403).json({
                     msg: 'No tiene permisos para cancelar este pedido'
                 });
             }
-            if (estado !== 'CANCELADO') {
-                return res.status(400).json({
-                    msg: 'El cliente solo puede cancelar pedidos'
-                });
-            }
+
             if (pedido.estado !== 'PENDIENTE') {
                 return res.status(400).json({
                     msg: 'Solo puede cancelar pedidos que aún están pendientes'
                 });
             }
         }
+
         if (rol === 'VENDEDOR') {
             const vendedorIdString = (pedido.vendedor?._id || pedido.vendedor)?.toString();
+
             if (vendedorIdString !== usuarioId) {
                 return res.status(403).json({
-                    msg: 'No tiene permisos para modificar este pedido'
+                    msg: 'No tiene permisos para cancelar este pedido'
                 });
             }
+
             if (pedido.estado !== 'EN_PROCESO') {
                 return res.status(400).json({
-                    msg: 'Solo se pueden actualizar pedidos en proceso'
+                    msg: 'Solo se pueden cancelar pedidos en proceso'
                 });
             }
         }
-        pedido.estado = estado;
+
+        pedido.estado = 'CANCELADO';
         await pedido.save();
+
         return res.status(200).json({
-            msg: `Pedido correctamente ${estado}`
+            msg: 'Pedido cancelado correctamente',
+            pedido: {
+                id: pedido._id,
+                estado: pedido.estado,
+                estadoPago: pedido.estadoPago,
+                metodoPago: pedido.metodoPago
+            }
         });
+
     } catch (error) {
         console.log('ERROR CAMBIAR ESTADO PEDIDO:', error);
+
         return res.status(500).json({
-            msg: 'Error al cambiar el estado del pedido', error: error.message
+            msg: 'Error al cambiar el estado del pedido',
+            error: error.message
         });
     }
 };
@@ -772,8 +806,131 @@ const armarPedidoDesdeFoto = async (req, res) => {
     }
 };
 
+// Cliente define método de pago de un pedido por foto ya armado
+const definirPagoPedido = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { metodoPago, paymentMethodId } = req.body || {};
+        const clienteId = req.usuario.id;
 
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID del pedido no es válido'
+            });
+        }
+
+        if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
+            return res.status(400).json({
+                msg: 'El método de pago no es válido'
+            });
+        }
+
+        const pedido = await Pedido.findById(id);
+
+        if (!pedido) {
+            return res.status(404).json({
+                msg: 'Pedido no encontrado'
+            });
+        }
+
+        if (pedido.cliente.toString() !== clienteId) {
+            return res.status(403).json({
+                msg: 'No tiene permisos para pagar este pedido'
+            });
+        }
+
+        if (pedido.tipoPedido !== 'FOTO_LISTA') {
+            return res.status(400).json({
+                msg: 'Este endpoint solo aplica para pedidos por foto'
+            });
+        }
+
+        if (pedido.estado !== 'EN_PROCESO') {
+            return res.status(400).json({
+                msg: 'El pedido debe estar en proceso para definir el pago'
+            });
+        }
+
+        if (!pedido.articulos || pedido.articulos.length === 0) {
+            return res.status(400).json({
+                msg: 'El vendedor aún no ha armado el pedido'
+            });
+        }
+
+        if (!pedido.resumenPago?.totalPagar || pedido.resumenPago.totalPagar <= 0) {
+            return res.status(400).json({
+                msg: 'El pedido aún no tiene un total válido para pagar'
+            });
+        }
+
+        if (pedido.metodoPago) {
+            return res.status(400).json({
+                msg: 'Este pedido ya tiene un método de pago definido'
+            });
+        }
+
+        if (metodoPago === 'TARJETA') {
+            if (!paymentMethodId?.trim()) {
+                return res.status(400).json({
+                    msg: 'El paymentMethodId es obligatorio para pago con tarjeta'
+                });
+            }
+
+            const payment = await cobrarConTarjeta({
+                totalPagar: pedido.resumenPago.totalPagar,
+                correo: pedido.datosFacturacion.correo,
+                paymentMethodId,
+                descripcion: `Pago de pedido por foto ${pedido.nombrePedido}`
+            });
+
+            if (payment.status !== 'succeeded') {
+                return res.status(400).json({
+                    msg: 'El pago no se completó',
+                    estadoStripe: payment.status
+                });
+            }
+
+            pedido.metodoPago = 'TARJETA';
+            pedido.estadoPago = 'PAGADO';
+        }
+
+        if (metodoPago === 'EFECTIVO') {
+            pedido.metodoPago = 'EFECTIVO';
+            pedido.estadoPago = 'PENDIENTE';
+        }
+
+        if (metodoPago === 'TRANSFERENCIA') {
+            pedido.metodoPago = 'TRANSFERENCIA';
+            pedido.estadoPago = 'PENDIENTE';
+        }
+
+        await pedido.save();
+
+        return res.status(200).json({
+            msg: metodoPago === 'TARJETA'
+                ? 'Pago con tarjeta realizado correctamente'
+                : 'Método de pago registrado correctamente',
+            pedido: {
+                id: pedido._id,
+                tipoPedido: pedido.tipoPedido,
+                nombrePedido: pedido.nombrePedido,
+                metodoPago: pedido.metodoPago,
+                estadoPago: pedido.estadoPago,
+                estado: pedido.estado,
+                resumenPago: pedido.resumenPago
+            }
+        });
+
+    } catch (error) {
+        console.log('ERROR AL DEFINIR PAGO DEL PEDIDO:', error);
+
+        return res.status(500).json({
+            msg: 'Error al definir el pago del pedido',
+            error: error.message
+        });
+    }
+};
 
 export {
-    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido, crearPedidoDesdeCarrito, armarPedidoDesdeFoto
+    crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido, crearPedidoDesdeCarrito, armarPedidoDesdeFoto, definirPagoPedido
 };

@@ -387,79 +387,97 @@ const crearVentaDesdePedido = async (req, res) => {
         const { pedidoId } = req.params;
         const { observaciones = '' } = req.body || {};
         const vendedorId = req.usuario.id;
+
         if (!mongoose.Types.ObjectId.isValid(pedidoId)) {
             return res.status(400).json({
                 msg: 'El ID del pedido no es válido'
             });
         }
+
         const pedido = await Pedido.findById(pedidoId);
+
         if (!pedido) {
             return res.status(404).json({
                 msg: 'Pedido no encontrado'
             });
         }
+
         const metodoPago = pedido.metodoPago;
+
         if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
             return res.status(400).json({
                 msg: 'El pedido no tiene un método de pago válido'
             });
         }
+
         if (pedido.vendedor?.toString() !== vendedorId) {
             return res.status(403).json({
                 msg: 'No tiene permisos para cobrar este pedido'
             });
         }
+
         if (pedido.estado !== 'EN_PROCESO') {
             return res.status(400).json({
                 msg: 'Solo se pueden cobrar pedidos en proceso'
             });
         }
+
         if (metodoPago === 'TARJETA' && pedido.estadoPago !== 'PAGADO') {
             return res.status(400).json({
                 msg: 'El pedido con tarjeta todavía no está pagado'
             });
         }
+
         if (metodoPago !== 'TARJETA' && pedido.estadoPago === 'PAGADO') {
             return res.status(400).json({
                 msg: 'Este pedido ya fue pagado'
             });
         }
+
         const ventaExistente = await Venta.findOne({
             pedido: pedido._id,
             origen: 'PEDIDO',
             estado: { $ne: 'CANCELADO' }
         });
+
         if (ventaExistente) {
             return res.status(400).json({
                 msg: 'Ya existe una venta activa asociada a este pedido'
             });
         }
+
         if (!pedido.articulos || pedido.articulos.length === 0) {
             return res.status(400).json({
                 msg: 'El pedido no tiene artículos para cobrar'
             });
         }
+
         const articulosVenta = [];
+
         for (const item of pedido.articulos) {
             if (!item.producto) {
                 return res.status(400).json({
                     msg: `El artículo "${item.nombreProducto}" no tiene producto asociado`
                 });
             }
+
             const producto = await Producto.findOne({
                 _id: item.producto,
                 estado: true
             });
+
             if (!producto) {
                 return res.status(404).json({
                     msg: `El producto "${item.nombreProducto}" ya no está disponible`
                 });
             }
+
             if (producto.stock < item.cantidad) {
                 return res.status(400).json({
                     msg: `Stock insuficiente para "${item.nombreProducto}". Disponible: ${producto.stock}`
                 });
             }
+
             articulosVenta.push({
                 producto: item.producto,
                 nombreProducto: item.nombreProducto,
@@ -473,7 +491,9 @@ const crearVentaDesdePedido = async (req, res) => {
                 subtotal: item.subtotal
             });
         }
+
         const esPagoInmediato = ['EFECTIVO', 'TARJETA'].includes(metodoPago);
+
         const venta = new Venta({
             origen: 'PEDIDO',
             pedido: pedido._id,
@@ -490,7 +510,9 @@ const crearVentaDesdePedido = async (req, res) => {
                 costoEnvio: pedido.resumenPago?.costoEnvio || 0
             }
         });
+
         await venta.validate();
+
         if (esPagoInmediato) {
             for (const item of articulosVenta) {
                 const resultadoDescuento = await Producto.updateOne(
@@ -510,15 +532,19 @@ const crearVentaDesdePedido = async (req, res) => {
                     });
                 }
             }
+
             pedido.estadoPago = 'PAGADO';
             pedido.estado = 'FINALIZADO';
         } else {
             pedido.estadoPago = 'PENDIENTE';
             pedido.estado = 'EN_PROCESO';
         }
+
         pedido.metodoPago = metodoPago;
+
         await venta.save();
         await pedido.save();
+
         return res.status(201).json({
             msg: esPagoInmediato
                 ? 'Venta creada desde pedido correctamente. Pedido finalizado y stock descontado'
@@ -551,7 +577,9 @@ const crearVentaDesdePedido = async (req, res) => {
                 msg: Object.values(error.errors)[0].message
             });
         }
+
         console.log('ERROR AL CREAR VENTA DESDE PEDIDO:', error);
+
         return res.status(500).json({
             msg: 'Error al crear venta desde pedido',
             error: error.message
@@ -612,126 +640,6 @@ const cancelarVenta = async (req, res) => {
     }
 };
 
-// Pagar una venta con tarjeta usando Stripe PaymentIntent
-const pagarVentaConTarjeta = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { paymentMethodId } = req.body || {};
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                msg: 'El ID de la venta no es válido'
-            });
-        }
-        if (!paymentMethodId?.trim()) {
-            return res.status(400).json({
-                msg: 'El paymentMethodId es obligatorio'
-            });
-        }
-        const venta = await Venta.findById(id);
-        if (!venta) {
-            return res.status(404).json({
-                msg: 'Venta no encontrada'
-            });
-        }
-        if (venta.metodoPago !== 'TARJETA') {
-            return res.status(400).json({
-                msg: 'Esta venta no fue registrada con método de pago tarjeta'
-            });
-        }
-        if (venta.estadoPago === 'PAGADO' || venta.estado === 'FINALIZADO') {
-            return res.status(400).json({
-                msg: 'Esta venta ya fue pagada'
-            });
-        }
-        if (venta.estado !== 'EN_PROCESO' || venta.estadoPago !== 'PENDIENTE') {
-            return res.status(400).json({
-                msg: 'La venta no está pendiente de pago'
-            });
-        }
-        if (!venta.articulos || venta.articulos.length === 0) {
-            return res.status(400).json({
-                msg: 'La venta no contiene artículos'
-            });
-        }
-        // Primero cobrar con Stripe
-        const payment = await cobrarVentaConTarjeta({
-            venta,
-            paymentMethodId
-        });
-        if (payment.status !== 'succeeded') {
-            return res.status(400).json({
-                msg: 'El pago no se completó',
-                estadoStripe: payment.status
-            });
-        }
-        // Si Stripe cobró correctamente, descontar stock
-        for (const item of venta.articulos) {
-            const resultadoDescuento = await Producto.updateOne(
-                {
-                    _id: item.producto,
-                    estado: true,
-                    stock: { $gte: item.cantidad }
-                },
-                {
-                    $inc: { stock: -item.cantidad }
-                }
-            );
-            if (resultadoDescuento.modifiedCount === 0) {
-                return res.status(400).json({
-                    msg: `El pago fue realizado, pero no hay stock suficiente para "${item.nombreProducto}". Revisar manualmente.`
-                });
-            }
-        }
-        venta.estadoPago = 'PAGADO';
-        venta.estado = 'FINALIZADO';
-        venta.stripe = {
-            paymentIntentId: payment.id
-        };
-        await venta.save();
-        let pedidoActualizado = null;
-        if (venta.origen === 'PEDIDO' && venta.pedido) {
-            pedidoActualizado = await Pedido.findByIdAndUpdate(
-                venta.pedido,
-                {
-                    estadoPago: 'PAGADO',
-                    estado: 'FINALIZADO',
-                    metodoPago: 'TARJETA'
-                },
-                { new: true }
-            ).select('_id estado estadoPago metodoPago');
-        }
-        return res.status(200).json({
-            msg: 'Pago con tarjeta realizado correctamente. Venta finalizada y stock descontado',
-            venta: {
-                id: venta._id,
-                origen: venta.origen,
-                pedido: venta.pedido,
-                cliente: venta.cliente,
-                vendedor: venta.vendedor,
-                metodoPago: venta.metodoPago,
-                estadoPago: venta.estadoPago,
-                estado: venta.estado,
-                stripe: venta.stripe,
-                resumenPago: venta.resumenPago,
-                updatedAt: venta.updatedAt
-            },
-            pedido: pedidoActualizado
-                ? {
-                    id: pedidoActualizado._id,
-                    estado: pedidoActualizado.estado,
-                    estadoPago: pedidoActualizado.estadoPago,
-                    metodoPago: pedidoActualizado.metodoPago
-                }
-                : null
-        });
-    } catch (error) {
-        console.log('ERROR AL PAGAR CON TARJETA:', error);
-        return res.status(500).json({
-            msg: 'Error al procesar el pago con tarjeta',
-            error: error.message
-        });
-    }
-};
 
 // Pagar carrito con tarjeta: cobra Stripe, crea pedido pagado y vacía carrito
 const pagarCarritoConTarjeta = async (req, res) => {
@@ -864,5 +772,5 @@ const pagarCarritoConTarjeta = async (req, res) => {
 };
 
 export {
-    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarVentaConTarjeta, pagarCarritoConTarjeta
+    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarCarritoConTarjeta
 };

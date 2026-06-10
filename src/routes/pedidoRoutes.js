@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido, crearPedidoDesdeCarrito, armarPedidoDesdeFoto } from '../controllers/pedidoController.js';
+import { crearPedidoPorFoto, obtenerPedidosPendientes, aceptarPedido, obtenerMisPedidos, obtenerDetallePedido, cambiarEstadoPedido, crearPedidoDesdeCarrito, armarPedidoDesdeFoto, definirPagoPedido } from '../controllers/pedidoController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloCliente from '../middleware/clienteMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
@@ -19,7 +19,7 @@ router.put('/aceptar/:id', protegerRuta, soloVendedor, aceptarPedido);
 router.get('/mis-pedidos', protegerRuta, obtenerMisPedidos);
 
 // Vendedor cambia e estado del pedido
-router.put('/estado/:id', protegerRuta, cambiarEstadoPedido);
+router.put('/estado-cancelar/:id', protegerRuta, cambiarEstadoPedido);
 
 // Obtener el detalle de un pedido específico
 router.get('/detalle/:id', protegerRuta, obtenerDetallePedido);
@@ -29,5 +29,8 @@ router.post('/crear-desde-carrito', protegerRuta, soloCliente, crearPedidoDesdeC
 
 // Armar un pedido a partir de una foto
 router.put('/armar-desde-foto/:id', protegerRuta, soloVendedor, armarPedidoDesdeFoto);
+
+// Cliente define cómo pagará un pedido por foto ya armado
+router.put('/definir-pago/:id', protegerRuta, soloCliente, definirPagoPedido);
 
 export default router;
