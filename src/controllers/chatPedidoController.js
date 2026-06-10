@@ -147,6 +147,50 @@ const enviarMensajePedido = async (req, res) => {
     }
 };
 
+// Marcar como leídos los mensajes del chat de un pedido
+const marcarChatPedidoComoLeido = async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const usuarioId = req.usuario.id;
+        // Validar formato del ID del pedido
+        if (!mongoose.Types.ObjectId.isValid(pedidoId)) {
+            return res.status(400).json({
+                msg: 'El ID del pedido no es válido'
+            });
+        }
+        // Verificar que el usuario pertenezca al pedido
+        const acceso = await validarAccesoPedido(
+            pedidoId,
+            usuarioId
+        );
+        if (!acceso.ok) {
+            return res.status(acceso.status).json({
+                msg: acceso.msg
+            });
+        }
+        // Agregar el usuario autenticado a leidoPor
+        await ChatPedido.updateMany(
+            {
+                pedido: pedidoId,
+                leidoPor: { $ne: usuarioId }
+            },
+            {
+                $addToSet: {
+                    leidoPor: usuarioId
+                }
+            }
+        );
+        return res.status(200).json({
+            msg: 'Mensajes marcados como leídos'
+        });
+    } catch (error) {
+        console.error('Error al marcar chat como leído:', error);
+        return res.status(500).json({
+            msg: 'Error al marcar el chat como leído'
+        });
+    }
+};
+
 export {
-    obtenerChatPedido, enviarMensajePedido
+    obtenerChatPedido, enviarMensajePedido, marcarChatPedidoComoLeido
 };
