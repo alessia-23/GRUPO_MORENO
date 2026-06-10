@@ -81,6 +81,56 @@ const obtenerMisQuejasSugerencias = async (req, res) => {
     }
 };
 
+// Listar todas las quejas y sugerencias para el administrador
+const obtenerQuejasSugerenciasAdmin = async (req, res) => {
+    try {
+        const { estado, rolUsuario } = req.query;
+        // Solo administradores pueden acceder
+        if (req.usuario.rol !== 'ADMINISTRADOR') {
+            return res.status(403).json({
+                msg: 'No tienes permiso para acceder a esta información'
+            });
+        }
+        const filtro = {};
+        // Filtrar por estado
+        if (estado) {
+            if (!['PENDIENTE', 'FINALIZADA'].includes(estado)) {
+                return res.status(400).json({
+                    msg: 'El estado debe ser PENDIENTE o FINALIZADA'
+                });
+            }
+            filtro.estado = estado;
+        }
+        // Filtrar por rol
+        if (rolUsuario) {
+            if (!['CLIENTE', 'VENDEDOR'].includes(rolUsuario)) {
+                return res.status(400).json({
+                    msg: 'El rol debe ser CLIENTE o VENDEDOR'
+                });
+            }
+            filtro.rolUsuario = rolUsuario;
+        }
+        const quejasSugerencias = await QuejaSugerencia.find(filtro)
+            .populate(
+                'usuario',
+                'email rol'
+            )
+            .sort({ createdAt: -1 });
+        return res.status(200).json({
+            msg: 'Quejas y sugerencias obtenidas correctamente',
+            quejasSugerencias
+        });
+    } catch (error) {
+        console.error(
+            'Error al obtener quejas y sugerencias:',
+            error
+        );
+        return res.status(500).json({
+            msg: 'Error al obtener las quejas y sugerencias'
+        });
+    }
+};
+
 export {
-    crearQuejaSugerencia, obtenerMisQuejasSugerencias
+    crearQuejaSugerencia, obtenerMisQuejasSugerencias, obtenerQuejasSugerenciasAdmin
 };
