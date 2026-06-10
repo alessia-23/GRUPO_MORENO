@@ -229,6 +229,7 @@ const obtenerMisPedidos = async (req, res) => {
         const {
             page = 1,
             estado,
+            estadoPago,
             tipoPedido,
             tipoEntrega,
             buscar
@@ -267,6 +268,15 @@ const obtenerMisPedidos = async (req, res) => {
                 });
             }
             filtro.estado = estado;
+        }
+        if (estadoPago) {
+            if (!['PENDIENTE', 'PAGADO'].includes(estadoPago)) {
+                return res.status(400).json({
+                    msg: 'El estado de pago no es válido'
+                });
+            }
+
+            filtro.estadoPago = estadoPago;
         }
         if (tipoPedido) {
             if (!['FOTO_LISTA', 'CARRITO'].includes(tipoPedido)) {
