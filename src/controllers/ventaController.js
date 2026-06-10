@@ -737,7 +737,8 @@ const pagarCarritoConTarjeta = async (req, res) => {
             resumenPago: {
                 subtotalProductos: totales.subtotalGeneral,
                 ivaProductos: totales.ivaGeneral,
-                costoEnvio
+                costoEnvio,
+                totalPagar
             },
             observaciones: observaciones?.trim() || '',
             estado: 'PENDIENTE'

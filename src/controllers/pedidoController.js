@@ -637,6 +637,10 @@ const crearPedidoDesdeCarrito = async (req, res) => {
         }
         // Calcular subtotal e IVA de productos
         const totales = calcularTotales(articulosPedido);
+        const costoEnvio = tipoEntrega === 'ENVIO_DOMICILIO' ? 3.50 : 0;
+        const totalPagar = Number(
+            (totales.subtotalGeneral + totales.ivaGeneral + costoEnvio).toFixed(2)
+        );
         // Crear pedido tipo carrito
         const pedido = new Pedido({
             cliente: clienteId,
@@ -660,7 +664,9 @@ const crearPedidoDesdeCarrito = async (req, res) => {
             estadoPago: 'PENDIENTE',
             resumenPago: {
                 subtotalProductos: totales.subtotalGeneral,
-                ivaProductos: totales.ivaGeneral
+                ivaProductos: totales.ivaGeneral,
+                costoEnvio,
+                totalPagar
             },
             observaciones: observaciones?.trim() || '',
             estado: 'PENDIENTE'
