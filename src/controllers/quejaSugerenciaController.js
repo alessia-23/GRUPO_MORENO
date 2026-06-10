@@ -1,4 +1,5 @@
 import QuejaSugerencia from '../models/QuejaSugerencia.js';
+import mongoose from 'mongoose';
 
 // Crear queja o sugerencia
 const crearQuejaSugerencia = async (req, res) => {
@@ -125,6 +126,51 @@ const obtenerQuejasSugerenciasAdmin = async (req, res) => {
     }
 };
 
+// Responder una queja o sugerencia
+const responderQuejaSugerencia = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { respuestaAdmin } = req.body;
+        // Validar ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El ID no es válido'
+            });
+        }
+        // Validar respuesta
+        if (!respuestaAdmin || !respuestaAdmin.trim()) {
+            return res.status(400).json({
+                msg: 'La respuesta es obligatoria'
+            });
+        }
+        const quejaSugerencia = await QuejaSugerencia.findById(id);
+        if (!quejaSugerencia) {
+            return res.status(404).json({
+                msg: 'La queja o sugerencia no existe'
+            });
+        }
+        // Evitar responder dos veces
+        if (quejaSugerencia.estado === 'FINALIZADA') {
+            return res.status(400).json({
+                msg: 'La queja o sugerencia ya fue respondida'
+            });
+        }
+        quejaSugerencia.respuestaAdmin = respuestaAdmin.trim();
+        quejaSugerencia.respondidoPor = req.usuario.id;
+        quejaSugerencia.fechaRespuesta = new Date();
+        quejaSugerencia.estado = 'FINALIZADA';
+        await quejaSugerencia.save();
+        return res.status(200).json({
+            msg: 'Respuesta enviada correctamente'
+        });
+    } catch (error) {
+        console.error('Error al responder queja o sugerencia:', error);
+        return res.status(500).json({
+            msg: 'Error al responder la queja o sugerencia'
+        });
+    }
+};
+
 export {
-    crearQuejaSugerencia, obtenerMisQuejasSugerencias, obtenerQuejasSugerenciasAdmin
+    crearQuejaSugerencia, obtenerMisQuejasSugerencias, obtenerQuejasSugerenciasAdmin, responderQuejaSugerencia
 };
