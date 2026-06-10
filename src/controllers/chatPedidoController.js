@@ -81,6 +81,65 @@ const obtenerChatPedido = async (req, res) => {
     }
 };
 
+// Enviar un mensaje al chat de un pedido
+const enviarMensajePedido = async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const { mensaje } = req.body;
+        const usuarioId = req.usuario.id;
+        // Validar formato del ID del pedido
+        if (!mongoose.Types.ObjectId.isValid(pedidoId)) {
+            return res.status(400).json({
+                msg: 'El ID del pedido no es válido'
+            });
+        }
+        // Validar que el mensaje no venga vacío
+        if (!mensaje || !mensaje.trim()) {
+            return res.status(400).json({
+                msg: 'El mensaje es obligatorio'
+            });
+        }
+        // Verificar que el usuario pertenezca al pedido
+        const acceso = await validarAccesoPedido(
+            pedidoId,
+            usuarioId
+        );
+        if (!acceso.ok) {
+            return res.status(acceso.status).json({
+                msg: acceso.msg
+            });
+        }
+        // No permitir mensajes si el pedido está cancelado
+        if (acceso.pedido.estado === 'CANCELADO') {
+            return res.status(400).json({
+                msg: 'No se puede enviar mensajes en un pedido cancelado'
+            });
+        }
+        // Guardar el mensaje en la base de datos
+        const nuevoMensaje = await ChatPedido.create({
+            pedido: pedidoId,
+            emisor: usuarioId,
+            mensaje: mensaje.trim(),
+            leidoPor: [usuarioId]
+        });
+        // Obtener el mensaje completo con datos del emisor
+        const mensajeCompleto = await ChatPedido.findById(nuevoMensaje._id)
+            .populate(
+                'emisor',
+                'email rol imagen perfilId perfilModelo'
+            );
+        return res.status(201).json({
+            msg: 'Mensaje enviado correctamente',
+            mensaje: mensajeCompleto
+        });
+    } catch (error) {
+        console.error('Error al enviar mensaje del pedido:', error);
+        return res.status(500).json({
+            msg: 'Error al enviar el mensaje'
+        });
+    }
+};
+
 export {
-    obtenerChatPedido
+    obtenerChatPedido, enviarMensajePedido
 };
