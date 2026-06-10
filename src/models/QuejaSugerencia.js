@@ -14,10 +14,12 @@ const quejaSugerenciaSchema = new mongoose.Schema(
             required: [true, 'El rol del usuario es obligatorio']
         },
 
-        tipo: {
+        asunto: {
             type: String,
-            enum: ['QUEJA', 'SUGERENCIA'],
-            required: [true, 'El tipo es obligatorio']
+            required: [true, 'El asunto es obligatorio'],
+            trim: true,
+            minlength: [3, 'El asunto debe tener mínimo 3 caracteres'],
+            maxlength: [60, 'El asunto no puede exceder los 60 caracteres']
         },
 
         mensaje: {
