@@ -896,6 +896,26 @@ const definirPagoPedido = async (req, res) => {
                 });
             }
 
+            // Si Stripe cobró correctamente, descontar stock inmediatamente
+            for (const item of pedido.articulos) {
+                const resultadoDescuento = await Producto.updateOne(
+                    {
+                        _id: item.producto,
+                        estado: true,
+                        stock: { $gte: item.cantidad }
+                    },
+                    {
+                        $inc: { stock: -item.cantidad }
+                    }
+                );
+
+                if (resultadoDescuento.modifiedCount === 0) {
+                    return res.status(400).json({
+                        msg: `El pago fue realizado, pero no hay stock suficiente para "${item.nombreProducto}". Revisar manualmente.`
+                    });
+                }
+            }
+
             pedido.metodoPago = 'TARJETA';
             pedido.estadoPago = 'PAGADO';
         }
@@ -914,7 +934,7 @@ const definirPagoPedido = async (req, res) => {
 
         return res.status(200).json({
             msg: metodoPago === 'TARJETA'
-                ? 'Pago con tarjeta realizado correctamente'
+                ? 'Pago con tarjeta realizado correctamente. Stock descontado'
                 : 'Método de pago registrado correctamente',
             pedido: {
                 id: pedido._id,

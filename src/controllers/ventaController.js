@@ -389,49 +389,35 @@ const crearVentaDesdePedido = async (req, res) => {
         const vendedorId = req.usuario.id;
 
         if (!mongoose.Types.ObjectId.isValid(pedidoId)) {
-            return res.status(400).json({
-                msg: 'El ID del pedido no es válido'
-            });
+            return res.status(400).json({ msg: 'El ID del pedido no es válido' });
         }
 
         const pedido = await Pedido.findById(pedidoId);
 
         if (!pedido) {
-            return res.status(404).json({
-                msg: 'Pedido no encontrado'
-            });
+            return res.status(404).json({ msg: 'Pedido no encontrado' });
         }
 
         const metodoPago = pedido.metodoPago;
 
         if (!['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'].includes(metodoPago)) {
-            return res.status(400).json({
-                msg: 'El pedido no tiene un método de pago válido'
-            });
+            return res.status(400).json({ msg: 'El pedido no tiene un método de pago válido' });
         }
 
         if (pedido.vendedor?.toString() !== vendedorId) {
-            return res.status(403).json({
-                msg: 'No tiene permisos para cobrar este pedido'
-            });
+            return res.status(403).json({ msg: 'No tiene permisos para cobrar este pedido' });
         }
 
         if (pedido.estado !== 'EN_PROCESO') {
-            return res.status(400).json({
-                msg: 'Solo se pueden cobrar pedidos en proceso'
-            });
+            return res.status(400).json({ msg: 'Solo se pueden cobrar pedidos en proceso' });
         }
 
         if (metodoPago === 'TARJETA' && pedido.estadoPago !== 'PAGADO') {
-            return res.status(400).json({
-                msg: 'El pedido con tarjeta todavía no está pagado'
-            });
+            return res.status(400).json({ msg: 'El pedido con tarjeta todavía no está pagado' });
         }
 
         if (metodoPago !== 'TARJETA' && pedido.estadoPago === 'PAGADO') {
-            return res.status(400).json({
-                msg: 'Este pedido ya fue pagado'
-            });
+            return res.status(400).json({ msg: 'Este pedido ya fue pagado' });
         }
 
         const ventaExistente = await Venta.findOne({
@@ -441,15 +427,11 @@ const crearVentaDesdePedido = async (req, res) => {
         });
 
         if (ventaExistente) {
-            return res.status(400).json({
-                msg: 'Ya existe una venta activa asociada a este pedido'
-            });
+            return res.status(400).json({ msg: 'Ya existe una venta activa asociada a este pedido' });
         }
 
         if (!pedido.articulos || pedido.articulos.length === 0) {
-            return res.status(400).json({
-                msg: 'El pedido no tiene artículos para cobrar'
-            });
+            return res.status(400).json({ msg: 'El pedido no tiene artículos para cobrar' });
         }
 
         const articulosVenta = [];
@@ -472,7 +454,9 @@ const crearVentaDesdePedido = async (req, res) => {
                 });
             }
 
-            if (producto.stock < item.cantidad) {
+            // Solo validar stock aquí si todavía se va a descontar en este endpoint.
+            // Para TARJETA ya se descontó al pagar.
+            if (metodoPago !== 'TARJETA' && producto.stock < item.cantidad) {
                 return res.status(400).json({
                     msg: `Stock insuficiente para "${item.nombreProducto}". Disponible: ${producto.stock}`
                 });
@@ -492,7 +476,8 @@ const crearVentaDesdePedido = async (req, res) => {
             });
         }
 
-        const esPagoInmediato = ['EFECTIVO', 'TARJETA'].includes(metodoPago);
+        const ventaFinalizada = ['EFECTIVO', 'TARJETA'].includes(metodoPago);
+        const debeDescontarStockAlCrearVenta = metodoPago === 'EFECTIVO';
 
         const venta = new Venta({
             origen: 'PEDIDO',
@@ -504,8 +489,8 @@ const crearVentaDesdePedido = async (req, res) => {
             metodoPago,
             referenciaPago: '',
             observaciones: observaciones?.trim() || pedido.observaciones || '',
-            estadoPago: esPagoInmediato ? 'PAGADO' : 'PENDIENTE',
-            estado: esPagoInmediato ? 'FINALIZADO' : 'EN_PROCESO',
+            estadoPago: ventaFinalizada ? 'PAGADO' : 'PENDIENTE',
+            estado: ventaFinalizada ? 'FINALIZADO' : 'EN_PROCESO',
             resumenPago: {
                 costoEnvio: pedido.resumenPago?.costoEnvio || 0
             }
@@ -513,7 +498,7 @@ const crearVentaDesdePedido = async (req, res) => {
 
         await venta.validate();
 
-        if (esPagoInmediato) {
+        if (debeDescontarStockAlCrearVenta) {
             for (const item of articulosVenta) {
                 const resultadoDescuento = await Producto.updateOne(
                     {
@@ -532,7 +517,9 @@ const crearVentaDesdePedido = async (req, res) => {
                     });
                 }
             }
+        }
 
+        if (ventaFinalizada) {
             pedido.estadoPago = 'PAGADO';
             pedido.estado = 'FINALIZADO';
         } else {
@@ -546,8 +533,10 @@ const crearVentaDesdePedido = async (req, res) => {
         await pedido.save();
 
         return res.status(201).json({
-            msg: esPagoInmediato
-                ? 'Venta creada desde pedido correctamente. Pedido finalizado y stock descontado'
+            msg: ventaFinalizada
+                ? metodoPago === 'TARJETA'
+                    ? 'Venta creada desde pedido correctamente. Pedido finalizado. Stock ya fue descontado al pagar con tarjeta'
+                    : 'Venta creada desde pedido correctamente. Pedido finalizado y stock descontado'
                 : 'Venta creada desde pedido. Pendiente de confirmar transferencia',
             venta: {
                 id: venta._id,
@@ -571,6 +560,7 @@ const crearVentaDesdePedido = async (req, res) => {
                 metodoPago: pedido.metodoPago
             }
         });
+
     } catch (error) {
         if (error.name === 'ValidationError') {
             return res.status(400).json({
@@ -645,46 +635,69 @@ const cancelarVenta = async (req, res) => {
 const pagarCarritoConTarjeta = async (req, res) => {
     try {
         const clienteId = req.usuario.id;
-        const { paymentMethodId, nombrePedido, nombreCompleto, identificacion, correo, telefono,
-            tipoEntrega, direccion, referencia, observaciones = '' } = req.body || {};
+
+        const {
+            paymentMethodId,
+            nombrePedido,
+            nombreCompleto,
+            identificacion,
+            correo,
+            telefono,
+            tipoEntrega,
+            direccion,
+            referencia,
+            observaciones = ''
+        } = req.body || {};
+
         if (!paymentMethodId?.trim()) {
             return res.status(400).json({ msg: 'El paymentMethodId es obligatorio' });
         }
+
         if (!nombrePedido?.trim()) {
             return res.status(400).json({ msg: 'El nombre del pedido es obligatorio' });
         }
+
         if (!nombreCompleto?.trim() || !identificacion?.trim() || !correo?.trim() || !telefono?.trim()) {
             return res.status(400).json({ msg: 'Los datos de facturación son obligatorios' });
         }
+
         if (!['RETIRO_LOCAL', 'ENVIO_DOMICILIO'].includes(tipoEntrega)) {
             return res.status(400).json({ msg: 'El tipo de entrega no es válido' });
         }
+
         if (tipoEntrega === 'ENVIO_DOMICILIO' && !direccion?.trim()) {
             return res.status(400).json({ msg: 'La dirección es obligatoria para envío a domicilio' });
         }
+
         const carrito = await Carrito.findOne({
             cliente: clienteId,
             estado: true
         });
+
         if (!carrito || carrito.articulos.length === 0) {
             return res.status(400).json({ msg: 'El carrito está vacío' });
         }
+
         const articulosPedido = [];
+
         for (const item of carrito.articulos) {
             const producto = await Producto.findOne({
                 _id: item.producto,
                 estado: true
             });
+
             if (!producto) {
                 return res.status(404).json({
                     msg: `El producto "${item.nombreProducto}" ya no está disponible`
                 });
             }
+
             if (producto.stock < item.cantidad) {
                 return res.status(400).json({
                     msg: `Stock insuficiente para "${item.nombreProducto}". Solo hay ${producto.stock} unidades disponibles`
                 });
             }
+
             articulosPedido.push({
                 producto: producto._id,
                 nombreProducto: item.nombreProducto,
@@ -697,23 +710,49 @@ const pagarCarritoConTarjeta = async (req, res) => {
                 porcentajeIva: item.porcentajeIva
             });
         }
+
         const totales = calcularTotales(articulosPedido);
+
         const costoEnvio = tipoEntrega === 'ENVIO_DOMICILIO' ? 3.50 : 0;
+
         const totalPagar = Number(
             (totales.subtotalGeneral + totales.ivaGeneral + costoEnvio).toFixed(2)
         );
+
         const payment = await cobrarConTarjeta({
             totalPagar,
             correo: correo.trim(),
             paymentMethodId,
             descripcion: 'Pago de pedido por carrito'
         });
+
         if (payment.status !== 'succeeded') {
             return res.status(400).json({
                 msg: 'El pago no se completó',
                 estadoStripe: payment.status
             });
         }
+
+        // Si Stripe cobró correctamente, descontar stock inmediatamente
+        for (const item of articulosPedido) {
+            const resultadoDescuento = await Producto.updateOne(
+                {
+                    _id: item.producto,
+                    estado: true,
+                    stock: { $gte: item.cantidad }
+                },
+                {
+                    $inc: { stock: -item.cantidad }
+                }
+            );
+
+            if (resultadoDescuento.modifiedCount === 0) {
+                return res.status(400).json({
+                    msg: `El pago fue realizado, pero no hay stock suficiente para "${item.nombreProducto}". Revisar manualmente.`
+                });
+            }
+        }
+
         const pedido = new Pedido({
             cliente: clienteId,
             tipoPedido: 'CARRITO',
@@ -743,28 +782,36 @@ const pagarCarritoConTarjeta = async (req, res) => {
             observaciones: observaciones?.trim() || '',
             estado: 'PENDIENTE'
         });
+
         await pedido.save();
+
         carrito.articulos = [];
         await carrito.save();
+
         const pedidoRespuesta = pedido.toObject();
+
         if (pedidoRespuesta.tipoEntrega === 'RETIRO_LOCAL') {
             delete pedidoRespuesta.direccionEntrega;
         }
+
         return res.status(201).json({
-            msg: 'Pago con tarjeta realizado correctamente. Pedido creado y enviado al muro de vendedores',
+            msg: 'Pago con tarjeta realizado correctamente. Stock descontado, pedido creado y enviado al muro de vendedores',
             pedido: pedidoRespuesta,
             stripe: {
                 paymentIntentId: payment.id,
                 status: payment.status
             }
         });
+
     } catch (error) {
         if (error.name === 'ValidationError') {
             return res.status(400).json({
                 msg: Object.values(error.errors)[0].message
             });
         }
+
         console.log('ERROR AL PAGAR CARRITO CON TARJETA:', error);
+
         return res.status(500).json({
             msg: 'Error al pagar el carrito con tarjeta',
             error: error.message
