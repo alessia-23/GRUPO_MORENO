@@ -123,11 +123,11 @@ const enviarMensajePedido = async (req, res) => {
             leidoPor: [usuarioId]
         });
         // Obtener el mensaje completo con datos del emisor
-        const mensajeCompleto = await ChatPedido.findById(nuevoMensaje._id)
-            .populate(
-                'emisor',
-                'email rol imagen perfilId perfilModelo'
-            );
+        //const mensajeCompleto = await ChatPedido.findById(nuevoMensaje._id)
+        //.populate(
+        //    'emisor',
+        //      'email rol imagen perfilId perfilModelo'
+        //    );
         return res.status(201).json({
             msg: 'Mensaje enviado correctamente',
             mensaje: {

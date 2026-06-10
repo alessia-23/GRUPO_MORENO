@@ -7,6 +7,8 @@ import app from './server.js';
 import connection from './config/database.js';
 import createAdminSeed from './Seeds/AdministradorSeed.js';
 import pedidoSocket from './sockets/pedidoSocket.js';
+import chatPedidoSocket from './sockets/chatPedidoSocket.js';
+
 const PORT = process.env.PORT || 3000;
 
 // Crear servidor HTTP
@@ -23,6 +25,7 @@ const io = new Server(server, {
 // Guardar io en express
 app.set('io', io);
 pedidoSocket(io);
+chatPedidoSocket(io);
 
 // Eventos socket
 io.on('connection', (socket) => {
