@@ -130,7 +130,14 @@ const enviarMensajePedido = async (req, res) => {
             );
         return res.status(201).json({
             msg: 'Mensaje enviado correctamente',
-            mensaje: mensajeCompleto
+            mensaje: {
+                id: nuevoMensaje._id,
+                pedido: nuevoMensaje.pedido,
+                texto: nuevoMensaje.mensaje,
+                emisor: nuevoMensaje.emisor,
+                leidoPor: nuevoMensaje.leidoPor,
+                createdAt: nuevoMensaje.createdAt
+            }
         });
     } catch (error) {
         console.error('Error al enviar mensaje del pedido:', error);

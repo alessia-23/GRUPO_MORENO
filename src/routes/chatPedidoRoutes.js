@@ -8,6 +8,6 @@ const router = Router();
 router.get('/:pedidoId', protegerRuta, obtenerChatPedido);
 
 // Enviar mensaje al chat de un pedido
-router.post('/:pedidoId/mensajes', protegerRuta, enviarMensajePedido);
+router.post('/mensajes/:pedidoId', protegerRuta, enviarMensajePedido);
 
 export default router;
