@@ -13,6 +13,7 @@ import productoRoutes from './routes/productoRoutes.js';
 import pedidoRoutes from './routes/pedidoRoutes.js';
 import carritoRoutes from './routes/carritoRoutes.js';
 import ventaRoutes from './routes/ventaRoutes.js';
+import chatPedidoRoutes from './routes/chatPedidoRoutes.js';
 
 // Inicialización
 const app = express();
@@ -51,6 +52,7 @@ app.use('/api/productos', productoRoutes); // Ruta para productos
 app.use('/api/pedidos', pedidoRoutes); // Ruta para pedidos
 app.use('/api/carrito', carritoRoutes); // Ruta para carrito de compras
 app.use('/api/ventas', ventaRoutes); // Ruta para ventas
+app.use('/api/chats-pedidos', chatPedidoRoutes); // Ruta para el chat de pedido
 
 // Exportar app
 export default app;
