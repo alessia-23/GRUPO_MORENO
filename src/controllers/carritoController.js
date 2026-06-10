@@ -124,6 +124,8 @@ const agregarAlCarrito = async (req, res) => {
         await carrito.save();
         return res.status(200).json({
             msg: 'Producto agregado al carrito correctamente',
+            stockDisponible: producto.stock,
+            cantidadEnCarrito: cantidadFinal,
             carrito: {
                 _id: carrito._id,
                 cliente: carrito.cliente,
