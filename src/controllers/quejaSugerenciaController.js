@@ -85,12 +85,6 @@ const obtenerMisQuejasSugerencias = async (req, res) => {
 const obtenerQuejasSugerenciasAdmin = async (req, res) => {
     try {
         const { estado, rolUsuario } = req.query;
-        // Solo administradores pueden acceder
-        if (req.usuario.rol !== 'ADMINISTRADOR') {
-            return res.status(403).json({
-                msg: 'No tienes permiso para acceder a esta información'
-            });
-        }
         const filtro = {};
         // Filtrar por estado
         if (estado) {
