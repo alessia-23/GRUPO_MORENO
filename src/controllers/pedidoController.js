@@ -87,6 +87,21 @@ const crearPedidoPorFoto = async (req, res) => {
             observaciones: observaciones?.trim() || ''
         });
         await pedido.save();
+        const io = req.app.get('io');
+
+        if (io) {
+            io.to('vendedores').emit('pedido:nuevo', {
+                msg: 'Nuevo pedido pendiente',
+                pedido: {
+                    id: pedido._id,
+                    tipoPedido: pedido.tipoPedido,
+                    nombrePedido: pedido.nombrePedido,
+                    tipoEntrega: pedido.tipoEntrega,
+                    estado: pedido.estado,
+                    createdAt: pedido.createdAt
+                }
+            });
+        }
         return res.status(201).json({
             msg: 'Pedido por foto enviado correctamente al muro de vendedores',
             pedido
