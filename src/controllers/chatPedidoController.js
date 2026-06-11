@@ -122,6 +122,17 @@ const enviarMensajePedido = async (req, res) => {
             mensaje: mensaje.trim(),
             leidoPor: [usuarioId]
         });
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`pedido-chat-${pedidoId}`).emit('nuevo-mensaje-pedido', {
+                id: nuevoMensaje._id,
+                pedido: nuevoMensaje.pedido,
+                texto: nuevoMensaje.mensaje,
+                emisor: nuevoMensaje.emisor,
+                leidoPor: nuevoMensaje.leidoPor,
+                createdAt: nuevoMensaje.createdAt
+            });
+        }
         // Obtener el mensaje completo con datos del emisor
         //const mensajeCompleto = await ChatPedido.findById(nuevoMensaje._id)
         //.populate(
