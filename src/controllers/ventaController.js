@@ -531,6 +531,41 @@ const crearVentaDesdePedido = async (req, res) => {
 
         await venta.save();
         await pedido.save();
+        const io = req.app.get('io');
+
+        if (io) {
+            io.to(`cliente:${pedido.cliente.toString()}`).emit(
+                'pedido:actualizado',
+                {
+                    id: pedido._id,
+                    estado: pedido.estado,
+                    estadoPago: pedido.estadoPago,
+                    vendedor: pedido.vendedor
+                }
+            );
+
+            if (pedido.vendedor) {
+                io.to(`vendedor:${pedido.vendedor.toString()}`).emit(
+                    'pedido:actualizado',
+                    {
+                        id: pedido._id,
+                        estado: pedido.estado,
+                        estadoPago: pedido.estadoPago
+                    }
+                );
+            }
+
+            if (pedido.estado === 'FINALIZADO') {
+                io.to('vendedores').emit(
+                    'pedido:finalizado',
+                    {
+                        id: pedido._id,
+                        estado: pedido.estado,
+                        estadoPago: pedido.estadoPago
+                    }
+                );
+            }
+        }
 
         return res.status(201).json({
             msg: ventaFinalizada

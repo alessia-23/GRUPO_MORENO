@@ -17,7 +17,13 @@ const pedidoSocket = (io) => {
                 console.log(`Socket ${socket.id} unido a sala cliente:${clienteId}`);
             }
         });
-
+        // Sala para vendedor específico
+        socket.on('vendedor:unirse', (vendedorId) => {
+            if (vendedorId) {
+                socket.join(`vendedor:${vendedorId}`);
+                console.log(`Socket ${socket.id} unido a sala vendedor:${vendedorId}`);
+            }
+        });
         // Listar pedidos pendientes del muro
         socket.on('pedidos:pendientes', async (filtros = {}) => {
             try {

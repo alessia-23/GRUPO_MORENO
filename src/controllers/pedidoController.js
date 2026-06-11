@@ -574,7 +574,6 @@ const cambiarEstadoPedido = async (req, res) => {
         const io = req.app.get('io');
 
         if (io) {
-
             io.to(`cliente:${pedido.cliente.toString()}`).emit(
                 'pedido:cancelado',
                 {
@@ -584,7 +583,7 @@ const cambiarEstadoPedido = async (req, res) => {
             );
 
             if (pedido.vendedor) {
-                io.to(`cliente:${pedido.vendedor.toString()}`).emit(
+                io.to(`vendedor:${pedido.vendedor.toString()}`).emit(
                     'pedido:cancelado',
                     {
                         id: pedido._id,
@@ -1025,7 +1024,7 @@ const definirPagoPedido = async (req, res) => {
         const io = req.app.get('io');
 
         if (io && pedido.vendedor) {
-            io.to(`cliente:${pedido.vendedor.toString()}`).emit(
+            io.to(`vendedor:${pedido.vendedor.toString()}`).emit(
                 'pedido:pago-definido',
                 {
                     id: pedido._id,
