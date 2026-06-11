@@ -8,6 +8,7 @@ import connection from './config/database.js';
 import createAdminSeed from './Seeds/AdministradorSeed.js';
 import pedidoSocket from './sockets/pedidoSocket.js';
 import chatPedidoSocket from './sockets/chatPedidoSocket.js';
+import quejaSugerenciaSocket from './sockets/quejaSugerenciaSocket.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -26,6 +27,7 @@ const io = new Server(server, {
 app.set('io', io);
 pedidoSocket(io);
 chatPedidoSocket(io);
+quejaSugerenciaSocket(io);
 
 // Eventos socket
 io.on('connection', (socket) => {

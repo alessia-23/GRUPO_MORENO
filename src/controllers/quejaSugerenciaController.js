@@ -26,12 +26,24 @@ const crearQuejaSugerencia = async (req, res) => {
             });
         }
         // Guardar queja o sugerencia en la base de datos
-        await QuejaSugerencia.create({
+        const nuevaQuejaSugerencia = await QuejaSugerencia.create({
             usuario: usuarioId,
             rolUsuario,
             asunto: asunto.trim(),
             mensaje: mensaje.trim()
         });
+
+        const io = req.app.get('io');
+
+        if (io) {
+            io.to('quejas-admin').emit('nueva-queja-sugerencia', {
+                id: nuevaQuejaSugerencia._id,
+                asunto: nuevaQuejaSugerencia.asunto,
+                estado: nuevaQuejaSugerencia.estado,
+                rolUsuario: nuevaQuejaSugerencia.rolUsuario,
+                createdAt: nuevaQuejaSugerencia.createdAt
+            });
+        }
         return res.status(201).json({
             msg: 'Queja o sugerencia enviada correctamente'
         });
@@ -160,6 +172,20 @@ const responderQuejaSugerencia = async (req, res) => {
         quejaSugerencia.fechaRespuesta = new Date();
         quejaSugerencia.estado = 'FINALIZADA';
         await quejaSugerencia.save();
+        const io = req.app.get('io');
+
+        if (io) {
+            io.to(`mis-quejas-${quejaSugerencia.usuario.toString()}`).emit(
+                'queja-sugerencia-respondida',
+                {
+                    id: quejaSugerencia._id,
+                    asunto: quejaSugerencia.asunto,
+                    estado: quejaSugerencia.estado,
+                    respuestaAdmin: quejaSugerencia.respuestaAdmin,
+                    fechaRespuesta: quejaSugerencia.fechaRespuesta
+                }
+            );
+        }
         return res.status(200).json({
             msg: 'Respuesta enviada correctamente'
         });
