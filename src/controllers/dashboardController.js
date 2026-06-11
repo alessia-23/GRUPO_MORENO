@@ -1,10 +1,11 @@
+import mongoose from 'mongoose';
 import Venta from '../models/Venta.js';
 import Pedido from '../models/Pedido.js';
 
 // Gráficas del dashboard del vendedor
 const obtenerGraficasDashboardVendedor = async (req, res) => {
     try {
-        const vendedorId = req.usuario.id;
+        const vendedorObjectId = new mongoose.Types.ObjectId(req.usuario.id);
 
         const inicioAnio = new Date(new Date().getFullYear(), 0, 1);
 
@@ -16,7 +17,7 @@ const obtenerGraficasDashboardVendedor = async (req, res) => {
             Venta.aggregate([
                 {
                     $match: {
-                        vendedor: vendedorId,
+                        vendedor: vendedorObjectId,
                         estado: { $ne: 'CANCELADO' },
                         createdAt: { $gte: inicioAnio }
                     }
@@ -34,7 +35,7 @@ const obtenerGraficasDashboardVendedor = async (req, res) => {
             Pedido.aggregate([
                 {
                     $match: {
-                        vendedor: vendedorId
+                        vendedor: vendedorObjectId
                     }
                 },
                 {
@@ -48,7 +49,7 @@ const obtenerGraficasDashboardVendedor = async (req, res) => {
             Venta.aggregate([
                 {
                     $match: {
-                        vendedor: vendedorId,
+                        vendedor: vendedorObjectId,
                         estado: { $ne: 'CANCELADO' }
                     }
                 },
@@ -58,7 +59,8 @@ const obtenerGraficasDashboardVendedor = async (req, res) => {
                         cantidad: { $sum: 1 },
                         total: { $sum: '$resumenPago.totalPagar' }
                     }
-                }
+                },
+                { $sort: { total: -1 } }
             ])
         ]);
 
@@ -75,10 +77,12 @@ const obtenerGraficasDashboardVendedor = async (req, res) => {
                     total: Number(item.total.toFixed(2)),
                     cantidad: item.cantidad
                 })),
+
                 pedidosPorEstado: pedidosPorEstado.map(item => ({
                     estado: item._id,
                     cantidad: item.cantidad
                 })),
+
                 ventasPorMetodoPago: ventasPorMetodoPago.map(item => ({
                     metodoPago: item._id,
                     cantidad: item.cantidad,
