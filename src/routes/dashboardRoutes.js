@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
-import { obtenerGraficasDashboardVendedor } from '../controllers/dashboardController.js';
+import { obtenerDashboardVendedor } from '../controllers/dashboardController.js';
 
 const router = Router();
 
-// Gráficas dashboard vendedor
-router.get('/vendedor/graficas', protegerRuta, soloVendedor, obtenerGraficasDashboardVendedor);
+// Dashboard completo del vendedor
+router.get('/vendedor', protegerRuta, soloVendedor, obtenerDashboardVendedor);
 
 export default router;
