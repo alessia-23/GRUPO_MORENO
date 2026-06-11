@@ -60,43 +60,46 @@ const recuperarPassword = async (req, res) => {
     try {
         const { email } = req.body;
         // Validar que llegue el correo
-        if (!email) {
+        if (!email?.trim()) {
             return res.status(400).json({
                 msg: 'Debe ingresar el correo'
             });
         }
-        // Buscar usuario en la colección Usuario
+        // Buscar usuario por correo y traer datos básicos del perfil
         const usuario = await Usuario.findOne({
             email: email.toLowerCase().trim()
-        });
+        }).populate('perfilId', 'nombre apellido');
         if (!usuario) {
             return res.status(404).json({
                 msg: 'Usuario no encontrado'
             });
         }
-        // Verificar si el usuario está activo
+        // Validar que el usuario esté activo
         if (!usuario.estado) {
             return res.status(403).json({
                 msg: 'Usuario inactivo'
             });
         }
-        // Generar token y guardarlo en la base
+        // Generar token temporal para recuperación
         const token = generarToken();
+        // Guardar el token en el usuario
         usuario.token = token;
         await usuario.save();
-        // Enlace temporal de recuperación
+        // Crear enlace que abrirá el frontend para cambiar contraseña
         const resetLink = `${process.env.FRONTEND_URL}/recuperar-password/${token}`;
-        // Enviar datos a n8n
-        await axios.post(process.env.N8N_WEBHOOK_URL, {
+        // Enviar datos al workflow de n8n
+        await axios.post(process.env.N8N_WEBHOOK_RECUPERAR_PASSWORD, {
             email: usuario.email,
-            nombre: usuario.email,
+            nombre: usuario.perfilId?.nombre || usuario.email,
+            apellido: usuario.perfilId?.apellido || '',
+            rol: usuario.rol,
             resetLink
         });
         return res.status(200).json({
             msg: 'Enlace de recuperación enviado correctamente'
         });
     } catch (error) {
-        console.log(error);
+        console.log('ERROR RECUPERAR PASSWORD:', error);
         return res.status(500).json({
             msg: 'Error al recuperar contraseña',
             error: error.message
