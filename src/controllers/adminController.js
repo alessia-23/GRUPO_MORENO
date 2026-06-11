@@ -6,9 +6,9 @@ import { hashPassword } from '../helpers/bcrypt.js';
 // Registro de vendedor creado por el administrador
 const registrarVendedor = async (req, res) => {
     try {
-        const {nombre,apellido,cedula,telefono,direccion,email,password,fecha_nacimiento} = req.body;
+        const { nombre, apellido, cedula, telefono, direccion, email, password, fecha_nacimiento } = req.body;
         // Validar campos obligatorios y evitar espacios vacíos
-        if (!nombre?.trim() ||!apellido?.trim() ||!cedula?.trim() ||!telefono?.trim() ||!direccion?.trim() ||!email?.trim() ||!password ||!fecha_nacimiento) {
+        if (!nombre?.trim() || !apellido?.trim() || !cedula?.trim() || !telefono?.trim() || !direccion?.trim() || !email?.trim() || !password || !fecha_nacimiento) {
             return res.status(400).json({
                 msg: 'Debe llenar todos los campos obligatorios'
             });
@@ -68,6 +68,20 @@ const registrarVendedor = async (req, res) => {
             perfilId: nuevoVendedor._id,
             perfilModelo: 'Vendedor'
         });
+        // ENVIAR CREDENCIALES AL NUEVO WORKFLOW DE n8n
+       
+        try {
+            await axios.post(process.env.N8N_WEBHOOK_CREAR_VENDEDOR, {
+                email: nuevoUsuario.email,
+                nombre: nuevoVendedor.nombre,
+                apellido: nuevoVendedor.apellido,
+                password: password // La contraseña limpia (sin encriptar) para el correo
+            });
+        } catch (errorAxios) {
+            console.log('Error al enviar datos a n8n:', errorAxios.message);
+            // No bloqueamos la respuesta al cliente aunque el flujo de n8n falle
+        }
+
         // Respuesta final
         return res.status(201).json({
             msg: 'Vendedor registrado correctamente',
@@ -249,19 +263,22 @@ const buscarCliente = async (req, res) => {
     try {
         const { cedula } = req.params;
         const cliente = await Cliente.findOne({
-            cedula: cedula.trim()});
+            cedula: cedula.trim()
+        });
         if (!cliente) {
             return res.status(404).json({
-                msg: 'Cliente no encontrado'});
-            }
+                msg: 'Cliente no encontrado'
+            });
+        }
         const usuario = await Usuario.findOne({
-            rol: 'CLIENTE',perfilId: cliente._id
+            rol: 'CLIENTE', perfilId: cliente._id
         })
             .select('-password -token -createdAt -updatedAt')
             .populate('perfilId', '-createdAt -updatedAt');
         if (!usuario) {
             return res.status(404).json({
-                msg: 'Usuario asociado al cliente no encontrado'});
+                msg: 'Usuario asociado al cliente no encontrado'
+            });
         }
         return res.status(200).json({
             _id: usuario._id,
@@ -272,7 +289,8 @@ const buscarCliente = async (req, res) => {
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al buscar cliente',error: error.message});
+            msg: 'Error al buscar cliente', error: error.message
+        });
     }
 };
 
@@ -291,7 +309,7 @@ const buscarVendedor = async (req, res) => {
         }
         // Buscar el usuario asociado a ese vendedor
         const usuario = await Usuario.findOne({
-            rol: 'VENDEDOR',perfilId: vendedor._id
+            rol: 'VENDEDOR', perfilId: vendedor._id
         })
             .select('-password -token -createdAt -updatedAt')
             .populate('perfilId', '-createdAt -updatedAt');
@@ -309,7 +327,7 @@ const buscarVendedor = async (req, res) => {
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al buscar vendedor',error: error.message
+            msg: 'Error al buscar vendedor', error: error.message
         });
     }
 };
@@ -321,8 +339,8 @@ const listarClientesActivos = async (req, res) => {
             rol: 'CLIENTE',
             estado: true
         })
-        .select('-password -token -createdAt -updatedAt')
-        .populate('perfilId', '-createdAt -updatedAt');
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({
             rol: 'CLIENTE',
             estado: true
@@ -346,8 +364,8 @@ const listarClientesInactivos = async (req, res) => {
             rol: 'CLIENTE',
             estado: false
         })
-        .select('-password -token -createdAt -updatedAt')
-        .populate('perfilId', '-createdAt -updatedAt');
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({
             rol: 'CLIENTE',
             estado: false
@@ -371,8 +389,8 @@ const listarVendedoresActivos = async (req, res) => {
             rol: 'VENDEDOR',
             estado: true
         })
-        .select('-password -token -createdAt -updatedAt')
-        .populate('perfilId', '-createdAt -updatedAt');
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({
             rol: 'VENDEDOR',
             estado: true
@@ -396,8 +414,8 @@ const listarVendedoresInactivos = async (req, res) => {
             rol: 'VENDEDOR',
             estado: false
         })
-        .select('-password -token -createdAt -updatedAt')
-        .populate('perfilId', '-createdAt -updatedAt');
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
         const total = await Usuario.countDocuments({
             rol: 'VENDEDOR',
             estado: false
@@ -414,6 +432,7 @@ const listarVendedoresInactivos = async (req, res) => {
     }
 };
 
-export { registrarVendedor, desactivarVendedor, activarVendedor, desactivarCliente, activarCliente 
+export {
+    registrarVendedor, desactivarVendedor, activarVendedor, desactivarCliente, activarCliente
     , buscarCliente, buscarVendedor, listarClientesActivos, listarClientesInactivos, listarVendedoresActivos, listarVendedoresInactivos
 };

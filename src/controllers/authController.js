@@ -110,7 +110,13 @@ const recuperarPassword = async (req, res) => {
 // Endpoint para cambiar la contraseña usando el token de recuperación
 const cambiarPasswordToken = async (req, res) => {
     try {
-        const { token } = req.params;
+        const token = req.params.token?.trim();
+        // Validar token recibido
+        if (!token) {
+            return res.status(400).json({
+                msg: 'Token no enviado'
+            });
+        }
         const { password, confirmarPassword } = req.body;
         if (!password?.trim() || !confirmarPassword?.trim()) {
             return res.status(400).json({
@@ -128,7 +134,9 @@ const cambiarPasswordToken = async (req, res) => {
                 msg: 'La contraseña debe tener entre 8 y 16 caracteres, incluir mayúscula, minúscula, número y carácter especial'
             });
         }
-        const usuario = await Usuario.findOne({ token });
+        const usuario = await Usuario.findOne({
+            token: token
+        });
         if (!usuario) {
             return res.status(404).json({
                 msg: 'Token no válido o expirado'
