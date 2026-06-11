@@ -784,6 +784,24 @@ const pagarCarritoConTarjeta = async (req, res) => {
         });
 
         await pedido.save();
+        // Avisar a los vendedores que hay un nuevo pedido en el muro
+        const io = req.app.get('io');
+
+        if (io) {
+            io.to('vendedores').emit('pedido:nuevo', {
+                msg: 'Nuevo pedido pendiente',
+                pedido: {
+                    id: pedido._id,
+                    tipoPedido: pedido.tipoPedido,
+                    nombrePedido: pedido.nombrePedido,
+                    tipoEntrega: pedido.tipoEntrega,
+                    estado: pedido.estado,
+                    estadoPago: pedido.estadoPago,
+                    metodoPago: pedido.metodoPago,
+                    createdAt: pedido.createdAt
+                }
+            });
+        }
 
         carrito.articulos = [];
         await carrito.save();

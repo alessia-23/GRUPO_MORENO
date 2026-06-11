@@ -226,6 +226,25 @@ const aceptarPedido = async (req, res) => {
                 msg: 'El pedido ya fue tomado, cancelado o no existe'
             });
         }
+        const io = req.app.get('io');
+
+        if (io) {
+
+            // Avisar a todos los vendedores
+            io.to('vendedores').emit('pedido:aceptado', {
+                pedidoId: pedido._id
+            });
+
+            // Avisar al cliente dueño
+            io.to(`cliente:${pedido.cliente._id}`).emit(
+                'pedido:actualizado',
+                {
+                    id: pedido._id,
+                    estado: pedido.estado,
+                    vendedor: pedido.vendedor
+                }
+            );
+        }
         return res.status(200).json({
             msg: 'Pedido aceptado correctamente',
             pedido
@@ -552,7 +571,28 @@ const cambiarEstadoPedido = async (req, res) => {
 
         pedido.estado = 'CANCELADO';
         await pedido.save();
+        const io = req.app.get('io');
 
+        if (io) {
+
+            io.to(`cliente:${pedido.cliente.toString()}`).emit(
+                'pedido:cancelado',
+                {
+                    id: pedido._id,
+                    estado: pedido.estado
+                }
+            );
+
+            if (pedido.vendedor) {
+                io.to(`cliente:${pedido.vendedor.toString()}`).emit(
+                    'pedido:cancelado',
+                    {
+                        id: pedido._id,
+                        estado: pedido.estado
+                    }
+                );
+            }
+        }
         return res.status(200).json({
             msg: 'Pedido cancelado correctamente',
             pedido: {
@@ -828,6 +868,18 @@ const armarPedidoDesdeFoto = async (req, res) => {
         pedido.resumenPago.subtotalProductos = totalesCalculados.subtotalGeneral;
         pedido.resumenPago.ivaProductos = totalesCalculados.ivaGeneral;
         await pedido.save();
+        const io = req.app.get('io');
+
+        if (io) {
+            io.to(`cliente:${pedido.cliente.toString()}`).emit(
+                'pedido:armado',
+                {
+                    id: pedido._id,
+                    total: pedido.resumenPago.totalPagar,
+                    articulos: pedido.articulos.length
+                }
+            );
+        }
         return res.status(200).json({
             msg: 'Pedido armado correctamente desde la foto',
             pedido: {
@@ -970,7 +1022,18 @@ const definirPagoPedido = async (req, res) => {
         }
 
         await pedido.save();
+        const io = req.app.get('io');
 
+        if (io && pedido.vendedor) {
+            io.to(`cliente:${pedido.vendedor.toString()}`).emit(
+                'pedido:pago-definido',
+                {
+                    id: pedido._id,
+                    metodoPago: pedido.metodoPago,
+                    estadoPago: pedido.estadoPago
+                }
+            );
+        }
         return res.status(200).json({
             msg: metodoPago === 'TARJETA'
                 ? 'Pago con tarjeta realizado correctamente. Stock descontado'
