@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarCarritoConTarjeta } from '../controllers/ventaController.js';
+import { crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarCarritoConTarjeta, obtenerAlertaBajasVentas } from '../controllers/ventaController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
 import soloCliente from '../middleware/clienteMiddleware.js';
@@ -27,5 +27,7 @@ router.post('/pagar-carrito-tarjeta', protegerRuta, soloCliente, pagarCarritoCon
 // Cancelar una venta pendiente
 router.put('/cancelar/:id', protegerRuta, soloVendedor, cancelarVenta);
 
+// Alerta para n8n: bajo número de ventas
+router.get('/alerta-bajas-ventas', obtenerAlertaBajasVentas);
 
 export default router;
