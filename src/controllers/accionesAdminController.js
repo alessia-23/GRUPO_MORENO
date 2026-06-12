@@ -172,6 +172,45 @@ const reactivarAccionAdminN8n = async (req, res) => {
         });
     }
 };
+
+const consultarAccionAdminN8n = async (req, res) => {
+    try {
+        const { tipo } = req.params;
+        const { token } = req.query;
+
+        if (token !== process.env.N8N_SECRET_TOKEN) {
+            return res.status(401).json({
+                msg: 'Token de n8n no válido'
+            });
+        }
+
+        if (!tiposAcciones.includes(tipo)) {
+            return res.status(400).json({
+                msg: 'Tipo de acción administrativa no válido'
+            });
+        }
+
+        const periodo = obtenerPeriodoActual(tipo);
+
+        const accion = await AccionesAdmin.findOne({
+            tipo,
+            periodo
+        });
+
+        return res.status(200).json({
+            tipo,
+            periodo,
+            estado: accion?.estado || 'PENDIENTE',
+            debeEnviarCorreo: !accion || accion.estado === 'PENDIENTE'
+        });
+
+    } catch (error) {
+        console.error('Error al consultar acción desde n8n:', error);
+        return res.status(500).json({
+            msg: 'Error al consultar acción desde n8n'
+        });
+    }
+};
 export {
-    listarAccionesAdmin, finalizarAccionAdmin, reactivarAccionAdmin, reactivarAccionAdminN8n
+    listarAccionesAdmin, finalizarAccionAdmin, reactivarAccionAdmin, reactivarAccionAdminN8n, consultarAccionAdminN8n
 };
