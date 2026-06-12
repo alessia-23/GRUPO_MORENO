@@ -1,4 +1,8 @@
+import axios from 'axios';
 import AccionesAdmin from '../models/AccionesAdmin.js';
+import Producto from '../models/Producto.js';
+import Usuario from '../models/Usuario.js';
+
 
 const tiposAcciones = [
     'PROMOCION_SUGERIDA',
@@ -128,6 +132,7 @@ const reactivarAccionAdmin = async (req, res) => {
     }
 };
 
+
 const reactivarAccionAdminN8n = async (req, res) => {
     try {
         const { tipo } = req.params;
@@ -173,6 +178,61 @@ const reactivarAccionAdminN8n = async (req, res) => {
     }
 };
 
+const ejecutarPromocionSugerida = async (req, res) => {
+    try {
+
+        const productos = await Producto.find({
+            estado: true,
+            stock: { $gt: 0 }
+        })
+            .sort({ stock: -1 })
+            .limit(3)
+            .select('nombre descripcion precioVenta stock imagen');
+
+        if (productos.length === 0) {
+            return res.status(404).json({
+                msg: 'No existen productos para promocionar'
+            });
+        }
+
+        const clientes = await Usuario.find({
+            rol: 'CLIENTE',
+            estado: true
+        }).select('email');
+
+        const correos = clientes
+            .map(cliente => cliente.email)
+            .filter(Boolean);
+
+        if (correos.length === 0) {
+            return res.status(404).json({
+                msg: 'No existen clientes para enviar promociones'
+            });
+        }
+
+        /*await axios.post(
+            process.env.N8N_WEBHOOK_PROMOCION_SUGERIDA,
+            {
+                productos,
+                correos
+            }
+        );
+*/
+        return res.status(200).json({
+            msg: 'Promoción sugerida enviada correctamente',
+            totalClientes: correos.length,
+            productos
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            msg: 'Error al ejecutar promoción sugerida'
+        });
+    }
+};
+
 const consultarAccionAdminN8n = async (req, res) => {
     try {
         const { tipo } = req.params;
@@ -212,5 +272,5 @@ const consultarAccionAdminN8n = async (req, res) => {
     }
 };
 export {
-    listarAccionesAdmin, finalizarAccionAdmin, reactivarAccionAdmin, reactivarAccionAdminN8n, consultarAccionAdminN8n
+    listarAccionesAdmin, finalizarAccionAdmin, reactivarAccionAdmin, reactivarAccionAdminN8n, consultarAccionAdminN8n, ejecutarPromocionSugerida
 };
