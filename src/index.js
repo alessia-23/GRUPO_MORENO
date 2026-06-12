@@ -9,6 +9,7 @@ import createAdminSeed from './Seeds/AdministradorSeed.js';
 import pedidoSocket from './sockets/pedidoSocket.js';
 import chatPedidoSocket from './sockets/chatPedidoSocket.js';
 import quejaSugerenciaSocket from './sockets/quejaSugerenciaSocket.js';
+import recomendacionSocket from './sockets/recomendacionSocket.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -28,6 +29,7 @@ app.set('io', io);
 pedidoSocket(io);
 chatPedidoSocket(io);
 quejaSugerenciaSocket(io);
+recomendacionSocket(io);
 
 // Eventos socket
 io.on('connection', (socket) => {
