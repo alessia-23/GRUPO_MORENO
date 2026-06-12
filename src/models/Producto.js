@@ -78,6 +78,10 @@ const productoSchema = new mongoose.Schema({
         min: [0, 'El stock mínimo no puede ser negativo'],
         default: 5
     },
+    alertaStockEnviada: {
+        type: Boolean,
+        default: false
+    },
     marca: {
         type: String,
         trim: true,
