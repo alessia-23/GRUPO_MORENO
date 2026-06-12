@@ -6,6 +6,7 @@ import Carrito from '../models/Carrito.js';
 import Producto from '../models/Producto.js';
 import { calcularTotales } from '../helpers/calcularTotal.js';
 import { cobrarConTarjeta } from '../helpers/stripeHelper.js';
+import revisarYEnviarAlertaStock from '../helpers/alertaStockHelper.js';
 
 // Crear pedido por foto/lista enviada por el cliente
 const crearPedidoPorFoto = async (req, res) => {
@@ -1004,6 +1005,7 @@ const definirPagoPedido = async (req, res) => {
                         msg: `El pago fue realizado, pero no hay stock suficiente para "${item.nombreProducto}". Revisar manualmente.`
                     });
                 }
+                await revisarYEnviarAlertaStock(item.producto);
             }
 
             pedido.metodoPago = 'TARJETA';

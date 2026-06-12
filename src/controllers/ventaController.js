@@ -6,6 +6,7 @@ import Pedido from '../models/Pedido.js';
 import Carrito from '../models/Carrito.js';
 import { calcularTotales } from '../helpers/calcularTotal.js';
 import { cobrarConTarjeta } from '../helpers/stripeHelper.js';
+import revisarYEnviarAlertaStock from '../helpers/alertaStockHelper.js';
 
 // Crear una venta directa en el local
 const crearVentaDirecta = async (req, res) => {
@@ -139,6 +140,7 @@ const crearVentaDirecta = async (req, res) => {
                         msg: `Stock insuficiente para "${item.nombreProducto}". Otro vendedor pudo haber vendido este producto antes.`
                     });
                 }
+                await revisarYEnviarAlertaStock(item.producto);
             }
         }
         await venta.save();
@@ -334,6 +336,7 @@ const confirmarTransferenciaVenta = async (req, res) => {
                     msg: `Stock insuficiente para "${item.nombreProducto}". No se pudo confirmar la venta.`
                 });
             }
+            await revisarYEnviarAlertaStock(item.producto);
         }
         if (referenciaPago?.trim()) {
             venta.referenciaPago = referenciaPago.trim();
@@ -516,6 +519,7 @@ const crearVentaDesdePedido = async (req, res) => {
                         msg: `Stock insuficiente para "${item.nombreProducto}". Otro vendedor pudo haber vendido este producto antes.`
                     });
                 }
+                await revisarYEnviarAlertaStock(item.producto);
             }
         }
 
@@ -786,6 +790,7 @@ const pagarCarritoConTarjeta = async (req, res) => {
                     msg: `El pago fue realizado, pero no hay stock suficiente para "${item.nombreProducto}". Revisar manualmente.`
                 });
             }
+            await revisarYEnviarAlertaStock(item.producto);
         }
 
         const pedido = new Pedido({
