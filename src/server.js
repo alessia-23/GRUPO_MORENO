@@ -58,7 +58,7 @@ app.use('/api/ventas', ventaRoutes); // Ruta para ventas
 app.use('/api/chats-pedidos', chatPedidoRoutes); // Ruta para el chat de pedido
 app.use('/api/quejas-sugerencias', quejaSugerenciaRoutes); // Ruta de quejas y sugerencias
 app.use('/api/dashboard', dashboardRoutes); // Ruta para dashboard
-app.use('/api/recomendaciones', recomendacionRoutes); // Para recomendaciones
+app.use('/api/recomendacion', recomendacionRoutes); // Para recomendaciones
 
 // Exportar app
 export default app;
