@@ -5,7 +5,7 @@ const quejaSugerenciaSocket = (io) => {
             socket.join('quejas-admin');
             console.log(`Socket ${socket.id} unido a quejas-admin`);
         });
-        // Sala personal del usuario cliente/vendedor
+        // Sala personal del usuario cliente
         socket.on('unirse-mis-quejas', (usuarioId) => {
             socket.join(`mis-quejas-${usuarioId}`);
             console.log(`Socket ${socket.id} unido a mis-quejas-${usuarioId}`);

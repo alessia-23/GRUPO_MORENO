@@ -10,7 +10,7 @@ const crearQuejaSugerencia = async (req, res) => {
         // Solo clientes y vendedores pueden enviar quejas o sugerencias
         if (rolUsuario !== 'CLIENTE') {
             return res.status(403).json({
-                msg: 'Solo los clientes pueden ver sus quejas o sugerencias'
+                msg: 'Solo los clientes pueden enviar quejas o sugerencias'
             });
         }
         // Validar asunto
@@ -62,7 +62,7 @@ const obtenerMisQuejasSugerencias = async (req, res) => {
         const rolUsuario = req.usuario.rol;
         const { estado } = req.query;
         // Solo clientes y vendedores pueden ver sus quejas o sugerencias
-        if (!['CLIENTE', 'VENDEDOR'].includes(rolUsuario)) {
+        if (!['CLIENTE'].includes(rolUsuario)) {
             return res.status(403).json({
                 msg: 'No tienes permiso para ver quejas o sugerencias'
             });
@@ -114,9 +114,9 @@ const obtenerQuejasSugerenciasAdmin = async (req, res) => {
         //        return res.status(400).json({
         //            msg: 'El rol debe ser CLIENTE o VENDEDOR'
         //        });
-         //   }
+        //   }
         //    filtro.rolUsuario = rolUsuario;
-       // }
+        // }
         const quejasSugerencias = await QuejaSugerencia.find(filtro)
             .populate(
                 'usuario',
@@ -201,26 +201,35 @@ const responderQuejaSugerencia = async (req, res) => {
 const obtenerDetalleQuejaSugerencia = async (req, res) => {
     try {
         const { id } = req.params;
-        // Validar ID
+
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 msg: 'El ID no es válido'
             });
         }
+
         const quejaSugerencia = await QuejaSugerencia.findById(id)
-            .populate(
-                'usuario',
-                'email rol'
-            )
-            .populate(
-                'respondidoPor',
-                'email rol'
-            );
+            .populate('usuario', 'email rol')
+            .populate('respondidoPor', 'email rol');
+
         if (!quejaSugerencia) {
             return res.status(404).json({
                 msg: 'La queja o sugerencia no existe'
             });
         }
+
+        if (req.usuario.rol === 'CLIENTE') {
+            if (quejaSugerencia.usuario._id.toString() !== req.usuario.id) {
+                return res.status(403).json({
+                    msg: 'No tienes permiso para ver esta queja o sugerencia'
+                });
+            }
+        } else if (req.usuario.rol !== 'ADMINISTRADOR') {
+            return res.status(403).json({
+                msg: 'No tienes permiso para ver esta queja o sugerencia'
+            });
+        }
+
         return res.status(200).json({
             msg: 'Detalle obtenido correctamente',
             quejaSugerencia
