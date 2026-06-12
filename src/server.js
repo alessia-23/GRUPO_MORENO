@@ -17,6 +17,7 @@ import chatPedidoRoutes from './routes/chatPedidoRoutes.js';
 import quejaSugerenciaRoutes from './routes/quejaSugerenciaRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import recomendacionRoutes from './routes/recomendacionRoutes.js';
+import accionesAdminRoutes from './routes/accionesAdminRoutes.js';
 
 // Inicialización
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/chats-pedidos', chatPedidoRoutes); // Ruta para el chat de pedido
 app.use('/api/quejas-sugerencias', quejaSugerenciaRoutes); // Ruta de quejas y sugerencias
 app.use('/api/dashboard', dashboardRoutes); // Ruta para dashboard
 app.use('/api/recomendacion', recomendacionRoutes); // Para recomendaciones
+app.use('/api/acciones-admin', accionesAdminRoutes);
 
 // Exportar app
 export default app;
