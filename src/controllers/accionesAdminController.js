@@ -1,4 +1,4 @@
-import AccionesAdmin from '../models/accionesAdmin.js';
+import AccionesAdmin from '../models/AccionesAdmin.js';
 
 const tiposAcciones = [
     'PROMOCION_SUGERIDA',
