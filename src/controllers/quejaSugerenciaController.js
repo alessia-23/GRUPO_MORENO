@@ -8,9 +8,9 @@ const crearQuejaSugerencia = async (req, res) => {
         const rolUsuario = req.usuario.rol;
         const { asunto, mensaje } = req.body;
         // Solo clientes y vendedores pueden enviar quejas o sugerencias
-        if (!['CLIENTE', 'VENDEDOR'].includes(rolUsuario)) {
+        if (rolUsuario !== 'CLIENTE') {
             return res.status(403).json({
-                msg: 'No tienes permiso para enviar quejas o sugerencias'
+                msg: 'Solo los clientes pueden ver sus quejas o sugerencias'
             });
         }
         // Validar asunto
@@ -109,14 +109,14 @@ const obtenerQuejasSugerenciasAdmin = async (req, res) => {
             filtro.estado = estado;
         }
         // Filtrar por rol
-        if (rolUsuario) {
-            if (!['CLIENTE', 'VENDEDOR'].includes(rolUsuario)) {
-                return res.status(400).json({
-                    msg: 'El rol debe ser CLIENTE o VENDEDOR'
-                });
-            }
-            filtro.rolUsuario = rolUsuario;
-        }
+        //if (rolUsuario) {
+        //    if (!['CLIENTE', 'VENDEDOR'].includes(rolUsuario)) {
+        //        return res.status(400).json({
+        //            msg: 'El rol debe ser CLIENTE o VENDEDOR'
+        //        });
+         //   }
+        //    filtro.rolUsuario = rolUsuario;
+       // }
         const quejasSugerencias = await QuejaSugerencia.find(filtro)
             .populate(
                 'usuario',
