@@ -6,6 +6,9 @@ import soloCliente from '../middleware/clienteMiddleware.js';
 
 const router = Router();
 
+// Alerta para n8n: bajo número de ventas
+router.get('/alerta-bajas-ventas', obtenerAlertaBajasVentas);
+
 // Crear una venta directa en el local
 router.post('/directa', protegerRuta, soloVendedor, crearVentaDirecta);
 
@@ -26,8 +29,5 @@ router.post('/pagar-carrito-tarjeta', protegerRuta, soloCliente, pagarCarritoCon
 
 // Cancelar una venta pendiente
 router.put('/cancelar/:id', protegerRuta, soloVendedor, cancelarVenta);
-
-// Alerta para n8n: bajo número de ventas
-router.get('/alerta-bajas-ventas', obtenerAlertaBajasVentas);
 
 export default router;
