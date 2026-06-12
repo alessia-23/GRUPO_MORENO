@@ -6,10 +6,12 @@ import Producto from '../models/Producto.js';
 const obtenerCarrito = async (req, res) => {
     try {
         const usuarioId = req.usuario.id;
+
         const carrito = await Carrito.findOne({
             cliente: usuarioId,
             estado: true
-        }).select('-__v');
+        }).select('-__v').lean();
+
         if (!carrito) {
             return res.status(200).json({
                 msg: 'El carrito está vacío',
@@ -23,14 +25,26 @@ const obtenerCarrito = async (req, res) => {
                 }
             });
         }
+
+        for (const item of carrito.articulos) {
+            const producto = await Producto.findById(item.producto)
+                .select('stock')
+                .lean();
+
+            item.stockDisponible = producto?.stock || 0;
+        }
+
         return res.status(200).json({
             msg: 'Carrito obtenido correctamente',
             carrito
         });
+
     } catch (error) {
         console.log('Error al obtener carrito:', error);
+
         return res.status(500).json({
-            msg: 'Error al obtener el carrito', error: error.message
+            msg: 'Error al obtener el carrito',
+            error: error.message
         });
     }
 };
