@@ -10,7 +10,7 @@ const quejaSugerenciaSchema = new mongoose.Schema(
 
         rolUsuario: {
             type: String,
-            enum: ['CLIENTE', 'VENDEDOR'],
+            enum: ['CLIENTE'],
             required: [true, 'El rol del usuario es obligatorio']
         },
 
