@@ -17,7 +17,10 @@ const obtenerPeriodoActual = (tipo) => {
     const anio = fecha.getFullYear();
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');
 
-    if (tipo === 'BAJO_NUMERO_VENTAS') {
+    if (
+        tipo === 'BAJO_NUMERO_VENTAS' ||
+        tipo === 'PROMOCION_SUGERIDA'
+    ) {
         const inicioAnio = new Date(anio, 0, 1);
         const dias = Math.floor((fecha - inicioAnio) / (24 * 60 * 60 * 1000));
         const semana = String(Math.ceil((dias + inicioAnio.getDay() + 1) / 7)).padStart(2, '0');
@@ -180,6 +183,25 @@ const reactivarAccionAdminN8n = async (req, res) => {
 
 const ejecutarPromocionSugerida = async (req, res) => {
     try {
+        const tipo = 'PROMOCION_SUGERIDA';
+        const periodo = obtenerPeriodoActual(tipo);
+
+        const accionExistente = await AccionesAdmin.findOne({
+            tipo,
+            periodo
+        });
+
+        if (accionExistente?.estado === 'FINALIZADA') {
+            return res.status(400).json({
+                msg: 'La promoción sugerida ya fue ejecutada esta semana'
+            });
+        }
+
+        if (!process.env.N8N_WEBHOOK_PROMOCION_SUGERIDA) {
+            return res.status(500).json({
+                msg: 'No está configurado el webhook de promoción sugerida'
+            });
+        }
 
         const productos = await Producto.find({
             estado: true,
@@ -210,22 +232,36 @@ const ejecutarPromocionSugerida = async (req, res) => {
             });
         }
 
-        /*await axios.post(
-            process.env.N8N_WEBHOOK_PROMOCION_SUGERIDA,
+        await axios.post(process.env.N8N_WEBHOOK_PROMOCION_SUGERIDA, {
+            tipo,
+            periodo,
+            productos,
+            correos
+        });
+
+        const accion = await AccionesAdmin.findOneAndUpdate(
+            { tipo, periodo },
             {
-                productos,
-                correos
+                tipo,
+                periodo,
+                estado: 'FINALIZADA',
+                fechaFinalizacion: new Date()
+            },
+            {
+                new: true,
+                upsert: true
             }
         );
-*/
+
         return res.status(200).json({
-            msg: 'Promoción sugerida enviada correctamente',
+            msg: 'Promoción sugerida ejecutada correctamente',
             totalClientes: correos.length,
-            productos
+            productos,
+            accion
         });
 
     } catch (error) {
-        console.error(error);
+        console.error('Error al ejecutar promoción sugerida:', error);
 
         return res.status(500).json({
             msg: 'Error al ejecutar promoción sugerida'
