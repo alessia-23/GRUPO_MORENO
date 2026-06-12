@@ -2,6 +2,7 @@ import Usuario from '../models/Usuario.js';
 import Vendedor from '../models/Vendedor.js';
 import Cliente from '../models/Cliente.js';
 import { hashPassword } from '../helpers/bcrypt.js';
+import axios from 'axios';
 
 // Registro de vendedor creado por el administrador
 const registrarVendedor = async (req, res) => {
@@ -69,7 +70,7 @@ const registrarVendedor = async (req, res) => {
             perfilModelo: 'Vendedor'
         });
         // ENVIAR CREDENCIALES AL NUEVO WORKFLOW DE n8n
-       
+
         try {
             await axios.post(process.env.N8N_WEBHOOK_CREAR_VENDEDOR, {
                 email: nuevoUsuario.email,
