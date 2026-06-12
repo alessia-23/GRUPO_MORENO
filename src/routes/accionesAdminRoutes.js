@@ -7,8 +7,8 @@ const router = Router();
 
 router.get('/', protegerRuta, soloAdmin, listarAccionesAdmin);
 
+router.patch('/n8n/:tipo/reactivar', reactivarAccionAdminN8n);
+
 router.patch('/:tipo/finalizar', protegerRuta, soloAdmin, finalizarAccionAdmin);
 router.patch('/:tipo/reactivar', protegerRuta, soloAdmin, reactivarAccionAdmin);
-
-router.patch('/n8n/:tipo/reactivar', reactivarAccionAdminN8n);
 export default router;
