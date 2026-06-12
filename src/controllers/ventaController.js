@@ -877,6 +877,50 @@ const pagarCarritoConTarjeta = async (req, res) => {
     }
 };
 
+// Alerta de bajo número de ventas para n8n
+const obtenerAlertaBajasVentas = async (req, res) => {
+    try {
+        const dias = Number(req.query.dias) || 7;
+        const minimoVentas = Number(req.query.minimoVentas) || 5;
+        const fechaInicio = new Date();
+        fechaInicio.setDate(fechaInicio.getDate() - dias);
+        const resultado = await Venta.aggregate([
+            {
+                $match: {
+                    estado: { $ne: 'CANCELADO' },
+                    createdAt: { $gte: fechaInicio }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalVentas: { $sum: 1 },
+                    montoTotal: { $sum: '$resumenPago.totalPagar' }
+                }
+            }
+        ]);
+        const totalVentas = resultado[0]?.totalVentas || 0;
+        const montoTotal = Number((resultado[0]?.montoTotal || 0).toFixed(2));
+        const alerta = totalVentas < minimoVentas;
+        return res.status(200).json({
+            alerta,
+            periodo: `Últimos ${dias} días`,
+            totalVentas,
+            montoTotal,
+            minimoVentasEsperadas: minimoVentas,
+            msg: alerta
+                ? 'Las ventas están por debajo del mínimo esperado'
+                : 'Las ventas están dentro del rango esperado'
+        });
+    } catch (error) {
+        console.log('ERROR AL OBTENER ALERTA DE BAJAS VENTAS:', error);
+        return res.status(500).json({
+            msg: 'Error al obtener la alerta de bajas ventas',
+            error: error.message
+        });
+    }
+};
+
 export {
-    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarCarritoConTarjeta
+    crearVentaDirecta, obtenerMisVentas, obtenerDetalleVenta, confirmarTransferenciaVenta, crearVentaDesdePedido, cancelarVenta, pagarCarritoConTarjeta, obtenerAlertaBajasVentas
 };
