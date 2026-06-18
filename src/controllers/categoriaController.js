@@ -42,7 +42,14 @@ const crearCategoria = async (req, res) => {
         });
         await categoria.save();
         return res.status(201).json({
-            msg: 'Categoría creada correctamente'
+            msg: 'Categoría creada correctamente',
+            categoria: {
+                _id: categoria._id,
+                nombre: categoria.nombre,
+                descripcion: categoria.descripcion,
+                estado: categoria.estado,
+                imagen: categoria.imagen
+            }
         });
     } catch (error) {
         console.log('ERROR CREAR CATEGORIA:', error);
