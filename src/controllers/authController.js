@@ -160,7 +160,7 @@ const cambiarPasswordToken = async (req, res) => {
 const obtenerPerfil = async (req, res) => {
     try {
         const usuarioId = req.usuario.id;
-        const usuario = await Usuario.findById(usuarioId).select('-password');
+        const usuario = await Usuario.findById(usuarioId).select('-password -token');
         if (!usuario) {
             return res.status(404).json({
                 msg: 'Usuario no encontrado'
