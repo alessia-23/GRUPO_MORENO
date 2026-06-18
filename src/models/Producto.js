@@ -20,13 +20,15 @@ const productoSchema = new mongoose.Schema({
         trim: true,
         uppercase: true,
         minlength: [3, 'El código debe tener mínimo 3 caracteres'],
-        maxlength: [10, 'El código no puede exceder los 10 caracteres']
+        maxlength: [10, 'El código no puede exceder los 10 caracteres'],
+        match: [/^[A-Z0-9-]+$/, 'El código solo puede contener letras, números y guiones']
     },
     codigoBarras: {
         type: String,
         unique: true,
         sparse: true,
-        trim: true
+        trim: true,
+        match: [/^\d{8,14}$/, 'El código de barras debe tener entre 8 y 14 dígitos']
     },
     precioCompra: {
         type: Number,
@@ -64,19 +66,34 @@ const productoSchema = new mongoose.Schema({
     },
     cantidadMinimaMayorista: {
         type: Number,
-        min: [1, 'La cantidad mínima mayorista debe ser al menos 1']
+        min: [1, 'La cantidad mínima mayorista debe ser al menos 1'],
+        validate: {
+            validator: function (valor) {
+                if (valor === undefined || valor === null) return true;
+                return Number.isInteger(valor);
+            },
+            message: 'La cantidad mínima mayorista debe ser un número entero'
+        }
     },
     stock: {
         type: Number,
         required: [true, 'El stock es obligatorio'],
         min: [0, 'El stock no puede ser un valor negativo'],
-        default: 0
+        default: 0,
+        validate: {
+            validator: Number.isInteger,
+            message: 'El stock debe ser un número entero'
+        }
     },
     stockMinimo: {
         type: Number,
         required: [true, 'El stock mínimo es obligatorio'],
         min: [0, 'El stock mínimo no puede ser negativo'],
-        default: 5
+        default: 5,
+        validate: {
+            validator: Number.isInteger,
+            message: 'El stock mínimo debe ser un número entero'
+        }
     },
     alertaStockEnviada: {
         type: Boolean,
