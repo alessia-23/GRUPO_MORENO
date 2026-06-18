@@ -18,13 +18,15 @@ const carritoSchema = new mongoose.Schema(
                 },
                 nombreProducto: {
                     type: String,
-                    required: true,
-                    trim: true
+                    required: [true, 'El nombre del producto es obligatorio'],
+                    trim: true,
+                    maxlength: [40, 'El nombre del producto no puede exceder los 40 caracteres']
                 },
                 codigo: {
                     type: String,
                     trim: true,
-                    uppercase: true
+                    uppercase: true,
+                    maxlength: [10, 'El código no puede exceder los 10 caracteres']
                 },
                 imagen: {
                     url: {
@@ -39,12 +41,14 @@ const carritoSchema = new mongoose.Schema(
                 color: {
                     type: String,
                     trim: true,
-                    default: ''
+                    default: '',
+                    maxlength: [20, 'El color no puede exceder los 20 caracteres']
                 },
                 tamanio: {
                     type: String,
                     trim: true,
-                    default: ''
+                    default: '',
+                    maxlength: [15, 'El tamaño no puede exceder los 15 caracteres']
                 },
                 cantidad: {
                     type: Number,
