@@ -336,18 +336,28 @@ const buscarVendedor = async (req, res) => {
 // Listar clientes activos
 const listarClientesActivos = async (req, res) => {
     try {
-        const usuarios = await Usuario.find({
+        const pagina = Number(req.query.page) || 1;
+        const limite = Number(req.query.limit) || 15;
+        const skip = (pagina - 1) * limite;
+
+        const filtro = {
             rol: 'CLIENTE',
             estado: true
-        })
+        };
+
+        const usuarios = await Usuario.find(filtro)
             .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
-        const total = await Usuario.countDocuments({
-            rol: 'CLIENTE',
-            estado: true
-        });
+            .populate('perfilId', '-createdAt -updatedAt')
+            .skip(skip)
+            .limit(limite);
+
+        const total = await Usuario.countDocuments(filtro);
+
         return res.status(200).json({
             total,
+            pagina,
+            limite,
+            totalPaginas: Math.ceil(total / limite),
             usuarios
         });
     } catch (error) {
@@ -361,18 +371,28 @@ const listarClientesActivos = async (req, res) => {
 // Listar clientes inactivos
 const listarClientesInactivos = async (req, res) => {
     try {
-        const usuarios = await Usuario.find({
+        const pagina = Number(req.query.page) || 1;
+        const limite = Number(req.query.limit) || 15;
+        const skip = (pagina - 1) * limite;
+
+        const filtro = {
             rol: 'CLIENTE',
             estado: false
-        })
+        };
+
+        const usuarios = await Usuario.find(filtro)
             .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
-        const total = await Usuario.countDocuments({
-            rol: 'CLIENTE',
-            estado: false
-        });
+            .populate('perfilId', '-createdAt -updatedAt')
+            .skip(skip)
+            .limit(limite);
+
+        const total = await Usuario.countDocuments(filtro);
+
         return res.status(200).json({
             total,
+            pagina,
+            limite,
+            totalPaginas: Math.ceil(total / limite),
             usuarios
         });
     } catch (error) {
@@ -383,21 +403,31 @@ const listarClientesInactivos = async (req, res) => {
     }
 };
 
-// Listar vendedores activos
+// Listar vendedores activos con paginación
 const listarVendedoresActivos = async (req, res) => {
     try {
-        const usuarios = await Usuario.find({
+        const pagina = Number(req.query.page) || 1;
+        const limite = Number(req.query.limit) || 15;
+        const skip = (pagina - 1) * limite;
+
+        const filtro = {
             rol: 'VENDEDOR',
             estado: true
-        })
+        };
+
+        const usuarios = await Usuario.find(filtro)
             .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
-        const total = await Usuario.countDocuments({
-            rol: 'VENDEDOR',
-            estado: true
-        });
+            .populate('perfilId', '-createdAt -updatedAt')
+            .skip(skip)
+            .limit(limite);
+
+        const total = await Usuario.countDocuments(filtro);
+
         return res.status(200).json({
             total,
+            pagina,
+            limite,
+            totalPaginas: Math.ceil(total / limite),
             usuarios
         });
     } catch (error) {
@@ -408,21 +438,31 @@ const listarVendedoresActivos = async (req, res) => {
     }
 };
 
-// Listar vendedores inactivos
+// Listar vendedores inactivos con paginación
 const listarVendedoresInactivos = async (req, res) => {
     try {
-        const usuarios = await Usuario.find({
+        const pagina = Number(req.query.page) || 1;
+        const limite = Number(req.query.limit) || 15;
+        const skip = (pagina - 1) * limite;
+
+        const filtro = {
             rol: 'VENDEDOR',
             estado: false
-        })
+        };
+
+        const usuarios = await Usuario.find(filtro)
             .select('-password -token -createdAt -updatedAt')
-            .populate('perfilId', '-createdAt -updatedAt');
-        const total = await Usuario.countDocuments({
-            rol: 'VENDEDOR',
-            estado: false
-        });
+            .populate('perfilId', '-createdAt -updatedAt')
+            .skip(skip)
+            .limit(limite);
+
+        const total = await Usuario.countDocuments(filtro);
+
         return res.status(200).json({
             total,
+            pagina,
+            limite,
+            totalPaginas: Math.ceil(total / limite),
             usuarios
         });
     } catch (error) {
