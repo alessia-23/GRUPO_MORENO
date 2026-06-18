@@ -7,7 +7,7 @@ import axios from 'axios';
 // Registro de vendedor creado por el administrador
 const registrarVendedor = async (req, res) => {
     try {
-        const { nombre, apellido, cedula, telefono, direccion, email, password, fecha_nacimiento } = req.body;
+        const { nombre, apellido, cedula, telefono, direccion, email, password, fecha_nacimiento } = req.body || {};
         // Validar campos obligatorios y evitar espacios vacíos
         if (!nombre?.trim() || !apellido?.trim() || !cedula?.trim() || !telefono?.trim() || !direccion?.trim() || !email?.trim() || !password || !fecha_nacimiento) {
             return res.status(400).json({
