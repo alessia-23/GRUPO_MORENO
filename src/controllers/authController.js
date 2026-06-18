@@ -31,7 +31,7 @@ const login = async (req, res) => {
         // Comparar contraseña
         const passwordValida = await comparePassword(password, usuario.password);
         if (!passwordValida) {
-            return res.status(401).json({ msg: 'Contraseña incorrecta, acceso denegado' });
+            return res.status(401).json({ msg: 'Credenciales incorrectas, acceso denegado' });
         }
         // Generar token
         const token = crearTokenJWT(usuario);
