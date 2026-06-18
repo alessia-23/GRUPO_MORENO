@@ -17,7 +17,7 @@ const mensajePedidoSchema = new mongoose.Schema(
             type: String,
             required: [true, 'El mensaje es obligatorio'],
             trim: true,
-            maxlength: [1000, 'El mensaje no puede exceder los 1000 caracteres']
+            maxlength: [500, 'El mensaje no puede exceder los 500 caracteres']
         },
         leidoPor: [
             {
