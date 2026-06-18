@@ -3,6 +3,7 @@ import Vendedor from '../models/Vendedor.js';
 import Cliente from '../models/Cliente.js';
 import { hashPassword } from '../helpers/bcrypt.js';
 import axios from 'axios';
+import Pedido from '../models/Pedido.js';
 
 // Registro de vendedor creado por el administrador
 const registrarVendedor = async (req, res) => {
@@ -107,7 +108,7 @@ const registrarVendedor = async (req, res) => {
     }
 };
 
-// Desactivar vendedor y su usuario asociado
+// Desactivar vendedor
 const desactivarVendedor = async (req, res) => {
     try {
         const { id } = req.params;
@@ -120,6 +121,16 @@ const desactivarVendedor = async (req, res) => {
         if (usuario.rol !== 'VENDEDOR') {
             return res.status(400).json({
                 msg: 'No es un vendedor'
+            });
+        }
+        // Validar si el vendedor tiene pedidos en proceso
+        const pedidoEnProceso = await Pedido.findOne({
+            vendedor: id,
+            estado: 'EN_PROCESO'
+        });
+        if (pedidoEnProceso) {
+            return res.status(400).json({
+                msg: 'No se puede desactivar el vendedor porque tiene pedidos en proceso'
             });
         }
         usuario.estado = false;
