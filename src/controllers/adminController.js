@@ -4,6 +4,7 @@ import Cliente from '../models/Cliente.js';
 import { hashPassword } from '../helpers/bcrypt.js';
 import axios from 'axios';
 import Pedido from '../models/Pedido.js';
+import mongoose from 'mongoose';
 
 // Registro de vendedor creado por el administrador
 const registrarVendedor = async (req, res) => {
