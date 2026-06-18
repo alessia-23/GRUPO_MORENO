@@ -215,20 +215,37 @@ const listarClientes = async (req, res) => {
 const desactivarCliente = async (req, res) => {
     try {
         const { id } = req.params; // id del usuario a desactivar
+
         const usuario = await Usuario.findById(id); // buscar usuario
+
         if (!usuario) {
             return res.status(404).json({
                 msg: 'Usuario no encontrado'
             });
         }
+
         // verificar que sea cliente, es decir que conste en la BD como cliente
         if (usuario.rol !== 'CLIENTE') {
             return res.status(400).json({
                 msg: 'No es un cliente'
             });
         }
+
+        // Validar si el cliente tiene pedidos pendientes o en proceso
+        const pedidoActivo = await Pedido.findOne({
+            cliente: id,
+            estado: { $in: ['PENDIENTE', 'EN_PROCESO'] }
+        });
+
+        if (pedidoActivo) {
+            return res.status(400).json({
+                msg: 'No se puede desactivar el cliente porque tiene pedidos pendientes o en proceso'
+            });
+        }
+
         usuario.estado = false; // desactivar
         await usuario.save();  // guardar cambios
+
         return res.status(200).json({
             msg: 'Cliente desactivado correctamente'
         });
