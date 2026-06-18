@@ -261,28 +261,31 @@ const desactivarCliente = async (req, res) => {
 const activarCliente = async (req, res) => {
     try {
         const { id } = req.params; // id del usuario a activar
-        // Buscar el usuario en la base de datos
+        // Validar formato del id
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                msg: 'El identificador del cliente no es válido'
+            });
+        }
         const usuario = await Usuario.findById(id);
-        if (!usuario) { // Validar si el usuario existe
+        if (!usuario) {
             return res.status(404).json({
                 msg: 'Usuario no encontrado'
             });
         }
-        // Verificar que el usuario sea realmente un cliente
         if (usuario.rol !== 'CLIENTE') {
             return res.status(400).json({
                 msg: 'No es un cliente'
             });
         }
-        usuario.estado = true;  // Activar el usuario cambiando su estado a true y se guardan los cambioes en la BD
+        usuario.estado = true;
         await usuario.save();
         return res.status(200).json({
             msg: 'Cliente activado correctamente'
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al activar cliente',
-            error: error.message
+            msg: 'Error al activar cliente'
         });
     }
 };
