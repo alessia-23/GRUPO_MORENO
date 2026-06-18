@@ -480,22 +480,23 @@ const todosProductos = async (req, res) => {
                     select: 'nombre imagen'
                 })
                 .select(`
-                    nombre
-                    descripcion
-                    precioVenta
-                    precioMayorista
-                    cantidadMinimaMayorista
-                    imagen
-                    stock
-                    marca
-                    unidadMedida
-                    color
-                    material
-                    tamanio
-                    presentacion
-                    destacado
-                    categoria
-                `)
+    nombre
+    descripcion
+    precioVenta
+    precioMayorista
+    cantidadMinimaMayorista
+    tipoIVA
+    imagen
+    stock
+    marca
+    unidadMedida
+    color
+    material
+    tamanio
+    presentacion
+    destacado
+    categoria
+`)
                 .sort(
                     destacado === 'true'
                         ? { nombre: 1 }
