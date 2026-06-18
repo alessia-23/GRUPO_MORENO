@@ -6,11 +6,17 @@ const crearQuejaSugerencia = async (req, res) => {
     try {
         const usuarioId = req.usuario.id;
         const rolUsuario = req.usuario.rol;
-        const { asunto, mensaje } = req.body;
-        // Solo clientes y vendedores pueden enviar quejas o sugerencias
+        const { tipo, asunto, mensaje } = req.body;
+        // Solo clientes pueden enviar quejas o sugerencias
         if (rolUsuario !== 'CLIENTE') {
             return res.status(403).json({
                 msg: 'Solo los clientes pueden enviar quejas o sugerencias'
+            });
+        }
+        // Validar tipo
+        if (!tipo || !['QUEJA', 'SUGERENCIA'].includes(tipo)) {
+            return res.status(400).json({
+                msg: 'El tipo debe ser QUEJA o SUGERENCIA'
             });
         }
         // Validar asunto
@@ -29,15 +35,16 @@ const crearQuejaSugerencia = async (req, res) => {
         const nuevaQuejaSugerencia = await QuejaSugerencia.create({
             usuario: usuarioId,
             rolUsuario,
+            tipo,
             asunto: asunto.trim(),
             mensaje: mensaje.trim()
         });
-
         const io = req.app.get('io');
-
+        // Notificar en tiempo real al administrador
         if (io) {
             io.to('quejas-admin').emit('nueva-queja-sugerencia', {
                 id: nuevaQuejaSugerencia._id,
+                tipo: nuevaQuejaSugerencia.tipo,
                 asunto: nuevaQuejaSugerencia.asunto,
                 estado: nuevaQuejaSugerencia.estado,
                 rolUsuario: nuevaQuejaSugerencia.rolUsuario,
@@ -45,7 +52,8 @@ const crearQuejaSugerencia = async (req, res) => {
             });
         }
         return res.status(201).json({
-            msg: 'Queja o sugerencia enviada correctamente'
+            msg: 'Queja o sugerencia enviada correctamente',
+            quejaSugerencia: nuevaQuejaSugerencia
         });
     } catch (error) {
         console.error('Error al crear queja o sugerencia:', error);
@@ -60,8 +68,8 @@ const obtenerMisQuejasSugerencias = async (req, res) => {
     try {
         const usuarioId = req.usuario.id;
         const rolUsuario = req.usuario.rol;
-        const { estado } = req.query;
-        // Solo clientes y vendedores pueden ver sus quejas o sugerencias
+        const { estado, tipo } = req.query;
+        // Solo clientes pueden ver sus quejas o sugerencias
         if (!['CLIENTE'].includes(rolUsuario)) {
             return res.status(403).json({
                 msg: 'No tienes permiso para ver quejas o sugerencias'
@@ -79,8 +87,17 @@ const obtenerMisQuejasSugerencias = async (req, res) => {
             }
             filtro.estado = estado;
         }
+        // Filtro opcional por tipo
+        if (tipo) {
+            if (!['QUEJA', 'SUGERENCIA'].includes(tipo)) {
+                return res.status(400).json({
+                    msg: 'El tipo debe ser QUEJA o SUGERENCIA'
+                });
+            }
+            filtro.tipo = tipo;
+        }
         const quejasSugerencias = await QuejaSugerencia.find(filtro)
-            .select('asunto mensaje estado respuestaAdmin fechaRespuesta createdAt')
+            .select('tipo asunto mensaje estado respuestaAdmin fechaRespuesta createdAt')
             .sort({ createdAt: -1 });
         return res.status(200).json({
             msg: 'Quejas y sugerencias obtenidas correctamente',
@@ -97,7 +114,7 @@ const obtenerMisQuejasSugerencias = async (req, res) => {
 // Listar todas las quejas y sugerencias para el administrador
 const obtenerQuejasSugerenciasAdmin = async (req, res) => {
     try {
-        const { estado, rolUsuario } = req.query;
+        const { estado, tipo } = req.query;
         const filtro = {};
         // Filtrar por estado
         if (estado) {
@@ -108,15 +125,15 @@ const obtenerQuejasSugerenciasAdmin = async (req, res) => {
             }
             filtro.estado = estado;
         }
-        // Filtrar por rol
-        //if (rolUsuario) {
-        //    if (!['CLIENTE', 'VENDEDOR'].includes(rolUsuario)) {
-        //        return res.status(400).json({
-        //            msg: 'El rol debe ser CLIENTE o VENDEDOR'
-        //        });
-        //   }
-        //    filtro.rolUsuario = rolUsuario;
-        // }
+        // Filtrar por tipo
+        if (tipo) {
+            if (!['QUEJA', 'SUGERENCIA'].includes(tipo)) {
+                return res.status(400).json({
+                    msg: 'El tipo debe ser QUEJA o SUGERENCIA'
+                });
+            }
+            filtro.tipo = tipo;
+        }
         const quejasSugerencias = await QuejaSugerencia.find(filtro)
             .populate(
                 'usuario',
@@ -173,12 +190,13 @@ const responderQuejaSugerencia = async (req, res) => {
         quejaSugerencia.estado = 'FINALIZADA';
         await quejaSugerencia.save();
         const io = req.app.get('io');
-
+        // Notificar en tiempo real al cliente
         if (io) {
             io.to(`mis-quejas-${quejaSugerencia.usuario.toString()}`).emit(
                 'queja-sugerencia-respondida',
                 {
                     id: quejaSugerencia._id,
+                    tipo: quejaSugerencia.tipo,
                     asunto: quejaSugerencia.asunto,
                     estado: quejaSugerencia.estado,
                     respuestaAdmin: quejaSugerencia.respuestaAdmin,

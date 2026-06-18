@@ -13,7 +13,11 @@ const quejaSugerenciaSchema = new mongoose.Schema(
             enum: ['CLIENTE'],
             required: [true, 'El rol del usuario es obligatorio']
         },
-
+        tipo: {
+            type: String,
+            enum: ['QUEJA', 'SUGERENCIA'],
+            required: [true, 'El tipo es obligatorio']
+        },
         asunto: {
             type: String,
             required: [true, 'El asunto es obligatorio'],
