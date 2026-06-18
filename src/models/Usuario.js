@@ -8,7 +8,8 @@ const usuarioSchema = new mongoose.Schema(
             required: true,
             unique: true,
             trim: true,
-            lowercase: true
+            lowercase: true,
+            maxlength: [100, 'El correo no puede exceder los 100 caracteres']
         },
         // Contraseña encriptada
         password: {
