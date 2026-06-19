@@ -8,7 +8,7 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import clienteRoutes from './routes/clienteRoutes.js';
 import categoriaRoutes from './routes/categoriaRoutes.js';
-import vendedorRoutes from './routes/vendedorRoutes.js';
+//import vendedorRoutes from './routes/vendedorRoutes.js';
 import productoRoutes from './routes/productoRoutes.js';
 import pedidoRoutes from './routes/pedidoRoutes.js';
 import carritoRoutes from './routes/carritoRoutes.js';
@@ -50,7 +50,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);  // Rutas de autenticación
 app.use('/api/admin', adminRoutes); // Rutas del administrador
 app.use('/api/clientes', clienteRoutes); // Rutas de clientes
-app.use('/api/vendedores', vendedorRoutes); // Rutas de vendedores
+//app.use('/api/vendedores', vendedorRoutes); // Rutas de vendedores
 app.use('/api/categorias', categoriaRoutes); // Rutas de categorías
 app.use('/api/productos', productoRoutes); // Ruta para productos
 app.use('/api/pedidos', pedidoRoutes); // Ruta para pedidos

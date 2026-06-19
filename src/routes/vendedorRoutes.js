@@ -1,4 +1,4 @@
-import { Router } from 'express';
+/*import { Router } from 'express';
 import { registrarClientePorVendedor } from '../controllers/vendedorController.js';
 import protegerRuta from '../middleware/authMiddleware.js';
 import soloVendedor from '../middleware/vendedorMiddleware.js';
@@ -12,4 +12,4 @@ router.post('/registrar-cliente', protegerRuta, soloVendedor, registrarClientePo
 // Vendedor lista clientes
 router.get('/listar-clientes', protegerRuta, soloVendedor, listarClientesActivos);
 
-export default router;
+export default router;*/
