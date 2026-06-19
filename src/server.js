@@ -18,6 +18,7 @@ import quejaSugerenciaRoutes from './routes/quejaSugerenciaRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import recomendacionRoutes from './routes/recomendacionRoutes.js';
 import accionesAdminRoutes from './routes/accionesAdminRoutes.js';
+import recoIARoutes from './routes/recoIARoutes.js';
 
 // Inicialización
 const app = express();
@@ -61,6 +62,8 @@ app.use('/api/quejas-sugerencias', quejaSugerenciaRoutes); // Ruta de quejas y s
 app.use('/api/dashboard', dashboardRoutes); // Ruta para dashboard
 app.use('/api/recomendacion', recomendacionRoutes); // Para recomendaciones
 app.use('/api/acciones-admin', accionesAdminRoutes);
+app.use('/api/recomendaciones-ia', recoIARoutes);
+
 
 // Exportar app
 export default app;
