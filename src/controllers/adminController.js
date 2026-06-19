@@ -72,7 +72,6 @@ const registrarVendedor = async (req, res) => {
             perfilModelo: 'Vendedor'
         });
         // ENVIAR CREDENCIALES AL NUEVO WORKFLOW DE n8n
-
         try {
             await axios.post(process.env.N8N_WEBHOOK_CREAR_VENDEDOR, {
                 email: nuevoUsuario.email,
@@ -102,9 +101,14 @@ const registrarVendedor = async (req, res) => {
             }
         });
     } catch (error) {
+        if (error.name === 'ValidationError') {
+            const mensaje = Object.values(error.errors)[0]?.message;
+            return res.status(400).json({
+                msg: mensaje
+            });
+        }
         return res.status(500).json({
-            msg: 'Error al registrar vendedor',
-            error: error.message
+            msg: 'Error al registrar vendedor'
         });
     }
 };
