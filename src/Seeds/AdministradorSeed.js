@@ -15,17 +15,17 @@ const createAdminSeed = async () => {
         }
 
         const adminPerfil = await Administrador.create({
-            nombre: 'Alessia',
-            apellido: 'Pérez',
-            cedula: '1234567890',
-            telefono: '0999999999',
+            nombre: 'Wilson',
+            apellido: 'Moreno',
+            cedula: '0501859235',
+            telefono: '0969557707',
             direccion: 'Quito'
         });
 
-        const passwordEncriptada = await hashPassword('Admin1*?');
+        const passwordEncriptada = await hashPassword('Admin1*.');
 
         await Usuario.create({
-            email: 'alessiaperezpalacios@gmail.com',
+            email: 'grupomoreno593@gmail.com',
             password: passwordEncriptada,
             rol: 'ADMINISTRADOR',
             estado: true,
