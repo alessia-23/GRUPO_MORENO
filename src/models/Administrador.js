@@ -54,7 +54,7 @@ const administradorSchema = new mongoose.Schema(
             required: [true, 'La dirección es obligatoria'],
             trim: true,
             minlength: [5, 'La dirección debe tener mínimo 5 caracteres'],
-            maxlength: [50, 'La dirección debe tener máximo 50 caracteres'],
+            maxlength: [30, 'La dirección debe tener máximo 30 caracteres'],
             match: [/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s#.,\-°]+$/, 'La dirección contiene caracteres no válidos']
         }
     },
