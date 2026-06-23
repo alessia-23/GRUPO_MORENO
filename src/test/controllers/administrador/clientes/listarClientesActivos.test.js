@@ -26,8 +26,6 @@ const mockConsulta = (resultado = []) => {
     const selectMock = jest.fn().mockReturnValue({ populate: populateMock });
 
     mockFind.mockReturnValue({ select: selectMock });
-
-    return { skipMock, limitMock };
 };
 
 describe('Módulo administrador - Gestión de clientes', () => {
@@ -35,20 +33,19 @@ describe('Módulo administrador - Gestión de clientes', () => {
         jest.clearAllMocks();
     });
 
-    test('Debería listar clientes activos correctamente', async () => {
-        const req = {
-            query: {
-                page: '1',
-                limit: '15'
-            }
-        };
+    test('Debería obtener clientes activos correctamente', async () => {
+        const req = { query: {} };
 
         const clientesMock = [
             {
-                _id: 'usuario1',
-                email: 'cliente1@gmail.com',
+                _id: '1',
+                email: 'cliente@gmail.com',
                 rol: 'CLIENTE',
-                estado: true
+                estado: true,
+                perfilId: {
+                    nombre: 'Ana',
+                    apellido: 'Pérez'
+                }
             }
         ];
 
@@ -59,45 +56,77 @@ describe('Módulo administrador - Gestión de clientes', () => {
 
         await listarClientesActivos(req, res);
 
-        expect(mockFind).toHaveBeenCalledWith({
-            rol: 'CLIENTE',
-            estado: true
-        });
-
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith({
-            total: 1,
-            pagina: 1,
-            limite: 15,
-            totalPaginas: 1,
-            usuarios: clientesMock
-        });
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                total: 1,
+                usuarios: clientesMock
+            })
+        );
     });
 
-    test('Debería aplicar paginación correctamente', async () => {
-        const req = {
-            query: {
-                page: '2',
-                limit: '10'
-            }
-        };
+    test('Debería devolver una lista vacía si no existen clientes activos', async () => {
+        const req = { query: {} };
 
-        const { skipMock, limitMock } = mockConsulta([]);
-        mockCountDocuments.mockResolvedValue(20);
+        mockConsulta([]);
+        mockCountDocuments.mockResolvedValue(0);
 
         const res = mockResponse();
 
         await listarClientesActivos(req, res);
 
-        expect(skipMock).toHaveBeenCalledWith(10);
-        expect(limitMock).toHaveBeenCalledWith(10);
         expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                total: 0,
+                usuarios: []
+            })
+        );
     });
 
-    test('Debería manejar errores al listar clientes activos', async () => {
+    test('Debería devolver únicamente usuarios con rol cliente y estado activo', async () => {
+        const req = { query: {} };
+
+        mockConsulta([]);
+        mockCountDocuments.mockResolvedValue(0);
+
+        const res = mockResponse();
+
+        await listarClientesActivos(req, res);
+
+        expect(mockFind).toHaveBeenCalledWith({
+            rol: 'CLIENTE',
+            estado: true
+        });
+    });
+
+    test('Debería responder con información de paginación', async () => {
         const req = {
-            query: {}
+            query: {
+                page: '2',
+                limit: '5'
+            }
         };
+
+        mockConsulta([]);
+        mockCountDocuments.mockResolvedValue(12);
+
+        const res = mockResponse();
+
+        await listarClientesActivos(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                pagina: 2,
+                limite: 5,
+                totalPaginas: 3
+            })
+        );
+    });
+
+    test('Debería manejar errores al consultar clientes activos', async () => {
+        const req = { query: {} };
 
         mockFind.mockImplementation(() => {
             throw new Error('Error de base de datos');

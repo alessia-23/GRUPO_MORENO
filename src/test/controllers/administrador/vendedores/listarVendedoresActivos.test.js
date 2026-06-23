@@ -59,11 +59,6 @@ describe('Módulo administrador - Gestión de vendedores', () => {
 
         await listarVendedoresActivos(req, res);
 
-        expect(mockFind).toHaveBeenCalledWith({
-            rol: 'VENDEDOR',
-            estado: true
-        });
-
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({
             total: 1,
@@ -71,6 +66,24 @@ describe('Módulo administrador - Gestión de vendedores', () => {
             limite: 15,
             totalPaginas: 1,
             usuarios: vendedoresMock
+        });
+    });
+
+    test('Debería consultar únicamente vendedores activos', async () => {
+        const req = {
+            query: {}
+        };
+
+        mockConsulta([]);
+        mockCountDocuments.mockResolvedValue(0);
+
+        const res = mockResponse();
+
+        await listarVendedoresActivos(req, res);
+
+        expect(mockFind).toHaveBeenCalledWith({
+            rol: 'VENDEDOR',
+            estado: true
         });
     });
 
