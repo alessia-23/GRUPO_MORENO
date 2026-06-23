@@ -2,32 +2,34 @@ import { jest } from '@jest/globals';
 
 const mockUsuarioFindById = jest.fn();
 const mockAdministradorFindById = jest.fn();
+const mockClienteFindById = jest.fn();
+const mockVendedorFindById = jest.fn();
 
-jest.unstable_mockModule('../../models/Usuario.js', () => ({
+jest.unstable_mockModule('../../../models/Usuario.js', () => ({
     default: {
         findById: mockUsuarioFindById
     }
 }));
 
-jest.unstable_mockModule('../../models/Administrador.js', () => ({
+jest.unstable_mockModule('../../../models/Administrador.js', () => ({
     default: {
         findById: mockAdministradorFindById
     }
 }));
 
-jest.unstable_mockModule('../../models/Cliente.js', () => ({
+jest.unstable_mockModule('../../../models/Cliente.js', () => ({
     default: {
-        findById: jest.fn()
+        findById: mockClienteFindById
     }
 }));
 
-jest.unstable_mockModule('../../models/Vendedor.js', () => ({
+jest.unstable_mockModule('../../../models/Vendedor.js', () => ({
     default: {
-        findById: jest.fn()
+        findById: mockVendedorFindById
     }
 }));
 
-const { actualizarPerfil } = await import('../../controllers/authController.js');
+const { actualizarPerfil } = await import('../../../controllers/authController.js');
 
 const mockResponse = () => {
     const res = {};

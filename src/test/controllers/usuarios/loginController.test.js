@@ -4,22 +4,22 @@ const mockFindOne = jest.fn();
 const mockComparePassword = jest.fn();
 const mockCrearTokenJWT = jest.fn();
 
-jest.unstable_mockModule('../../models/Usuario.js', () => ({
+jest.unstable_mockModule('../../../models/Usuario.js', () => ({
     default: {
         findOne: mockFindOne
     }
 }));
 
-jest.unstable_mockModule('../../helpers/bcrypt.js', () => ({
+jest.unstable_mockModule('../../../helpers/bcrypt.js', () => ({
     comparePassword: mockComparePassword,
     hashPassword: jest.fn()
 }));
 
-jest.unstable_mockModule('../../helpers/jwt.js', () => ({
+jest.unstable_mockModule('../../../helpers/jwt.js', () => ({
     default: mockCrearTokenJWT
 }));
 
-const { login } = await import('../../controllers/authController.js');
+const { login } = await import('../../../controllers/authController.js');
 
 const mockResponse = () => {
     const res = {};

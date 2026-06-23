@@ -4,7 +4,7 @@ const mockFindOne = jest.fn();
 const mockAxiosPost = jest.fn();
 const mockGenerarToken = jest.fn();
 
-jest.unstable_mockModule('../../models/Usuario.js', () => ({
+jest.unstable_mockModule('../../../models/Usuario.js', () => ({
     default: {
         findOne: mockFindOne
     }
@@ -16,11 +16,11 @@ jest.unstable_mockModule('axios', () => ({
     }
 }));
 
-jest.unstable_mockModule('../../helpers/generarToken.js', () => ({
+jest.unstable_mockModule('../../../helpers/generarToken.js', () => ({
     default: mockGenerarToken
 }));
 
-const { recuperarPassword } = await import('../../controllers/authController.js');
+const { recuperarPassword } = await import('../../../controllers/authController.js');
 
 const mockResponse = () => {
     const res = {};
@@ -78,6 +78,7 @@ describe('Módulo de autenticación - Restablecer contraseña', () => {
                 resetLink: 'https://distribuidoragm.netlify.app/recuperar-password/token-prueba'
             })
         );
+
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({
             msg: 'Enlace de recuperación enviado correctamente'
