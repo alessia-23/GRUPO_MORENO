@@ -101,12 +101,8 @@ describe('Módulo productos - Actualizar producto', () => {
 
     test('Debería retornar error si el producto no existe', async () => {
         const req = {
-            params: {
-                id: 'producto-no-existe'
-            },
-            body: {
-                nombre: 'Producto prueba'
-            }
+            params: {id: 'producto-no-existe'},
+            body: {nombre: 'Producto prueba'}
         };
         mockProductoFindById.mockResolvedValue(null);
         const res = mockResponse();
