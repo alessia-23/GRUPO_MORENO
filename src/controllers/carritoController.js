@@ -222,6 +222,7 @@ const actualizarCantidadCarrito = async (req, res) => {
         await carrito.save();
         return res.status(200).json({
             msg: 'Cantidad actualizada correctamente',
+            stockDisponible: producto.stock, 
             carrito: {
                 _id: carrito._id,
                 cliente: carrito.cliente,
