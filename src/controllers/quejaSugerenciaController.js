@@ -68,7 +68,7 @@ const obtenerMisQuejasSugerencias = async (req, res) => {
     try {
         const usuarioId = req.usuario.id;
         const rolUsuario = req.usuario.rol;
-        const { estado, tipo } = req.query;
+        const { estado, tipo, pagina = 1 } = req.query; // Paginación agregada
         // Solo clientes pueden ver sus quejas o sugerencias
         if (!['CLIENTE'].includes(rolUsuario)) {
             return res.status(403).json({
@@ -96,12 +96,23 @@ const obtenerMisQuejasSugerencias = async (req, res) => {
             }
             filtro.tipo = tipo;
         }
+        // Límite fijo de 15 cosas
+        const limite = 15;
+        const saltar = (parseInt(pagina) - 1) * limite;
+        // Contar el total para el front
+        const total = await QuejaSugerencia.countDocuments(filtro);
         const quejasSugerencias = await QuejaSugerencia.find(filtro)
             .select('tipo asunto mensaje estado respuestaAdmin fechaRespuesta createdAt')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(saltar) // Saltar elementos anteriores
+            .limit(limite); // Limitar a 15 elementos
         return res.status(200).json({
-            msg: 'Quejas y sugerencias obtenidas correctamente',
-            quejasSugerencias
+            total,
+            paginaActual: parseInt(pagina),
+            totalPaginas: Math.ceil(total / limite),
+            limite,
+            rol: rolUsuario,
+            quejasSugerencias // Listado abajo
         });
     } catch (error) {
         console.error('Error al obtener mis quejas o sugerencias:', error);
@@ -114,7 +125,7 @@ const obtenerMisQuejasSugerencias = async (req, res) => {
 // Listar todas las quejas y sugerencias para el administrador
 const obtenerQuejasSugerenciasAdmin = async (req, res) => {
     try {
-        const { estado, tipo } = req.query;
+        const { estado, tipo, pagina = 1 } = req.query; // Paginación agregada
         const filtro = {};
         // Filtrar por estado
         if (estado) {
@@ -134,15 +145,26 @@ const obtenerQuejasSugerenciasAdmin = async (req, res) => {
             }
             filtro.tipo = tipo;
         }
+        // Límite fijo de 15 cosas
+        const limite = 15;
+        const saltar = (parseInt(pagina) - 1) * limite;
+        // Contar el total para el front
+        const total = await QuejaSugerencia.countDocuments(filtro);
         const quejasSugerencias = await QuejaSugerencia.find(filtro)
             .populate(
                 'usuario',
                 'email rol'
             )
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(saltar) // Saltar elementos anteriores
+            .limit(limite); // Limitar a 15 elementos
         return res.status(200).json({
-            msg: 'Quejas y sugerencias obtenidas correctamente',
-            quejasSugerencias
+            total,
+            paginaActual: parseInt(pagina),
+            totalPaginas: Math.ceil(total / limite),
+            limite,
+            rol: req.usuario.rol,
+            quejasSugerencias // Listado abajo
         });
     } catch (error) {
         console.error(

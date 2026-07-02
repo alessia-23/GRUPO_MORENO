@@ -56,7 +56,7 @@ const obtenerMisRecomendaciones = async (req, res) => {
     try {
         const vendedorId = req.usuario.id;
         const rolUsuario = req.usuario.rol;
-        const { estado } = req.query;
+        const { estado, pagina = 1 } = req.query; // Paginación agregada
         if (rolUsuario !== 'VENDEDOR') {
             return res.status(403).json({
                 msg: 'Solo los vendedores pueden ver sus recomendaciones'
@@ -73,12 +73,23 @@ const obtenerMisRecomendaciones = async (req, res) => {
             }
             filtro.estado = estado;
         }
+        // Límite fijo de 15 cosas
+        const limite = 15;
+        const saltar = (parseInt(pagina) - 1) * limite;
+        // Contar el total para el front
+        const total = await Recomendacion.countDocuments(filtro);
         const recomendaciones = await Recomendacion.find(filtro)
             .select('asunto mensaje estado respuestaAdmin fechaRespuesta createdAt')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(saltar) // Saltar elementos anteriores
+            .limit(limite); // Limitar a 15 elementos
         return res.status(200).json({
-            msg: 'Recomendaciones obtenidas correctamente',
-            recomendaciones
+            total,
+            paginaActual: parseInt(pagina),
+            totalPaginas: Math.ceil(total / limite),
+            limite,
+            rol: rolUsuario,
+            recomendaciones // Listado abajo
         });
     } catch (error) {
         console.error('Error al obtener mis recomendaciones:', error);
@@ -91,7 +102,7 @@ const obtenerMisRecomendaciones = async (req, res) => {
 // Listar todas las recomendaciones para el administrador
 const obtenerRecomendacionesAdmin = async (req, res) => {
     try {
-        const { estado, buscar } = req.query;
+        const { estado, buscar, pagina = 1 } = req.query; // Paginación agregada
         const filtro = {};
         if (estado) {
             if (!['PENDIENTE', 'FINALIZADA'].includes(estado)) {
@@ -113,13 +124,24 @@ const obtenerRecomendacionesAdmin = async (req, res) => {
                 $in: vendedores.map((vendedor) => vendedor._id)
             };
         }
+        // Límite fijo de 15 cosas
+        const limite = 15;
+        const saltar = (parseInt(pagina) - 1) * limite;
+        // Contar el total para el front
+        const total = await Recomendacion.countDocuments(filtro);
         const recomendaciones = await Recomendacion.find(filtro)
             .populate('vendedor', 'email rol')
             .populate('respondidoPor', 'email rol')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(saltar) // Saltar elementos anteriores
+            .limit(limite); // Limitar a 15 elementos
         return res.status(200).json({
-            msg: 'Recomendaciones obtenidas correctamente',
-            recomendaciones
+            total,
+            paginaActual: parseInt(pagina),
+            totalPaginas: Math.ceil(total / limite),
+            limite,
+            rol: req.usuario.rol,
+            recomendaciones // Listado abajo
         });
     } catch (error) {
         console.error('Error al obtener recomendaciones:', error);
