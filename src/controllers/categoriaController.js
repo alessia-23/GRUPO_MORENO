@@ -185,35 +185,44 @@ const actualizarCategoria = async (req, res) => {
         // Buscar categoría
         const categoria = await Categoria.findById(id);
         if (!categoria) {
-            return res.status(404).json({ msg: 'Categoría no encontrada' });
+            return res.status(404).json({
+                msg: 'Categoría no encontrada'
+            });
         }
+        // Verificar que la categoría esté activa
         if (!categoria.estado) {
             return res.status(400).json({
                 msg: 'No se puede actualizar una categoría inactiva'
             });
         }
-        // Validar nombre
-        if (!nombre?.trim()) {
-            return res.status(400).json({ msg: 'El nombre es obligatorio' });
-        }
-        const nombreLimpio = nombre.trim();
-        // Validar duplicado
-        const categoriaExistente = await Categoria.findOne({
-            nombre: {
-                $regex: `^${nombreLimpio}$`,
-                $options: 'i'
-            },
-            _id: { $ne: id }
-        });
-        if (categoriaExistente) {
-            return res.status(400).json({
-                msg: 'Ya existe una categoría con ese nombre'
+        // Validar y actualizar nombre
+        if (nombre !== undefined) {
+            if (!nombre.trim()) {
+                return res.status(400).json({
+                    msg: 'El nombre es obligatorio'
+                });
+            }
+            const nombreLimpio = nombre.trim();
+            // Validar que no exista otra categoría con el mismo nombre
+            const categoriaExistente = await Categoria.findOne({
+                nombre: {
+                    $regex: `^${nombreLimpio}$`,
+                    $options: 'i'
+                },
+                _id: { $ne: id }
             });
+            if (categoriaExistente) {
+                return res.status(400).json({
+                    msg: 'Ya existe una categoría con ese nombre'
+                });
+            }
+            categoria.nombre = nombreLimpio;
         }
-        // Actualizar datos
-        categoria.nombre = nombreLimpio;
-        categoria.descripcion = descripcion?.trim() || '';
-        // Si viene nueva imagen
+        // Actualizar descripción (opcional)
+        if (descripcion !== undefined) {
+            categoria.descripcion = descripcion.trim();
+        }
+        // Actualizar imagen (opcional)
         if (req.files?.imagen) {
             // Eliminar imagen anterior de Cloudinary
             if (categoria.imagen?.public_id) {
@@ -224,10 +233,15 @@ const actualizarCategoria = async (req, res) => {
             // Subir nueva imagen
             const { secure_url, public_id } =
                 await subirImagenCloudinary(
-                    req.files.imagen.tempFilePath, 'Categorias'
+                    req.files.imagen.tempFilePath,
+                    'Categorias'
                 );
-            categoria.imagen = { url: secure_url, public_id };
+            categoria.imagen = {
+                url: secure_url,
+                public_id
+            };
         }
+        // Guardar cambios
         await categoria.save();
         return res.status(200).json({
             msg: 'Categoría actualizada correctamente'
@@ -235,7 +249,8 @@ const actualizarCategoria = async (req, res) => {
     } catch (error) {
         console.log('ERROR ACTUALIZAR CATEGORIA:', error);
         return res.status(500).json({
-            msg: 'Error al actualizar categoría', error: error.message
+            msg: 'Error al actualizar categoría',
+            error: error.message
         });
     }
 };
