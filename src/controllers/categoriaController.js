@@ -134,23 +134,35 @@ const activarCategoria = async (req, res) => {
     }
 };
 
-// Listar categorías activas, va a ser un endpoint para que todos puedan ver las categorías disponibles 
+// Listar categorías activas, va a ser un endpoint para que todos puedan ver las categorías disponibles
 const listarCategoriasActivas = async (req, res) => {
     try {
-        // Obtener categorías activas ocultando fechas
-        const categorias = await Categoria.find({
-            estado: true
-        }).select('-createdAt -updatedAt');
-        // Contar total de categorías activas
+        // Paginación
+        const pagina = parseInt(req.query.pagina) || 1;
+        // Límite de registros por página (máximo 15)
+        const limite = Math.min(parseInt(req.query.limite) || 15, 15);
+        const desde = (pagina - 1) * limite;
         const total = await Categoria.countDocuments({
             estado: true
         });
+        // Obtener categorías activas ocultando fechas
+        const categorias = await Categoria.find({
+            estado: true
+        })
+            .select('-createdAt -updatedAt')
+            .skip(desde)
+            .limit(limite);
         return res.status(200).json({
-            total, categorias
+            pagina,
+            limite,
+            total,
+            totalPaginas: Math.ceil(total / limite),
+            categorias
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al listar categorías activas', error: error.message
+            msg: 'Error al listar categorías activas',
+            error: error.message
         });
     }
 };
@@ -158,21 +170,34 @@ const listarCategoriasActivas = async (req, res) => {
 // Listar categorías inactivas, solo serán visibles para el rol administrador
 const listarCategoriasInactivas = async (req, res) => {
     try {
-        // Obtener categorías inactivas ocultando fechas
-        const categorias = await Categoria.find({
-            estado: false
-        }).select('-createdAt -updatedAt');
+        // Paginación
+
+        const pagina = parseInt(req.query.pagina) || 1;
+        // Límite de registros por página (máximo 15)
+        const limite = Math.min(parseInt(req.query.limite) || 15, 15);
+        const desde = (pagina - 1) * limite;
         // Contar total de categorías inactivas
         const total = await Categoria.countDocuments({
             estado: false
         });
+        // Obtener categorías inactivas ocultando fechas
+        const categorias = await Categoria.find({
+            estado: false
+        })
+            .select('-createdAt -updatedAt')
+            .skip(desde)
+            .limit(limite);
         return res.status(200).json({
+            pagina,
+            limite,
             total,
+            totalPaginas: Math.ceil(total / limite),
             categorias
         });
     } catch (error) {
         return res.status(500).json({
-            msg: 'Error al listar categorías inactivas', error: error.message
+            msg: 'Error al listar categorías inactivas',
+            error: error.message
         });
     }
 };
