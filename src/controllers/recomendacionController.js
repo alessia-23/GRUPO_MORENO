@@ -112,6 +112,7 @@ const obtenerRecomendacionesAdmin = async (req, res) => {
             }
             filtro.estado = estado;
         }
+        /*
         if (buscar?.trim()) {
             const vendedores = await Usuario.find({
                 rol: 'VENDEDOR',
@@ -124,6 +125,7 @@ const obtenerRecomendacionesAdmin = async (req, res) => {
                 $in: vendedores.map((vendedor) => vendedor._id)
             };
         }
+            */
         // Límite fijo de 15 cosas
         const limite = 15;
         const saltar = (parseInt(pagina) - 1) * limite;
