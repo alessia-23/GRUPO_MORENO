@@ -1,57 +1,64 @@
-import axios from 'axios';
-import Producto from '../models/Producto.js';
-import Usuario from '../models/Usuario.js'; // <-- Importamos tu modelo de Usuario
+import mongoose from 'mongoose';
+import validarIdentificacion from '../helpers/validarIdentificacion.js';
 
-// Revisa si un producto llegó a stock bajo y envía una alerta
-const revisarYEnviarAlertaStock = async (productoId) => {
-    try {
-        // Buscar el producto actualizado
-        const producto = await Producto.findById(productoId);
-        // Si no existe o está inactivo no hacemos nada
-        if (!producto || !producto.estado) return;
-
-        // Si el stock llegó al mínimo y todavía no se ha enviado alerta
-        if (
-            producto.stock <= producto.stockMinimo &&
-            producto.alertaStockEnviada === false
-        ) {
-            const usuariosANotificar = await Usuario.find({
-                rol: { $in: ['ADMINISTRADOR', 'VENDEDOR'] }, // Tus enums exactos en mayúsculas
-                estado: true
-            }).select('email'); // Usamos tu campo 'email'
-            const correosDestinatarios = usuariosANotificar
-                .map(usuario => usuario.email)
-                .join(', ');
-            if (correosDestinatarios) {
-                await axios.post(process.env.N8N_WEBHOOK_STOCK_BAJO, {
-                    productoId: producto._id,
-                    nombre: producto.nombre,
-                    codigo: producto.codigo,
-                    stock: producto.stock,
-                    stockMinimo: producto.stockMinimo,
-                    proveedor: producto.proveedor,
-                    marca: producto.marca,
-                    destinatarios: correosDestinatarios
-                });
-            } else {
-                console.log('No se encontraron administradores o vendedores activos para notificar.');
+const administradorSchema = new mongoose.Schema(
+    {
+        // Datos básicos del administrador
+        nombre: {
+            type: String,
+            required: [true, 'El nombre es obligatorio'],
+            trim: true,
+            minlength: [3, 'El nombre debe tener mínimo 3 caracteres'],
+            maxlength: [15, 'El nombre debe tener máximo 15 caracteres'],
+            match: [/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, 'El nombre solo debe contener letras']
+        },
+        apellido: {
+            type: String,
+            required: [true, 'El apellido es obligatorio'],
+            trim: true,
+            minlength: [3, 'El apellido debe tener mínimo 3 caracteres'],
+            maxlength: [20, 'El apellido debe tener máximo 20 caracteres'],
+            match: [/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, 'El apellido solo debe contener letras']
+        },
+        // Cédula única
+        cedula: {
+            type: String,
+            required: [true, 'La cédula o RUC es obligatoria'],
+            unique: true,
+            trim: true,
+            validate: {
+                validator: validarIdentificacion,
+                message: 'Ingrese una cédula o RUC válido'
             }
-            producto.alertaStockEnviada = true;
-            await producto.save();
+        },
+        // Teléfono único
+        telefono: {
+            type: String,
+            required: [true, 'El teléfono es obligatorio'],
+            unique: true,
+            trim: true,
+            validate: {
+                validator: function (v) {
+                    return /^\d{10}$/.test(v);
+                },
+                message: 'El teléfono debe tener exactamente 10 dígitos'
+            }
+        },
+        // Dirección básica
+        direccion: {
+            type: String,
+            required: [true, 'La dirección es obligatoria'],
+            trim: true,
+            minlength: [5, 'La dirección debe tener mínimo 5 caracteres'],
+            maxlength: [30, 'La dirección debe tener máximo 30 caracteres'],
+            match: [/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s#.,\-°]+$/, 'La dirección contiene caracteres no válidos']
         }
-        if (
-            producto.stock > producto.stockMinimo &&
-            producto.alertaStockEnviada === true
-        ) {
-            producto.alertaStockEnviada = false;
-            await producto.save();
-        }
-    } catch (error) {
-        console.log(
-            'Error al revisar/enviar alerta de stock:',
-            error.message
-        );
+    },
+    {
+        timestamps: true,
+        versionKey: false,
+        collection: 'Administradores'
     }
-};
+);
 
-export default revisarYEnviarAlertaStock;
+export default mongoose.model('Administrador', administradorSchema);

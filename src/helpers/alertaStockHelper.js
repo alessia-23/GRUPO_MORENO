@@ -4,48 +4,70 @@ import Usuario from '../models/Usuario.js';
 
 const revisarYEnviarAlertaStock = async (productoId) => {
     try {
+        // Buscar el producto actualizado
         const producto = await Producto.findById(productoId);
-        if (!producto || !producto.estado) return;
 
+        if (!producto || !producto.estado) {
+            return;
+        }
+
+        // Solo enviar alerta si llegó al stock mínimo
         if (
             producto.stock <= producto.stockMinimo &&
             producto.alertaStockEnviada === false
         ) {
-            // 1. Buscamos los usuarios activos con los roles requeridos
+
+            // Buscar todos los administradores y vendedores activos
             const usuariosANotificar = await Usuario.find({
                 rol: { $in: ['ADMINISTRADOR', 'VENDEDOR'] },
                 estado: true
-            }).select('email');
+            }).select('email rol estado');
 
-            // 2. Validación defensiva: Si por alguna razón la consulta no devuelve un array, creamos uno vacío
-            const listaUsuarios = Array.isArray(usuariosANotificar) ? usuariosANotificar : [];
+            console.log('========== USUARIOS ENCONTRADOS ==========');
+            console.log(usuariosANotificar);
 
-            // 3. Mapeamos los correos de forma segura
-            const correosDestinatarios = listaUsuarios
-                .map(usuario => usuario.email)
-                .filter(email => email) // Filtra si algún usuario no tiene email cargado
-                .join(', ');
+            // Obtener únicamente los correos válidos
+            const correosDestinatarios = usuariosANotificar
+                .map(usuario => usuario.email?.trim())
+                .filter(Boolean)
+                .join(',');
 
-            // Si encontramos correos, enviamos la alerta a n8n
-            if (correosDestinatarios) {
-                await axios.post(process.env.N8N_WEBHOOK_STOCK_BAJO, {
-                    productoId: producto._id,
-                    nombre: producto.nombre,
-                    codigo: producto.codigo,
-                    stock: producto.stock,
-                    stockMinimo: producto.stockMinimo,
-                    proveedor: producto.proveedor,
-                    marca: producto.marca,
-                    destinatarios: correosDestinatarios
-                });
+            console.log('========== DESTINATARIOS ==========');
+            console.log(correosDestinatarios);
+
+            const payload = {
+                productoId: producto._id,
+                nombre: producto.nombre,
+                codigo: producto.codigo,
+                stock: producto.stock,
+                stockMinimo: producto.stockMinimo,
+                proveedor: producto.proveedor,
+                marca: producto.marca,
+                destinatarios: correosDestinatarios
+            };
+
+            console.log('========== PAYLOAD QUE SE ENVÍA A N8N ==========');
+            console.log(payload);
+
+            if (correosDestinatarios.length > 0) {
+                const respuesta = await axios.post(
+                    process.env.N8N_WEBHOOK_STOCK_BAJO,
+                    payload
+                );
+
+                console.log('========== RESPUESTA N8N ==========');
+                console.log(respuesta.status);
             } else {
-                console.log('No se encontraron correos para ADMINISTRADOR o VENDEDOR activos.');
+                console.log(
+                    'No existen administradores o vendedores activos para enviar la alerta.'
+                );
             }
 
             producto.alertaStockEnviada = true;
             await producto.save();
         }
 
+        // Reiniciar bandera cuando vuelva a tener stock suficiente
         if (
             producto.stock > producto.stockMinimo &&
             producto.alertaStockEnviada === true
@@ -53,8 +75,15 @@ const revisarYEnviarAlertaStock = async (productoId) => {
             producto.alertaStockEnviada = false;
             await producto.save();
         }
+
     } catch (error) {
-        console.log('Error al revisar/enviar alerta de stock:', error.message);
+        console.log('========== ERROR ALERTA STOCK ==========');
+
+        if (error.response) {
+            console.log(error.response.data);
+        } else {
+            console.log(error.message);
+        }
     }
 };
 
