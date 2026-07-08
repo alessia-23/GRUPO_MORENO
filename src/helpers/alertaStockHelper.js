@@ -3,7 +3,6 @@ import Producto from '../models/Producto.js';
 import Usuario from '../models/Usuario.js';
 
 /**
- * Revisa si un producto llegó a stock bajo y envía una alerta a n8n
  * @param {String} productoId - ID del producto
  * @param {Number} cantidadVendida - Cantidad que se acaba de restar en la venta
  */
@@ -15,17 +14,13 @@ const revisarYEnviarAlertaStock = async (productoId, cantidadVendida = 0) => {
             return;
         }
 
-        // CALCULAMOS EL STOCK REAL EN MEMORIA INMEDIATAMENTE
-        // Si el controlador no nos pasa la cantidad, usamos el stock del documento
         const stockActual = cantidadVendida > 0 ? (producto.stock) : producto.stock;
 
         console.log(`=== [HELPER] EVALUANDO ALERTA DE STOCK ===`);
         console.log(`Producto: ${producto.nombre} | Stock calculado: ${stockActual} | Mínimo: ${producto.stockMinimo}`);
 
-        // VALIDACIÓN MATEMÁTICA REAL
         if (stockActual <= producto.stockMinimo && producto.alertaStockEnviada === false) {
-            
-            // Buscar destinatarios activos
+
             const usuariosANotificar = await Usuario.find({
                 rol: { $in: ['ADMINISTRADOR', 'VENDEDOR'] },
                 estado: true
@@ -36,7 +31,7 @@ const revisarYEnviarAlertaStock = async (productoId, cantidadVendida = 0) => {
                 .filter(Boolean)
                 .join(',');
 
-            // Respaldo por si tu colección de usuarios está vacía en este entorno
+
             if (!correosDestinatarios) {
                 console.log('--- [ADVERTENCIA] No hay usuarios activos en la BD. Usando correo de respaldo ---');
                 correosDestinatarios = "grupomoreno593@gmail.com";
@@ -62,11 +57,11 @@ const revisarYEnviarAlertaStock = async (productoId, cantidadVendida = 0) => {
 
             console.log(`--- RESPUESTA N8N: ${respuesta.status} ---`);
 
-            // Cambiar bandera con updateOne para no disparar validaciones de precio
+
             await Producto.updateOne({ _id: producto._id }, { $set: { alertaStockEnviada: true } });
         }
 
-        // Si el stock volvió a subir por encima del mínimo, reseteamos la bandera
+
         if (stockActual > producto.stockMinimo && producto.alertaStockEnviada === true) {
             await Producto.updateOne({ _id: producto._id }, { $set: { alertaStockEnviada: false } });
             console.log('--- Bandera reseteada a false (Stock suficiente) ---');
