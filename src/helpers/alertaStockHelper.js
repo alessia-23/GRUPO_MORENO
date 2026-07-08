@@ -10,26 +10,27 @@ const revisarYEnviarAlertaStock = async (productoId) => {
             return;
         }
 
-        // Solo enviar alerta si llegó al stock mínimo
-        if (
-            producto.stock <= producto.stockMinimo &&
-            producto.alertaStockEnviada === false
-        ) {
+        console.log(`=== REVISANDO STOCK DE: ${producto.nombre} ===`);
+        console.log(`Stock Actual: ${producto.stock} | Stock Mínimo: ${producto.stockMinimo}`);
+
+        // VALIDACIÓN MATEMÁTICA
+        if (producto.stock <= producto.stockMinimo) {
+            
             const usuariosANotificar = await Usuario.find({
                 rol: { $in: ['ADMINISTRADOR', 'VENDEDOR'] },
                 estado: true
-            }).select('email rol estado');
+            }).select('email');
 
-            console.log('========== USUARIOS ENCONTRADOS ==========');
-            console.log(usuariosANotificar);
-
-            const correosDestinatarios = usuariosANotificar
+            // Si no encuentra usuarios en la BD, te pone a ti por defecto para que no vaya vacío
+            let correosDestinatarios = usuariosANotificar
                 .map(usuario => usuario.email?.trim())
                 .filter(Boolean)
                 .join(',');
 
-            console.log('========== DESTINATARIOS ==========');
-            console.log(correosDestinatarios);
+            if (!correosDestinatarios) {
+                console.log('ADVERTENCIA: No se hallaron usuarios activos en BD. Usando correo de respaldo.');
+                correosDestinatarios = "grupomoreno593@gmail.com"; 
+            }
 
             const payload = {
                 productoId: producto._id,
@@ -42,37 +43,26 @@ const revisarYEnviarAlertaStock = async (productoId) => {
                 destinatarios: correosDestinatarios
             };
 
-            console.log('========== PAYLOAD QUE SE ENVÍA A N8N ==========');
+            console.log('========== PAYLOAD QUE SALE A N8N ==========');
             console.log(payload);
 
-            if (correosDestinatarios.length > 0) {
-                const respuesta = await axios.post(
-                    process.env.N8N_WEBHOOK_STOCK_BAJO,
-                    payload
-                );
+            const respuesta = await axios.post(
+                process.env.N8N_WEBHOOK_STOCK_BAJO,
+                payload
+            );
 
-                console.log('========== RESPUESTA N8N ==========');
-                console.log(respuesta.status);
-            } else {
-                console.log('No existen administradores o vendedores activos para enviar la alerta.');
-            }
+            console.log('========== RESPUESTA N8N ==========');
+            console.log(`STATUS: ${respuesta.status}`);
 
-            // USAMOS UPDATEONE PARA EVITAR ENTRAR EN VALIDACIONES INTERNAS DEL MODELO
             await Producto.updateOne({ _id: producto._id }, { $set: { alertaStockEnviada: true } });
-            console.log('Bandera alertaStockEnviada cambiada a true de forma segura.');
         }
 
-        // Reiniciar bandera cuando vuelva a tener stock suficiente
-        if (
-            producto.stock > producto.stockMinimo &&
-            producto.alertaStockEnviada === true
-        ) {
+        if (producto.stock > producto.stockMinimo) {
             await Producto.updateOne({ _id: producto._id }, { $set: { alertaStockEnviada: false } });
-            console.log('Bandera alertaStockEnviada reseteada a false de forma segura.');
         }
 
     } catch (error) {
-        console.log('========== ERROR ALERTA STOCK ==========');
+        console.log('========== ERROR CRÍTICO EN HELPER ==========');
         if (error.response) {
             console.log(error.response.data);
         } else {
