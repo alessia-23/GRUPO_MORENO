@@ -4,7 +4,6 @@ import Usuario from '../models/Usuario.js';
 
 const revisarYEnviarAlertaStock = async (productoId) => {
     try {
-        // Buscar el producto actualizado
         const producto = await Producto.findById(productoId);
 
         if (!producto || !producto.estado) {
@@ -16,8 +15,6 @@ const revisarYEnviarAlertaStock = async (productoId) => {
             producto.stock <= producto.stockMinimo &&
             producto.alertaStockEnviada === false
         ) {
-
-            // Buscar todos los administradores y vendedores activos
             const usuariosANotificar = await Usuario.find({
                 rol: { $in: ['ADMINISTRADOR', 'VENDEDOR'] },
                 estado: true
@@ -26,7 +23,6 @@ const revisarYEnviarAlertaStock = async (productoId) => {
             console.log('========== USUARIOS ENCONTRADOS ==========');
             console.log(usuariosANotificar);
 
-            // Obtener únicamente los correos válidos
             const correosDestinatarios = usuariosANotificar
                 .map(usuario => usuario.email?.trim())
                 .filter(Boolean)
@@ -58,13 +54,12 @@ const revisarYEnviarAlertaStock = async (productoId) => {
                 console.log('========== RESPUESTA N8N ==========');
                 console.log(respuesta.status);
             } else {
-                console.log(
-                    'No existen administradores o vendedores activos para enviar la alerta.'
-                );
+                console.log('No existen administradores o vendedores activos para enviar la alerta.');
             }
 
-            producto.alertaStockEnviada = true;
-            await producto.save();
+            // USAMOS UPDATEONE PARA EVITAR ENTRAR EN VALIDACIONES INTERNAS DEL MODELO
+            await Producto.updateOne({ _id: producto._id }, { $set: { alertaStockEnviada: true } });
+            console.log('Bandera alertaStockEnviada cambiada a true de forma segura.');
         }
 
         // Reiniciar bandera cuando vuelva a tener stock suficiente
@@ -72,13 +67,12 @@ const revisarYEnviarAlertaStock = async (productoId) => {
             producto.stock > producto.stockMinimo &&
             producto.alertaStockEnviada === true
         ) {
-            producto.alertaStockEnviada = false;
-            await producto.save();
+            await Producto.updateOne({ _id: producto._id }, { $set: { alertaStockEnviada: false } });
+            console.log('Bandera alertaStockEnviada reseteada a false de forma segura.');
         }
 
     } catch (error) {
         console.log('========== ERROR ALERTA STOCK ==========');
-
         if (error.response) {
             console.log(error.response.data);
         } else {
