@@ -220,13 +220,20 @@ const actualizarCantidadCarrito = async (req, res) => {
         articulo.tipoPrecio = tipoPrecio;
         articulo.porcentajeIva = producto.tipoIVA === '15%' ? 0.15 : 0;
         await carrito.save();
+        const articulosFormateados = carrito.articulos.map((item) => {
+            const itemPlano = item.toObject();
+            if (item.producto.toString() === productoId) {
+                itemPlano.stockDisponible = producto.stock;
+            }
+            return itemPlano;
+        });
         return res.status(200).json({
             msg: 'Cantidad actualizada correctamente',
             stockDisponible: producto.stock, 
             carrito: {
                 _id: carrito._id,
                 cliente: carrito.cliente,
-                articulos: carrito.articulos,
+                articulos: articulosFormateados,
                 subtotalGeneral: carrito.subtotalGeneral,
                 ivaGeneral: carrito.ivaGeneral,
                 totalGeneral: carrito.totalGeneral
