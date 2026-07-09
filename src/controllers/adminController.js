@@ -5,6 +5,7 @@ import { hashPassword } from '../helpers/bcrypt.js';
 import axios from 'axios';
 import Pedido from '../models/Pedido.js';
 import mongoose from 'mongoose';
+import validarIdentificacion from '../helpers/validarIdentificacion.js';
 
 // Registro de vendedor creado por el administrador
 const registrarVendedor = async (req, res) => {
@@ -14,6 +15,12 @@ const registrarVendedor = async (req, res) => {
         if (!nombre?.trim() || !apellido?.trim() || !cedula?.trim() || !telefono?.trim() || !direccion?.trim() || !email?.trim() || !password || !fecha_nacimiento) {
             return res.status(400).json({
                 msg: 'Debe llenar todos los campos obligatorios'
+            });
+        }
+        // Validar que sea estrictamente una cédula de 10 dígitos válida para el Vendedor
+        if (!validarIdentificacion(cedula, true)) {
+            return res.status(400).json({
+                msg: 'Para el rol de Vendedor, debe proporcionar un número de cédula válido de 10 dígitos'
             });
         }
         // Validar formato de contraseña debe tener de 8 a 16, mayúscula, minúscula, número y carácter especial

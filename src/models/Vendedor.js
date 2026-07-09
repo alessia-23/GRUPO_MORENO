@@ -27,8 +27,11 @@ const vendedorSchema = new mongoose.Schema(
             unique: true,
             trim: true,
             validate: {
-                validator: validarIdentificacion,
-                message: 'Ingrese una cédula o RUC válido'
+                // Forzamos a que Mongoose use el helper en modo solo cédula (true)
+                validator: function (v) {
+                    return validarIdentificacion(v, true);
+                },
+                message: 'Ingrese una cédula válida de 10 dígitos'
             }
         },
         // Fecha de nacimiento para tener mejor control del vendedor
@@ -41,10 +44,10 @@ const vendedorSchema = new mongoose.Schema(
                     const fechaMinima = new Date();
                     fechaMinima.setFullYear(hoy.getFullYear() - 100);
                     const fechaMaxima = new Date();
-                    fechaMaxima.setFullYear(hoy.getFullYear() - 15);
+                    fechaMaxima.setFullYear(hoy.getFullYear() - 18);
                     return value >= fechaMinima && value <= fechaMaxima;
                 },
-                message: 'La edad debe estar entre 15 y 100 años'
+                message: 'La edad debe estar entre 18 y 100 años'
             }
         },
         // Teléfono único

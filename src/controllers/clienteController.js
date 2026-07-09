@@ -4,11 +4,17 @@ import { hashPassword } from '../helpers/bcrypt.js';
 
 const registrarCliente = async (req, res) => {
     try {
-        const {nombre,apellido,cedula,telefono,direccion,ciudad,email,password,fecha_nacimiento} = req.body;
+        const { nombre, apellido, cedula, telefono, direccion, ciudad, email, password, fecha_nacimiento } = req.body;
         // Validar campos obligatorios y evitar espacios vacíos
-        if (!nombre?.trim() ||!apellido?.trim() ||!cedula?.trim() ||!telefono?.trim() ||!direccion?.trim() ||!ciudad?.trim() ||!email?.trim() ||!password ||!fecha_nacimiento) {
+        if (!nombre?.trim() || !apellido?.trim() || !cedula?.trim() || !telefono?.trim() || !direccion?.trim() || !ciudad?.trim() || !email?.trim() || !password || !fecha_nacimiento) {
             return res.status(400).json({
                 msg: 'Debe llenar todos los campos obligatorios'
+            });
+        }
+        // Al registrar un cliente (Cédula o RUC)
+        if (!validarIdentificacion(identificacion)) { 
+            return res.status(400).json({
+                msg: 'La identificación proporcionada no es válida (Debe ser cédula de 10 dígitos o RUC de 13 dígitos terminado en 001)'
             });
         }
         // Validar contraseña

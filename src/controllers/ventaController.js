@@ -7,6 +7,7 @@ import Carrito from '../models/Carrito.js';
 import { calcularTotales } from '../helpers/calcularTotal.js';
 import { cobrarConTarjeta } from '../helpers/stripeHelper.js';
 import revisarYEnviarAlertaStock from '../helpers/alertaStockHelper.js';
+import validarIdentificacion from '../helpers/validarIdentificacion.js';
 
 // Crear una venta directa en el local
 const crearVentaDirecta = async (req, res) => {
@@ -24,6 +25,11 @@ const crearVentaDirecta = async (req, res) => {
         if (!datosFacturacion) {
             return res.status(400).json({
                 msg: 'Los datos de facturación son obligatorios'
+            });
+        }
+        if (datosFacturacion.identificacion && !validarIdentificacion(datosFacturacion.identificacion)) {
+            return res.status(400).json({
+                msg: 'La identificación de facturación no es válida (Debe ser cédula de 10 dígitos o RUC de 13 dígitos terminado en 001)'
             });
         }
         // Validar método de pago
