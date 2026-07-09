@@ -276,7 +276,7 @@ const actualizarPassword = async (req, res) => {
         // comprobar contraseña actual
         const passwordCorrecta = await comparePassword(passwordActual, usuario.password);
         if (!passwordCorrecta) {
-            return res.status(401).json({
+            return res.status(400).json({
                 msg: 'La contraseña actual es incorrecta'
             });
         }
