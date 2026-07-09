@@ -13,7 +13,7 @@ const registrarCliente = async (req, res) => {
             });
         }
         // Al registrar un cliente (Cédula o RUC)
-        if (!validarIdentificacion(identificacion)) { 
+        if (!validarIdentificacion(cedula)) { 
             return res.status(400).json({
                 msg: 'La identificación proporcionada no es válida (Debe ser cédula de 10 dígitos o RUC de 13 dígitos terminado en 001)'
             });
