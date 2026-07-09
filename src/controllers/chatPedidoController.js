@@ -163,12 +163,13 @@ const marcarChatPedidoComoLeido = async (req, res) => {
     try {
         const { pedidoId } = req.params;
         const usuarioId = req.usuario.id;
+    
         // Validar formato del ID del pedido
         if (!mongoose.Types.ObjectId.isValid(pedidoId)) {
             return res.status(400).json({
                 msg: 'El ID del pedido no es válido'
             });
-        }
+        }    
         // Verificar que el usuario pertenezca al pedido
         const acceso = await validarAccesoPedido(
             pedidoId,
@@ -191,6 +192,13 @@ const marcarChatPedidoComoLeido = async (req, res) => {
                 }
             }
         );
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`pedido-chat-${pedidoId}`).emit('chat-leido-pedido', {
+                pedidoId,
+                usuarioId
+            });
+        }
         return res.status(200).json({
             msg: 'Mensajes marcados como leídos'
         });
