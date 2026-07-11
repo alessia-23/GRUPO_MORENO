@@ -8,7 +8,6 @@ const crearRecomendacion = async (req, res) => {
         const vendedorId = req.usuario.id;
         const rolUsuario = req.usuario.rol;
         const { asunto, mensaje } = req.body;
-
         if (rolUsuario !== 'VENDEDOR') {
             return res.status(403).json({
                 msg: 'Solo los vendedores pueden enviar recomendaciones'
@@ -32,7 +31,7 @@ const crearRecomendacion = async (req, res) => {
         });
         const io = req.app.get('io');
         if (io) {
-            io.to('recomendaciones-admin').emit('nueva-recomendacion', {
+            io.to('recomendaciones-admin').emit('nueva-recommendacion', {
                 id: nuevaRecomendacion._id,
                 asunto: nuevaRecomendacion.asunto,
                 estado: nuevaRecomendacion.estado,
@@ -44,6 +43,11 @@ const crearRecomendacion = async (req, res) => {
             msg: 'Recomendación enviada correctamente'
         });
     } catch (error) {
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                msg: Object.values(error.errors)[0].message
+            });
+        }
         console.error('Error al crear recomendación:', error);
         return res.status(500).json({
             msg: 'Error al enviar la recomendación'
