@@ -43,6 +43,7 @@ const quejaSugerenciaSchema = new mongoose.Schema(
         respuestaAdmin: {
             type: String,
             trim: true,
+            minlength: [5, 'La respuesta debe tener mínimo 5 caracteres'],
             maxlength: [500, 'La respuesta no puede exceder los 500 caracteres'],
             default: ''
         },
