@@ -167,14 +167,24 @@ const pedidoSchema = new mongoose.Schema({
         direccion: {
             type: String,
             trim: true,
-            maxlength: [80, 'La dirección no puede exceder los 80 caracteres']
+            default: null,
+            validate: {
+                validator: function (v) {
+                    return v === null || v === '' || (v.length >= 3 && v.length <= 50);
+                },
+                message: 'La dirección debe tener entre 3 y 50 caracteres'
+            }
         },
-
         referencia: {
             type: String,
             trim: true,
-            maxlength: [80, 'La referencia no puede exceder los 80 caracteres'],
-            default: ''
+            default: '',
+            validate: {
+                validator: function (v) {
+                    return v === null || v === '' || (v.length >= 3 && v.length <= 50);
+                },
+                message: 'La referencia debe tener entre 3 y 50 caracteres'
+            }
         }
     },
 
