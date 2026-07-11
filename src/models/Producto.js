@@ -48,7 +48,7 @@ const productoSchema = new mongoose.Schema({
     },
     tipoIVA: {
         type: String,
-        enum: ['15%', '0%', 'Exento'],
+        enum: ['15%', '0%'],
         default: '15%'
     },
     precioMayorista: {
