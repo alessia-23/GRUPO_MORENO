@@ -1,4 +1,6 @@
 import Categoria from '../models/Categoria.js';
+import Producto from '../models/Producto.js';
+import Carrito from '../models/Carrito.js';
 import { subirImagenCloudinary } from '../helpers/uploadCloudinary.js';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -97,6 +99,21 @@ const desactivarCategoria = async (req, res) => {
         }
         categoria.estado = false;
         await categoria.save();
+        const productosAsociados = await Producto.find({ categoria: id });
+        const idsProductos = productosAsociados.map(p => p._id.toString());
+
+        if (idsProductos.length > 0) {
+            await Producto.updateMany({ categoria: id }, { estado: false });
+            const carritosAfectados = await Carrito.find({
+                "articulos.producto": { $in: idsProductos }
+            });
+            for (const carrito of carritosAfectados) {
+                carrito.articulos = carrito.articulos.filter(
+                    (articulo) => !idsProductos.includes(articulo.producto.toString())
+                );
+                await carrito.save();
+            }
+        }
         return res.status(200).json({
             msg: 'Categoría desactivada correctamente'
         });

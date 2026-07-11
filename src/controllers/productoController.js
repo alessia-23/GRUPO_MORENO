@@ -1,5 +1,6 @@
 import Producto from '../models/Producto.js';
 import Categoria from '../models/Categoria.js';
+import Carrito from '../models/Carrito.js';
 import { subirImagenCloudinary } from '../helpers/uploadCloudinary.js';
 import { v2 as cloudinary } from 'cloudinary';
 import mongoose from 'mongoose';
@@ -376,8 +377,15 @@ const desactivarProducto = async (req, res) => {
         }
         producto.estado = false;
         await producto.save();
+        const carritosConProducto = await Carrito.find({ "articulos.producto": id }); // Buscar que carritos contienen el producto
+        for (const carrito of carritosConProducto) {
+            carrito.articulos = carrito.articulos.filter(
+                (articulo) => articulo.producto.toString() !== id.toString()
+            );
+            await carrito.save();
+        }
         return res.status(200).json({
-            msg: 'Producto desactivado correctamente'
+            msg: 'Producto desactivado correctamente y removido de los carritos'
         });
     } catch (error) {
         return res.status(500).json({
