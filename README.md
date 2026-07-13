@@ -21,7 +21,10 @@ Dicho sistema permite al negocio automatizar visualmente sus procesos internos, 
 |---|---|
 | **Formulario F_AA_233** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQCAFNUv4dX4SKgZape9b8RUAXr6WWIXGsodIXP9Jvt-GU0?e=aTEQ8f) |
 | **Formulario F_AA_234** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQDd4hdPAA77RbavFUoM6WJXAa2-L5wkmpIxU-dtpI2VU70?e=uFDYFz) |
+| **Formulario F_AA_236** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQB-Ki1Pg_LqQ5FdvYT-qJuWASMqIk8TuQXKRQRSUa4CJRg?e=W6Jwxo) |
 | **Documento de tesis** | [Ver documento](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQCwCGZFEn3QTZAK-q3khI5SAYFBXTmo33PnHdWUFEqcE5M?e=9PNuCE) |
+| **Certificado IA** | [Ver documento](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQC8Ch8BhjaNQrRrOuHNDsxAASiKBtz1o-FVhsaBB8H6jrg?e=stHDww) |
+| **Turnitin** | [Ver documento](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQBk-pwkWxOISpzjXsqFqizUATP5KTkPE4nHtwJl7VC3QHM?e=4JlsoA) |
 | **Video demostrativo** | [Ver video](https://www.youtube.com/watch?v=xlRkscrBpF8) |
 
 ---
