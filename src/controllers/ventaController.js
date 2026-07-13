@@ -545,6 +545,14 @@ const crearVentaDesdePedido = async (req, res) => {
 
         await venta.save();
         await pedido.save();
+        const articulosConStock = [];
+        for (const item of venta.articulos) {
+            const prod = await Producto.findById(item.producto).select('stock').lean();
+            articulosVenta.push({
+                ...item.toObject(),
+                stockDisponible: prod?.stock || 0
+            });
+        }
         const io = req.app.get('io');
 
         if (io) {
@@ -597,7 +605,7 @@ const crearVentaDesdePedido = async (req, res) => {
                 estadoPago: venta.estadoPago,
                 estado: venta.estado,
                 stripe: venta.stripe,
-                articulos: venta.articulos,
+                articulos: articulosConStock,
                 datosFacturacion: venta.datosFacturacion,
                 resumenPago: venta.resumenPago,
                 createdAt: venta.createdAt
