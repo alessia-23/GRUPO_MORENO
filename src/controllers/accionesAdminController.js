@@ -142,6 +142,10 @@ const obtenerPeriodoActual = (tipo) => {
         const semana = String(Math.ceil((dias + inicioAnio.getDay() + 1) / 7)).padStart(2, '0');
         return `${anio}-S${semana}`;
     }
+    if (tipo === 'FECHA_FESTIVA') {
+        const evento = obtenerFechaFestivaDisponible();
+        return evento ? `${anio}-${evento.codigo}` : `${anio}-SIN_EVENTO`;
+    }
 
     return `${anio}-${mes}`;
 };
