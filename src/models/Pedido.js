@@ -47,34 +47,29 @@ const pedidoSchema = new mongoose.Schema({
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Producto'
             },
-
             nombreProducto: {
                 type: String,
                 trim: true,
                 maxlength: [60, 'El nombre del producto no puede exceder los 60 caracteres']
             },
-
             codigo: {
                 type: String,
                 trim: true,
                 uppercase: true,
                 maxlength: [15, 'El código no puede exceder los 15 caracteres']
             },
-
             color: {
                 type: String,
                 trim: true,
                 default: '',
                 maxlength: [20, 'El color no puede exceder los 20 caracteres']
             },
-
             tamanio: {
                 type: String,
                 trim: true,
                 default: '',
                 maxlength: [15, 'El tamaño no puede exceder los 15 caracteres']
             },
-
             cantidad: {
                 type: Number,
                 min: [1, 'La cantidad mínima es 1'],
@@ -86,19 +81,31 @@ const pedidoSchema = new mongoose.Schema({
                     message: 'La cantidad debe ser un número entero'
                 }
             },
-
             precioUnitario: {
                 type: Number,
                 default: 0,
                 min: [0, 'El precio unitario no puede ser negativo']
             },
-
+            precioMayorista: {
+                type: Number,
+                default: 0,
+                min: [0, 'El precio mayorista no puede ser negativo']
+            },
+            cantidadMinimaMayorista: {
+                type: Number,
+                default: 0,
+                min: [0, 'La cantidad mínima mayorista no puede ser negativa']
+            },
+            tipoPrecio: {
+                type: String,
+                enum: ['NORMAL', 'MAYORISTA'],
+                default: 'NORMAL'
+            },
             porcentajeIva: {
                 type: Number,
                 enum: [0, 0.15],
                 default: 0.15
             },
-
             subtotal: {
                 type: Number,
                 default: 0,
@@ -106,7 +113,6 @@ const pedidoSchema = new mongoose.Schema({
             }
         }
     ],
-
     datosFacturacion: {
         nombreCompleto: {
             type: String,
@@ -121,7 +127,6 @@ const pedidoSchema = new mongoose.Schema({
                 message: 'El nombre solo puede contener letras'
             }
         },
-
         identificacion: {
             type: String,
             required: [true, 'La cédula o RUC es obligatorio'],
@@ -131,7 +136,6 @@ const pedidoSchema = new mongoose.Schema({
                 message: 'Ingrese una cédula o RUC válido'
             }
         },
-
         correo: {
             type: String,
             required: [true, 'El correo electrónico es obligatorio'],
@@ -143,7 +147,6 @@ const pedidoSchema = new mongoose.Schema({
                 'Ingrese un correo válido'
             ]
         },
-
         telefono: {
             type: String,
             required: [true, 'El teléfono es obligatorio'],
@@ -156,13 +159,11 @@ const pedidoSchema = new mongoose.Schema({
             }
         }
     },
-
     tipoEntrega: {
         type: String,
         enum: ['RETIRO_LOCAL', 'ENVIO_DOMICILIO'],
         required: [true, 'El tipo de entrega es obligatorio']
     },
-
     direccionEntrega: {
         direccion: {
             type: String,

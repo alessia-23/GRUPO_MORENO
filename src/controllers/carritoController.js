@@ -118,6 +118,8 @@ const agregarAlCarrito = async (req, res) => {
             carrito.articulos[indiceArticulo].precioUnitario = precioUnitario;
             carrito.articulos[indiceArticulo].tipoPrecio = tipoPrecio;
             carrito.articulos[indiceArticulo].porcentajeIva = porcentajeIva;
+            carrito.articulos[indiceArticulo].precioMayorista = producto.precioMayorista || 0;
+            carrito.articulos[indiceArticulo].cantidadMinimaMayorista = producto.cantidadMinimaMayorista || 0;
         } else {
             carrito.articulos.push({
                 producto: producto._id,
@@ -132,7 +134,9 @@ const agregarAlCarrito = async (req, res) => {
                 cantidad: cantidadFinal,
                 precioUnitario,
                 tipoPrecio,
-                porcentajeIva
+                porcentajeIva,
+                precioMayorista: producto.precioMayorista || 0,
+                cantidadMinimaMayorista: producto.cantidadMinimaMayorista || 0
             });
         }
         await carrito.save();
@@ -219,6 +223,8 @@ const actualizarCantidadCarrito = async (req, res) => {
         articulo.precioUnitario = precioUnitario;
         articulo.tipoPrecio = tipoPrecio;
         articulo.porcentajeIva = producto.tipoIVA === '15%' ? 0.15 : 0;
+        articulo.precioMayorista = producto.precioMayorista || 0;
+        articulo.cantidadMinimaMayorista = producto.cantidadMinimaMayorista || 0;
         await carrito.save();
         const articulosFormateados = carrito.articulos.map((item) => {
             const itemPlano = item.toObject();
@@ -229,7 +235,7 @@ const actualizarCantidadCarrito = async (req, res) => {
         });
         return res.status(200).json({
             msg: 'Cantidad actualizada correctamente',
-            stockDisponible: producto.stock, 
+            stockDisponible: producto.stock,
             carrito: {
                 _id: carrito._id,
                 cliente: carrito.cliente,

@@ -696,7 +696,10 @@ const crearPedidoDesdeCarrito = async (req, res) => {
                 tamanio: item.tamanio || '',
                 cantidad: item.cantidad,
                 precioUnitario: item.precioUnitario,
-                porcentajeIva: item.porcentajeIva
+                porcentajeIva: item.porcentajeIva,
+                tipoPrecio: item.tipoPrecio || 'NORMAL',
+                precioMayorista: item.precioMayorista || 0,
+                cantidadMinimaMayorista: item.cantidadMinimaMayorista || 0
             });
         }
         // Calcular subtotal e IVA de productos
@@ -852,6 +855,16 @@ const armarPedidoDesdeFoto = async (req, res) => {
                 });
             }
             const porcentajeIva = producto.tipoIVA === '15%' ? 0.15 : 0;
+            let precioUnitario = producto.precioVenta;
+            let tipoPrecio = 'NORMAL';
+            if (
+                producto.precioMayorista &&
+                producto.cantidadMinimaMayorista &&
+                cantidadNumerica >= producto.cantidadMinimaMayorista
+            ) {
+                precioUnitario = producto.precioMayorista;
+                tipoPrecio = 'MAYORISTA';
+            }
             articulosParaCalcular.push({
                 producto: producto._id,
                 nombreProducto: producto.nombre,
@@ -859,7 +872,10 @@ const armarPedidoDesdeFoto = async (req, res) => {
                 color: producto.color || '',
                 tamanio: producto.tamanio || '',
                 cantidad: cantidadNumerica,
-                precioUnitario: producto.precioVenta,
+                precioUnitario,
+                tipoPrecio,
+                precioMayorista: producto.precioMayorista || 0,
+                cantidadMinimaMayorista: producto.cantidadMinimaMayorista || 0,
                 porcentajeIva
             });
         }

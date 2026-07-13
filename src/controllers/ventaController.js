@@ -108,7 +108,9 @@ const crearVentaDirecta = async (req, res) => {
                 cantidad: cantidadNumerica,
                 precioUnitario,
                 tipoPrecio,
-                porcentajeIva
+                porcentajeIva,
+                precioMayorista: producto.precioMayorista || 0,
+                cantidadMinimaMayorista: producto.cantidadMinimaMayorista || 0
             });
         }
         // En venta directa solo EFECTIVO se considera pago inmediato
@@ -481,7 +483,9 @@ const crearVentaDesdePedido = async (req, res) => {
                 precioUnitario: item.precioUnitario,
                 tipoPrecio: item.tipoPrecio || 'NORMAL',
                 porcentajeIva: item.porcentajeIva,
-                subtotal: item.subtotal
+                subtotal: item.subtotal,
+                precioMayorista: item.precioMayorista || 0,
+                cantidadMinimaMayorista: item.cantidadMinimaMayorista || 0
             });
         }
 
@@ -680,19 +684,7 @@ const cancelarVenta = async (req, res) => {
 const pagarCarritoConTarjeta = async (req, res) => {
     try {
         const clienteId = req.usuario.id;
-
-        const {
-            paymentMethodId,
-            nombrePedido,
-            nombreCompleto,
-            identificacion,
-            correo,
-            telefono,
-            tipoEntrega,
-            direccion,
-            referencia,
-            observaciones = ''
-        } = req.body || {};
+        const {paymentMethodId,nombrePedido,nombreCompleto,identificacion,correo,telefono,tipoEntrega,direccion,referencia,observaciones = ''} = req.body || {};
 
         if (!paymentMethodId?.trim()) {
             return res.status(400).json({ msg: 'El paymentMethodId es obligatorio' });
@@ -752,7 +744,9 @@ const pagarCarritoConTarjeta = async (req, res) => {
                 cantidad: item.cantidad,
                 precioUnitario: item.precioUnitario,
                 tipoPrecio: item.tipoPrecio || 'NORMAL',
-                porcentajeIva: item.porcentajeIva
+                porcentajeIva: item.porcentajeIva,
+                precioMayorista: item.precioMayorista || 0,
+                cantidadMinimaMayorista: item.cantidadMinimaMayorista || 0
             });
         }
 

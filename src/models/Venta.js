@@ -68,6 +68,16 @@ const ventaSchema = new mongoose.Schema({
                 required: [true, 'El precio unitario es obligatorio'],
                 min: [0, 'El precio unitario no puede ser negativo']
             },
+            precioMayorista: {
+                type: Number,
+                default: 0,
+                min: [0, 'El precio mayorista no puede ser negativo']
+            },
+            cantidadMinimaMayorista: {
+                type: Number,
+                default: 0,
+                min: [0, 'La cantidad mínima mayorista no puede ser negativa']
+            },
             tipoPrecio: {
                 type: String,
                 enum: ['NORMAL', 'MAYORISTA'],

@@ -71,6 +71,16 @@ const carritoSchema = new mongoose.Schema(
                         message: 'El precio unitario debe ser un número válido'
                     }
                 },
+                precioMayorista: {
+                    type: Number,
+                    default: 0,
+                    min: [0, 'El precio mayorista no puede ser negativo']
+                },
+                cantidadMinimaMayorista: {
+                    type: Number,
+                    default: 0,
+                    min: [0, 'La cantidad mínima mayorista no puede ser negativa']
+                },
                 tipoPrecio: {
                     type: String,
                     enum: ['NORMAL', 'MAYORISTA'],
