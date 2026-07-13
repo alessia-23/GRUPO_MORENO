@@ -42,6 +42,10 @@ const ventaSchema = new mongoose.Schema({
                 uppercase: true,
                 maxlength: [15, 'El código no puede exceder los 15 caracteres']
             },
+            imagen: {
+                url: producto.imagen?.url || item.imagen?.url || null,
+                public_id: producto.imagen?.public_id || item.imagen?.public_id || null
+            },
             color: {
                 type: String,
                 trim: true,

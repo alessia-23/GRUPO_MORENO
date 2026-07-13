@@ -692,6 +692,10 @@ const crearPedidoDesdeCarrito = async (req, res) => {
                 producto: producto._id,
                 nombreProducto: item.nombreProducto,
                 codigo: item.codigo,
+                imagen: {
+                    url: item.imagen?.url || null,
+                    public_id: item.imagen?.public_id || null
+                },
                 color: item.color || '',
                 tamanio: item.tamanio || '',
                 cantidad: item.cantidad,
@@ -869,6 +873,10 @@ const armarPedidoDesdeFoto = async (req, res) => {
                 producto: producto._id,
                 nombreProducto: producto.nombre,
                 codigo: producto.codigo,
+                imagen: {
+                    url: producto.imagen?.url || null,
+                    public_id: producto.imagen?.public_id || null
+                },
                 color: producto.color || '',
                 tamanio: producto.tamanio || '',
                 cantidad: cantidadNumerica,

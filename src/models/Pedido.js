@@ -58,6 +58,16 @@ const pedidoSchema = new mongoose.Schema({
                 uppercase: true,
                 maxlength: [15, 'El código no puede exceder los 15 caracteres']
             },
+            imagen: {
+                url: {
+                    type: String,
+                    default: null
+                },
+                public_id: {
+                    type: String,
+                    default: null
+                }
+            },
             color: {
                 type: String,
                 trim: true,

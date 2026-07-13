@@ -684,7 +684,7 @@ const cancelarVenta = async (req, res) => {
 const pagarCarritoConTarjeta = async (req, res) => {
     try {
         const clienteId = req.usuario.id;
-        const {paymentMethodId,nombrePedido,nombreCompleto,identificacion,correo,telefono,tipoEntrega,direccion,referencia,observaciones = ''} = req.body || {};
+        const { paymentMethodId, nombrePedido, nombreCompleto, identificacion, correo, telefono, tipoEntrega, direccion, referencia, observaciones = '' } = req.body || {};
 
         if (!paymentMethodId?.trim()) {
             return res.status(400).json({ msg: 'El paymentMethodId es obligatorio' });
@@ -739,6 +739,10 @@ const pagarCarritoConTarjeta = async (req, res) => {
                 producto: producto._id,
                 nombreProducto: item.nombreProducto,
                 codigo: item.codigo,
+                imagen: {
+                    url: item.imagen?.url || null,
+                    public_id: item.imagen?.public_id || null
+                },
                 color: item.color || '',
                 tamanio: item.tamanio || '',
                 cantidad: item.cantidad,
