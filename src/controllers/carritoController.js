@@ -2,6 +2,23 @@ import mongoose from 'mongoose';
 import Carrito from '../models/Carrito.js';
 import Producto from '../models/Producto.js';
 
+const conStockDisponible = async (articulos) => {
+    const ids = articulos.map(a => a.producto);
+    const productos = await Producto.find({ _id: { $in: ids } })
+        .select('stock')
+        .lean();
+    const stockPorId = {};
+    productos.forEach(p => { stockPorId[p._id.toString()] = p.stock; });
+
+    return articulos.map(item => {
+        const plano = item.toObject ? item.toObject() : item;
+        return {
+            ...plano,
+            stockDisponible: stockPorId[item.producto.toString()] ?? 0
+        };
+    });
+};
+
 // Obtener carrito del cliente autenticado
 const obtenerCarrito = async (req, res) => {
     try {
@@ -140,6 +157,7 @@ const agregarAlCarrito = async (req, res) => {
             });
         }
         await carrito.save();
+        const articulosConStock = await conStockDisponible(carrito.articulos);
         return res.status(200).json({
             msg: 'Producto agregado al carrito correctamente',
             stockDisponible: producto.stock,
@@ -147,7 +165,7 @@ const agregarAlCarrito = async (req, res) => {
             carrito: {
                 _id: carrito._id,
                 cliente: carrito.cliente,
-                articulos: carrito.articulos,
+                articulos: articulosConStock,
                 subtotalGeneral: carrito.subtotalGeneral,
                 ivaGeneral: carrito.ivaGeneral,
                 totalGeneral: carrito.totalGeneral
@@ -226,20 +244,14 @@ const actualizarCantidadCarrito = async (req, res) => {
         articulo.precioMayorista = producto.precioMayorista || 0;
         articulo.cantidadMinimaMayorista = producto.cantidadMinimaMayorista || 0;
         await carrito.save();
-        const articulosFormateados = carrito.articulos.map((item) => {
-            const itemPlano = item.toObject();
-            if (item.producto.toString() === productoId) {
-                itemPlano.stockDisponible = producto.stock;
-            }
-            return itemPlano;
-        });
+        const articulosConStock = await conStockDisponible(carrito.articulos);
         return res.status(200).json({
             msg: 'Cantidad actualizada correctamente',
             stockDisponible: producto.stock,
             carrito: {
                 _id: carrito._id,
                 cliente: carrito.cliente,
-                articulos: articulosFormateados,
+                articulos: articulosConStock,
                 subtotalGeneral: carrito.subtotalGeneral,
                 ivaGeneral: carrito.ivaGeneral,
                 totalGeneral: carrito.totalGeneral
@@ -282,12 +294,13 @@ const eliminarProductoCarrito = async (req, res) => {
             });
         }
         await carrito.save();
+        const articulosConStock = await conStockDisponible(carrito.articulos);
         return res.status(200).json({
             msg: 'Producto eliminado del carrito correctamente',
             carrito: {
                 _id: carrito._id,
                 cliente: carrito.cliente,
-                articulos: carrito.articulos,
+                articulos: articulosConStock,
                 subtotalGeneral: carrito.subtotalGeneral,
                 ivaGeneral: carrito.ivaGeneral,
                 totalGeneral: carrito.totalGeneral

@@ -103,6 +103,7 @@ const crearVentaDirecta = async (req, res) => {
                 producto: producto._id,
                 nombreProducto: producto.nombre,
                 codigo: producto.codigo,
+                imagen: producto.imagen || null,
                 color: producto.color || '',
                 tamanio: producto.tamanio || '',
                 cantidad: cantidadNumerica,
@@ -477,6 +478,7 @@ const crearVentaDesdePedido = async (req, res) => {
                 producto: item.producto,
                 nombreProducto: item.nombreProducto,
                 codigo: item.codigo,
+                imagen: item.imagen || null,
                 color: item.color || '',
                 tamanio: item.tamanio || '',
                 cantidad: item.cantidad,
@@ -548,9 +550,9 @@ const crearVentaDesdePedido = async (req, res) => {
         const articulosConStock = [];
         for (const item of venta.articulos) {
             const prod = await Producto.findById(item.producto).select('stock').lean();
-            articulosVenta.push({
+            articulosConStock.push({
                 ...item.toObject(),
-                stockDisponible: prod?.stock || 0
+                stockDisponible: prod?.stock ?? 0
             });
         }
         const io = req.app.get('io');

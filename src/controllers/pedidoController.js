@@ -438,6 +438,25 @@ const obtenerDetallePedido = async (req, res) => {
                 msg: 'No tiene permisos para ver este pedido'
             });
         }
+        const productoIds = (pedido.articulos || [])
+            .map(a => a.producto)
+            .filter(Boolean);
+
+        const productosInfo = await Producto.find({ _id: { $in: productoIds } })
+            .select('stock imagen')
+            .lean();
+
+        const infoPorId = {};
+        productosInfo.forEach(p => { infoPorId[p._id.toString()] = p; });
+
+        const articulosConStock = (pedido.articulos || []).map(item => {
+            const info = infoPorId[item.producto?.toString()];
+            return {
+                ...item,
+                stock: info?.stock ?? 0,
+                imagen: item.imagen?.url ? item.imagen : (info?.imagen || null)
+            };
+        });
         const pedidoRespuesta = {
             _id: pedido._id,
             cliente: pedido.cliente
@@ -459,7 +478,7 @@ const obtenerDetallePedido = async (req, res) => {
             tipoPedido: pedido.tipoPedido,
             nombrePedido: pedido.nombrePedido,
             listaCliente: pedido.listaCliente,
-            articulos: pedido.articulos,
+            articulos: articulosConStock,
             datosFacturacion: pedido.datosFacturacion,
             tipoEntrega: pedido.tipoEntrega,
             direccionEntrega: pedido.direccionEntrega,
