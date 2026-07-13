@@ -20,7 +20,7 @@ Dicho sistema permite al negocio automatizar visualmente sus procesos internos, 
 | Recurso | Enlace |
 |---|---|
 | **Formulario F_AA_233** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQCAFNUv4dX4SKgZape9b8RUAXr6WWIXGsodIXP9Jvt-GU0?e=aTEQ8f) |
-| **Formulario F_AA_234** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:w:/g/personal/alessia_perez_epn_edu_ec/IQCM4CllupY9TJyhliPbtQKdAdduheTh6H-hxn9EeB8ui7M?e=mswwhG) |
+| **Formulario F_AA_234** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQDd4hdPAA77RbavFUoM6WJXAa2-L5wkmpIxU-dtpI2VU70?e=uFDYFz) |
 | **Documento de tesis** | [Ver documento](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQCwCGZFEn3QTZAK-q3khI5SAYFBXTmo33PnHdWUFEqcE5M?e=9PNuCE) |
 | **Video demostrativo** | [Ver video](https://www.youtube.com/watch?v=xlRkscrBpF8) |
 
