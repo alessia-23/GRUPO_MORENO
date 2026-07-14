@@ -314,209 +314,209 @@ const buscarCliente = async (req, res) => {
         if (!cliente) {
             return res.status(404).json({ msg: 'Cliente no encontrado' });
         }
-            const usuario = await Usuario.findOne({
-                rol: 'CLIENTE', perfilId: cliente._id
-            })
-                .select('-password -token -createdAt -updatedAt')
-                .populate('perfilId', '-createdAt -updatedAt');
-            if (!usuario) {
-                return res.status(404).json({
-                    msg: 'Usuario asociado al cliente no encontrado'
-                });
-            }
-            return res.status(200).json({
-                _id: usuario._id,
-                email: usuario.email,
-                rol: usuario.rol,
-                estado: usuario.estado,
-                perfilId: usuario.perfilId
-            });
-        } catch (error) {
-            return res.status(500).json({
-                msg: 'Error al buscar cliente', error: error.message
+        const usuario = await Usuario.findOne({
+            rol: 'CLIENTE', perfilId: cliente._id
+        })
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
+        if (!usuario) {
+            return res.status(404).json({
+                msg: 'Usuario asociado al cliente no encontrado'
             });
         }
-    };
+        return res.status(200).json({
+            _id: usuario._id,
+            email: usuario.email,
+            rol: usuario.rol,
+            estado: usuario.estado,
+            perfilId: usuario.perfilId
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al buscar cliente', error: error.message
+        });
+    }
+};
 
-    // Buscar vendedor por cédula
-    const buscarVendedor = async (req, res) => {
-        try {
-            const { cedula } = req.params;
-            // Buscar el perfil del vendedor por cédula
-            const vendedor = await Vendedor.findOne({
-                cedula: cedula.trim()
-            });
-            if (!vendedor) {
-                return res.status(404).json({
-                    msg: 'Vendedor no encontrado'
-                });
-            }
-            // Buscar el usuario asociado a ese vendedor
-            const usuario = await Usuario.findOne({
-                rol: 'VENDEDOR', perfilId: vendedor._id
-            })
-                .select('-password -token -createdAt -updatedAt')
-                .populate('perfilId', '-createdAt -updatedAt');
-            if (!usuario) {
-                return res.status(404).json({
-                    msg: 'Usuario asociado al vendedor no encontrado'
-                });
-            }
-            return res.status(200).json({
-                _id: usuario._id,
-                email: usuario.email,
-                rol: usuario.rol,
-                estado: usuario.estado,
-                perfilId: usuario.perfilId
-            });
-        } catch (error) {
-            return res.status(500).json({
-                msg: 'Error al buscar vendedor', error: error.message
+// Buscar vendedor por cédula
+const buscarVendedor = async (req, res) => {
+    try {
+        const { cedula } = req.params;
+        // Buscar el perfil del vendedor por cédula
+        const vendedor = await Vendedor.findOne({
+            cedula: cedula.trim()
+        });
+        if (!vendedor) {
+            return res.status(404).json({
+                msg: 'Vendedor no encontrado'
             });
         }
-    };
-
-    // Listar clientes activos
-    const listarClientesActivos = async (req, res) => {
-        try {
-            const pagina = Number(req.query.page) || 1;
-            const limite = Number(req.query.limit) || 15;
-            const skip = (pagina - 1) * limite;
-
-            const filtro = {
-                rol: 'CLIENTE',
-                estado: true
-            };
-
-            const usuarios = await Usuario.find(filtro)
-                .select('-password -token -createdAt -updatedAt')
-                .populate('perfilId', '-createdAt -updatedAt')
-                .skip(skip)
-                .limit(limite);
-
-            const total = await Usuario.countDocuments(filtro);
-
-            return res.status(200).json({
-                total,
-                pagina,
-                limite,
-                totalPaginas: Math.ceil(total / limite),
-                usuarios
-            });
-        } catch (error) {
-            return res.status(500).json({
-                msg: 'Error al listar clientes activos',
-                error: error.message
+        // Buscar el usuario asociado a ese vendedor
+        const usuario = await Usuario.findOne({
+            rol: 'VENDEDOR', perfilId: vendedor._id
+        })
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt');
+        if (!usuario) {
+            return res.status(404).json({
+                msg: 'Usuario asociado al vendedor no encontrado'
             });
         }
-    };
+        return res.status(200).json({
+            _id: usuario._id,
+            email: usuario.email,
+            rol: usuario.rol,
+            estado: usuario.estado,
+            perfilId: usuario.perfilId
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al buscar vendedor', error: error.message
+        });
+    }
+};
 
-    // Listar clientes inactivos
-    const listarClientesInactivos = async (req, res) => {
-        try {
-            const pagina = Number(req.query.page) || 1;
-            const limite = Number(req.query.limit) || 15;
-            const skip = (pagina - 1) * limite;
+// Listar clientes activos
+const listarClientesActivos = async (req, res) => {
+    try {
+        const pagina = Number(req.query.page) || 1;
+        const limite = Number(req.query.limit) || 15;
+        const skip = (pagina - 1) * limite;
 
-            const filtro = {
-                rol: 'CLIENTE',
-                estado: false
-            };
+        const filtro = {
+            rol: 'CLIENTE',
+            estado: true
+        };
 
-            const usuarios = await Usuario.find(filtro)
-                .select('-password -token -createdAt -updatedAt')
-                .populate('perfilId', '-createdAt -updatedAt')
-                .skip(skip)
-                .limit(limite);
+        const usuarios = await Usuario.find(filtro)
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt')
+            .skip(skip)
+            .limit(limite);
 
-            const total = await Usuario.countDocuments(filtro);
+        const total = await Usuario.countDocuments(filtro);
 
-            return res.status(200).json({
-                total,
-                pagina,
-                limite,
-                totalPaginas: Math.ceil(total / limite),
-                usuarios
-            });
-        } catch (error) {
-            return res.status(500).json({
-                msg: 'Error al listar clientes inactivos',
-                error: error.message
-            });
-        }
-    };
+        return res.status(200).json({
+            total,
+            pagina,
+            limite,
+            totalPaginas: Math.ceil(total / limite),
+            usuarios
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar clientes activos',
+            error: error.message
+        });
+    }
+};
 
-    // Listar vendedores activos con paginación
-    const listarVendedoresActivos = async (req, res) => {
-        try {
-            const pagina = Number(req.query.page) || 1;
-            const limite = Number(req.query.limit) || 15;
-            const skip = (pagina - 1) * limite;
+// Listar clientes inactivos
+const listarClientesInactivos = async (req, res) => {
+    try {
+        const pagina = Number(req.query.page) || 1;
+        const limite = Number(req.query.limit) || 15;
+        const skip = (pagina - 1) * limite;
 
-            const filtro = {
-                rol: 'VENDEDOR',
-                estado: true
-            };
+        const filtro = {
+            rol: 'CLIENTE',
+            estado: false
+        };
 
-            const usuarios = await Usuario.find(filtro)
-                .select('-password -token -createdAt -updatedAt')
-                .populate('perfilId', '-createdAt -updatedAt')
-                .skip(skip)
-                .limit(limite);
+        const usuarios = await Usuario.find(filtro)
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt')
+            .skip(skip)
+            .limit(limite);
 
-            const total = await Usuario.countDocuments(filtro);
+        const total = await Usuario.countDocuments(filtro);
 
-            return res.status(200).json({
-                total,
-                pagina,
-                limite,
-                totalPaginas: Math.ceil(total / limite),
-                usuarios
-            });
-        } catch (error) {
-            return res.status(500).json({
-                msg: 'Error al listar vendedores activos',
-                error: error.message
-            });
-        }
-    };
+        return res.status(200).json({
+            total,
+            pagina,
+            limite,
+            totalPaginas: Math.ceil(total / limite),
+            usuarios
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar clientes inactivos',
+            error: error.message
+        });
+    }
+};
 
-    // Listar vendedores inactivos con paginación
-    const listarVendedoresInactivos = async (req, res) => {
-        try {
-            const pagina = Number(req.query.page) || 1;
-            const limite = Number(req.query.limit) || 15;
-            const skip = (pagina - 1) * limite;
+// Listar vendedores activos con paginación
+const listarVendedoresActivos = async (req, res) => {
+    try {
+        const pagina = Number(req.query.page) || 1;
+        const limite = Number(req.query.limit) || 15;
+        const skip = (pagina - 1) * limite;
 
-            const filtro = {
-                rol: 'VENDEDOR',
-                estado: false
-            };
+        const filtro = {
+            rol: 'VENDEDOR',
+            estado: true
+        };
 
-            const usuarios = await Usuario.find(filtro)
-                .select('-password -token -createdAt -updatedAt')
-                .populate('perfilId', '-createdAt -updatedAt')
-                .skip(skip)
-                .limit(limite);
+        const usuarios = await Usuario.find(filtro)
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt')
+            .skip(skip)
+            .limit(limite);
 
-            const total = await Usuario.countDocuments(filtro);
+        const total = await Usuario.countDocuments(filtro);
 
-            return res.status(200).json({
-                total,
-                pagina,
-                limite,
-                totalPaginas: Math.ceil(total / limite),
-                usuarios
-            });
-        } catch (error) {
-            return res.status(500).json({
-                msg: 'Error al listar vendedores inactivos',
-                error: error.message
-            });
-        }
-    };
+        return res.status(200).json({
+            total,
+            pagina,
+            limite,
+            totalPaginas: Math.ceil(total / limite),
+            usuarios
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar vendedores activos',
+            error: error.message
+        });
+    }
+};
 
-    export {
-        registrarVendedor, desactivarVendedor, activarVendedor, desactivarCliente, activarCliente
-        , buscarCliente, buscarVendedor, listarClientesActivos, listarClientesInactivos, listarVendedoresActivos, listarVendedoresInactivos
-    };
+// Listar vendedores inactivos con paginación
+const listarVendedoresInactivos = async (req, res) => {
+    try {
+        const pagina = Number(req.query.page) || 1;
+        const limite = Number(req.query.limit) || 15;
+        const skip = (pagina - 1) * limite;
+
+        const filtro = {
+            rol: 'VENDEDOR',
+            estado: false
+        };
+
+        const usuarios = await Usuario.find(filtro)
+            .select('-password -token -createdAt -updatedAt')
+            .populate('perfilId', '-createdAt -updatedAt')
+            .skip(skip)
+            .limit(limite);
+
+        const total = await Usuario.countDocuments(filtro);
+
+        return res.status(200).json({
+            total,
+            pagina,
+            limite,
+            totalPaginas: Math.ceil(total / limite),
+            usuarios
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error al listar vendedores inactivos',
+            error: error.message
+        });
+    }
+};
+
+export {
+    registrarVendedor, desactivarVendedor, activarVendedor, desactivarCliente, activarCliente
+    , buscarCliente, buscarVendedor, listarClientesActivos, listarClientesInactivos, listarVendedoresActivos, listarVendedoresInactivos
+};
