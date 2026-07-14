@@ -14,6 +14,16 @@ const tiposAcciones = [
 
 const fechasFestivas = [
     {
+        codigo: 'PRUEBA_TEST',
+        nombre: 'Evento de Prueba',
+        tipoFecha: 'FIJA',
+        mes: 7,
+        dia: 15,   
+        asunto: 'Prueba',
+        titulo: 'Prueba',
+        mensaje: 'Prueba'
+    },
+    {
         codigo: 'DIA_PADRE',
         nombre: 'Día del Padre',
         tipoFecha: 'MOVIL',
