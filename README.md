@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Trabajo de Integración Curricular</strong> — Escuela Politécnica Nacional<br>
-  Desarrollo de un sistema web basado en IA y N8N para la gestión y comercialización de artículos de oficina para el negocio "Dsitribuidaora Grupo Moreno".
+  Desarrollo de un sistema web basado en IA y N8N para la gestión y comercialización de artículos de oficina para el negocio "Distribuidaora Grupo Moreno".
 </p>
 
 ---
@@ -19,9 +19,12 @@ Dicho sistema permite al negocio automatizar visualmente sus procesos internos, 
 
 | Recurso | Enlace |
 |---|---|
-| **Formulario F_AA_233** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:w:/g/personal/alessia_perez_epn_edu_ec/IQCM4CllupY9TJyhliPbtQKdAdduheTh6H-hxn9EeB8ui7M?e=mswwhG) |
-| **Formulario F_AA_234** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:w:/g/personal/alessia_perez_epn_edu_ec/IQCM4CllupY9TJyhliPbtQKdAdduheTh6H-hxn9EeB8ui7M?e=mswwhG) |
-| **Documento de tesis** | [Ver documento](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQBEiHe0YTQ3Tr-p_fh-UugWAbQnOrVrby6_wTMY8hPK85I?e=mVxxH8) |
+| **Formulario F_AA_233** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQCAFNUv4dX4SKgZape9b8RUAXr6WWIXGsodIXP9Jvt-GU0?e=aTEQ8f) |
+| **Formulario F_AA_234** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQDd4hdPAA77RbavFUoM6WJXAa2-L5wkmpIxU-dtpI2VU70?e=uFDYFz) |
+| **Formulario F_AA_236** | [Acceder al formulario](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQB-Ki1Pg_LqQ5FdvYT-qJuWASMqIk8TuQXKRQRSUa4CJRg?e=W6Jwxo) |
+| **Documento de tesis** | [Ver documento](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQCwCGZFEn3QTZAK-q3khI5SAYFBXTmo33PnHdWUFEqcE5M?e=9PNuCE) |
+| **Certificado IA** | [Ver documento](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQC8Ch8BhjaNQrRrOuHNDsxAASiKBtz1o-FVhsaBB8H6jrg?e=stHDww) |
+| **Turnitin** | [Ver documento](https://epnecuador-my.sharepoint.com/:b:/g/personal/alessia_perez_epn_edu_ec/IQBk-pwkWxOISpzjXsqFqizUATP5KTkPE4nHtwJl7VC3QHM?e=4JlsoA) |
 | **Video demostrativo** | [Ver video](https://www.youtube.com/watch?v=xlRkscrBpF8) |
 
 ---
