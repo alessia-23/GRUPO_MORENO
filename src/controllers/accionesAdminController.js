@@ -155,17 +155,21 @@ const listarAccionesAdmin = async (req, res) => {
         const acciones = await Promise.all(
             tiposAcciones.map(async (tipo) => {
                 const periodo = obtenerPeriodoActual(tipo);
-
                 const registro = await AccionesAdmin.findOne({
                     tipo,
                     periodo
                 });
-
-                return {
+                const respuesta = {
                     tipo,
                     periodo,
                     estado: registro?.estado || 'PENDIENTE'
                 };
+                if (tipo === 'FECHA_FESTIVA') {
+                    const evento = obtenerFechaFestivaDisponible();
+                    respuesta.hayEventoDisponible = !!evento;
+                    respuesta.nombreEvento = evento?.nombre || null;
+                }
+                return respuesta;
             })
         );
 
